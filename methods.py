@@ -71,12 +71,6 @@ METHODS = {
     DEOLDIFY_ARTISTIC: 'Kolorieren · DeOldify Artistic',
     UPSCALING: 'Nur hochskalieren',
 }
-METHOD_MENU_GROUPS = {
-    **dict.fromkeys((QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS), 'Qwen Image Edit 2509'),
-    **dict.fromkeys(QWEN2511_GGUF_METHODS, 'Qwen Image Edit 2511'),
-    **dict.fromkeys(FIRERED_METHODS, 'FireRed Image Edit 1.1'),
-    **dict.fromkeys(COLORIZATION_METHODS, 'Kolorieren'),
-}
 METHOD_FILENAME_LABELS = {
     FIBO2_TURBO: 'Fibo-2.0',
     FLUX2: 'FLUX2-4B',

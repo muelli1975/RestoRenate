@@ -29,7 +29,7 @@ from local_backend import Backend, BackendStartError
 from portable_setup import AMD, COMPUTE_DEVICES, CPU, GPU_HINTS, NVIDIA, ComputeUnavailable, Setup, SetupCancelled
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import choose_preloads, format_download_size, preload_label
-from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES, METHOD_MENU_GROUPS,
+from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES,
                      METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU, available_methods,
                      UPSCALE_LICENSES, UPSCALERS, UPSCALING,
                      resolve_upscaler, uses_comfy)
@@ -40,7 +40,7 @@ from progress_track import ProgressTrack
 from prompt_menu import PromptMenu
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
                    TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, checkbox,
-                   set_control_state)
+                   set_control_state, style_method_scrollbar)
 from restoration import Client, restore, select_models
 from technical_logs import TechnicalLog, prepare_technical_logs
 from titlebar import install_tk_titlebars
@@ -338,12 +338,10 @@ class Application:
         tk.Label(left, textvariable=self.dimensions, bg=PANEL, fg=MUTED, anchor='w',
                  justify='left', wraplength=336).grid(row=7, column=0, sticky='ew', pady=(2, 0))
         label(translate('Verfahren'), 8)
-        self.method_widget = ttk.Menubutton(left, textvariable=self.method, style='Method.TMenubutton')
+        self.method_widget = ttk.Combobox(left, textvariable=self.method, values=list(self.method_ids), state='readonly')
         self.method_widget.grid(row=9, column=0, sticky='ew')
-        self.method_menu_options = menu_colors
-        self.method_menu = tk.Menu(self.method_widget, **menu_colors)
-        self.method_widget.configure(menu=self.method_menu)
-        self.refresh_method_menu()
+        style_method_scrollbar(self.method_widget)
+        self.method_widget.bind('<<ComboboxSelected>>', self.choose_method)
         self.prompt_heading = tk.StringVar(value='Prompt')
         self.prompt_heading_widget = tk.Label(left, textvariable=self.prompt_heading, bg=PANEL, fg=INK, anchor='w',
                                               font=('Segoe UI', 10, 'bold'))
@@ -524,25 +522,6 @@ class Application:
     def available_method_ids(self):
         return {translate(METHODS[method]): method for method in available_methods(self.supports_nunchaku())}
 
-    def refresh_method_menu(self):
-        self.method_menu.delete(0, 'end')
-        for submenu in self.method_menu.winfo_children():
-            submenu.destroy()
-        submenus = {}
-        for label, method in self.method_ids.items():
-            group = METHOD_MENU_GROUPS.get(method)
-            menu = self.method_menu
-            if group:
-                if group not in submenus:
-                    submenus[group] = tk.Menu(self.method_menu, **self.method_menu_options)
-                    # Tk uses the Windows system menu color for the cascade arrow.
-                    self.method_menu.add_cascade(label=translate(group), menu=submenus[group],
-                                                 background=GOLD, foreground=BG,
-                                                 activebackground=GOLD_LIGHT, activeforeground=BG)
-                menu = submenus[group]
-            caption = label.partition(' · ')[2] if group else label
-            menu.add_radiobutton(label=caption, variable=self.method, value=label, command=self.choose_method)
-
     def offer_cpu_fallback(self, reason):
         self.status.set(reason.splitlines()[0])
         if not messagebox.askyesno(
@@ -558,7 +537,7 @@ class Application:
         self.active_compute = CPU
         self.update_compute_label()
         self.method_ids = self.available_method_ids()
-        self.refresh_method_menu()
+        self.method_widget.configure(values=list(self.method_ids))
         self.refresh_processing_menu()
         self.status.set(translate('CPU für diese Sitzung aktiv'))
         return True
@@ -951,7 +930,7 @@ class Application:
         self.prompt.insert('1.0', saved_prompt)
         self.prompt.edit_modified(False)
 
-    def choose_method(self):
+    def choose_method(self, event=None):
         self.remember_prompt()
         self.remember_scaling()
         self.current_method = self.method_ids[self.method.get()]
@@ -1189,8 +1168,8 @@ class Application:
     def busy(self, value):
         for control in self.controls:
             set_control_state(control, 'disabled' if value else 'normal')
-        self.method_widget.configure(state='disabled' if value else 'normal')
-        self.size_widget.configure(state='disabled' if value else 'readonly')
+        for control in (self.method_widget, self.size_widget):
+            control.configure(state='disabled' if value else 'readonly')
         self.upscale_options.configure(state='disabled' if value or self.size_choice() == NO_RESCALE else 'readonly')
         self.format_widget.configure(state='disabled' if value else 'readonly')
         self.start_button.configure(

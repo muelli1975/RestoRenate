@@ -169,7 +169,6 @@ ENGLISH = {
     'Gespeicherte Datei ist beschädigt. Download wird wiederholt.': 'The saved file is damaged. Retrying the download.',
     'Kachel': 'Tile',
     'Klassische Restaurierung ohne Prompt': 'Classic restoration without a prompt',
-    'Kolorieren': 'Colorize',
     'Kolorieren · DDColor': 'Colorize · DDColor',
     'Kolorieren · DDColor Artistic': 'Colorize · DDColor Artistic',
     'Kolorieren · DeOldify Stable': 'Colorize · DeOldify Stable',

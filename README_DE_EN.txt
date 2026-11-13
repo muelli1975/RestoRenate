@@ -1,4 +1,4 @@
-RestoRenate 0.2.77
+RestoRenate 0.2.78
 Windows x64 · Portable
 
 DEUTSCH
@@ -47,9 +47,6 @@ stoppen“ lässt das aktuelle Ergebnis fertig werden. Nach einem erfolgreich
 abgeschlossenen Auftrag ertönt der Abschlusston.
 
 Verfahren und Hardware
-
-Im Menü „Verfahren“ sind die Varianten von Qwen und FireRed nach Modell gruppiert.
-Die Kolorierungsverfahren stehen unter „Kolorieren“.
 
 - Fibo 2.0 Edit Turbo arbeitet mit vier Schritten und einer zum Bild passenden
   Arbeitsfläche um 1 MP. Modell und Textencoder benötigen zusätzlich 13,3 GB.
@@ -200,9 +197,6 @@ the current job runs.
 lets the current result finish. A completion sound plays after a successful job.
 
 Methods and hardware
-
-The “Method” menu groups Qwen and FireRed variants by model.
-Colorization methods are under “Colorize”.
 
 - Fibo 2.0 Edit Turbo uses four steps and a working canvas around one
   megapixel. The model and text encoder add a 13.3 GB download. It shares the
