@@ -1,7 +1,7 @@
 """ComfyUI graphs for single-photo restoration."""
-from methods import (FIRERED_LIGHTNING, NUNCHAKU_LOADER, QWEN2509_GGUF_METHODS,
-                     QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU, QWEN2511_GGUF_METHODS,
-                     QWEN2511_LIGHTNING_4)
+from methods import (NUNCHAKU_LOADER, QWEN2509_BASE, QWEN2509_GGUF_METHODS,
+                     QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU,
+                     QWEN2511_BASE, QWEN2511_GGUF_METHODS, QWEN2511_LIGHTNING_4)
 
 RESULT_NODE = '14'
 
@@ -13,6 +13,7 @@ def qwen_graph(models, filename, prompt, seed, method):
         graph[str(number)] = {'class_type': kind, 'inputs': inputs}
 
     nunchaku = method == QWEN2509_NUNCHAKU
+    qwen2511 = method in QWEN2511_GGUF_METHODS
     four_steps = method in (QWEN2509_NUNCHAKU, QWEN2509_LIGHTNING_4, QWEN2511_LIGHTNING_4)
     shift = 3.0 if method in (QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS) else 3.1
     if nunchaku:
@@ -25,7 +26,7 @@ def qwen_graph(models, filename, prompt, seed, method):
     add(3, 'VAELoader', vae_name=models['vae'])
     add(4, 'LoadImage', image=filename)
     sampling_model = ['1', 0]
-    if method in (*QWEN2509_GGUF_METHODS, FIRERED_LIGHTNING):
+    if 'lightning' in models and not qwen2511:
         # These ComfyUI templates apply Lightning before sampling patches.
         add(16, 'LoraLoaderModelOnly', model=sampling_model, lora_name=models['lightning'], strength_model=1.0)
         sampling_model = ['16', 0]
@@ -35,13 +36,17 @@ def qwen_graph(models, filename, prompt, seed, method):
     add(8, 'VAEEncode', pixels=['4', 0], vae=['3', 0])
     add(15, 'CFGNorm', model=['5', 0], strength=1.0)
     model, positive, negative = ['15', 0], ['6', 0], ['7', 0]
-    if method in QWEN2511_GGUF_METHODS:
-        add(16, 'LoraLoaderModelOnly', model=model, lora_name=models['lightning'], strength_model=1.0)
+    if qwen2511:
+        if 'lightning' in models:
+            add(16, 'LoraLoaderModelOnly', model=model, lora_name=models['lightning'], strength_model=1.0)
+            model = ['16', 0]
         add(17, 'FluxKontextMultiReferenceLatentMethod', conditioning=positive, reference_latents_method='index_timestep_zero')
         add(18, 'FluxKontextMultiReferenceLatentMethod', conditioning=negative, reference_latents_method='index_timestep_zero')
-        model, positive, negative = ['16', 0], ['17', 0], ['18', 0]
+        positive, negative = ['17', 0], ['18', 0]
+    base_steps = {QWEN2509_BASE: 20, QWEN2511_BASE: 40}.get(method)
+    steps = base_steps or (4 if four_steps else 8)
     add(9, 'KSampler', model=model, positive=positive, negative=negative, latent_image=['8', 0],
-        seed=seed, steps=4 if four_steps else 8, cfg=1.0,
+        seed=seed, steps=steps, cfg=4.0 if base_steps else 1.0,
         sampler_name='euler', scheduler='simple', denoise=1.0)
     add(10, 'VAEDecode', samples=['9', 0], vae=['3', 0])
     return graph

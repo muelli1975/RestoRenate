@@ -7,11 +7,13 @@ FLUX2 = 'flux2-klein'
 QWEN2509_NUNCHAKU = 'qwen2509-nunchaku'
 QWEN2509_LIGHTNING_4 = 'qwen2509-lightning-4'
 QWEN2509_LIGHTNING_8 = 'qwen2509-lightning-8'
+QWEN2509_BASE = 'qwen2509-base'
 QWEN2511_LIGHTNING_4 = 'qwen2511-lightning-4'
 QWEN2511_LIGHTNING_8 = 'qwen2511-lightning-8'
+QWEN2511_BASE = 'qwen2511-base'
 FIRERED_LIGHTNING = 'firered11-lightning-8'
-QWEN2509_GGUF_METHODS = (QWEN2509_LIGHTNING_4, QWEN2509_LIGHTNING_8)
-QWEN2511_GGUF_METHODS = (QWEN2511_LIGHTNING_4, QWEN2511_LIGHTNING_8)
+QWEN2509_GGUF_METHODS = (QWEN2509_LIGHTNING_4, QWEN2509_LIGHTNING_8, QWEN2509_BASE)
+QWEN2511_GGUF_METHODS = (QWEN2511_LIGHTNING_4, QWEN2511_LIGHTNING_8, QWEN2511_BASE)
 QWEN_METHODS = (QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS)
 GGUF_METHODS = (*QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS, FIRERED_LIGHTNING)
 NUNCHAKU_LOADER = 'NunchakuQwenImageDiTLoader'
@@ -52,10 +54,12 @@ METHODS = {
     FIBO2_TURBO: 'Fibo 2.0 Edit Turbo',
     FLUX2: 'FLUX.2 [klein] 4B',
     QWEN2509_NUNCHAKU: 'Qwen Image Edit 2509 · Nunchaku INT4',
-    QWEN2509_LIGHTNING_4: 'Qwen Image Edit 2509 · GGUF Lightning (4 Schritte)',
-    QWEN2509_LIGHTNING_8: 'Qwen Image Edit 2509 · GGUF Lightning (8 Schritte)',
-    QWEN2511_LIGHTNING_4: 'Qwen Image Edit 2511 · GGUF Lightning (4 Schritte)',
-    QWEN2511_LIGHTNING_8: 'Qwen Image Edit 2511 · GGUF Lightning (8 Schritte)',
+    QWEN2509_LIGHTNING_4: 'Qwen Image Edit 2509 · Lightning (4 Schritte)',
+    QWEN2509_LIGHTNING_8: 'Qwen Image Edit 2509 · Lightning (8 Schritte)',
+    QWEN2509_BASE: 'Qwen Image Edit 2509 · Ohne Lightning (20 Schritte)',
+    QWEN2511_LIGHTNING_4: 'Qwen Image Edit 2511 · Lightning (4 Schritte)',
+    QWEN2511_LIGHTNING_8: 'Qwen Image Edit 2511 · Lightning (8 Schritte)',
+    QWEN2511_BASE: 'Qwen Image Edit 2511 · Ohne Lightning (40 Schritte)',
     FIRERED_LIGHTNING: 'FireRed Image Edit 1.1 · Lightning (8 Schritte)',
     MICROSOFT: 'Microsoft · Bringing Old Photos Back to Life',
     DDCOLOR: 'Kolorieren · DDColor',
@@ -64,14 +68,21 @@ METHODS = {
     DEOLDIFY_ARTISTIC: 'Kolorieren · DeOldify Artistic',
     UPSCALING: 'Nur hochskalieren',
 }
+METHOD_MENU_GROUPS = {
+    **dict.fromkeys((QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS), 'Qwen Image Edit 2509'),
+    **dict.fromkeys(QWEN2511_GGUF_METHODS, 'Qwen Image Edit 2511'),
+    **dict.fromkeys(COLORIZATION_METHODS, 'Kolorieren'),
+}
 METHOD_FILENAME_LABELS = {
     FIBO2_TURBO: 'Fibo-2.0',
     FLUX2: 'FLUX2-4B',
     QWEN2509_NUNCHAKU: 'Qwen-2509-Nunchaku',
     QWEN2509_LIGHTNING_4: 'Qwen-2509-4step',
     QWEN2509_LIGHTNING_8: 'Qwen-2509-8step',
+    QWEN2509_BASE: 'Qwen-2509-20step',
     QWEN2511_LIGHTNING_4: 'Qwen-2511-4step',
     QWEN2511_LIGHTNING_8: 'Qwen-2511-8step',
+    QWEN2511_BASE: 'Qwen-2511-40step',
     FIRERED_LIGHTNING: 'FireRed-1.1',
     MICROSOFT: 'Microsoft',
     DDCOLOR: 'DDColor',
@@ -156,6 +167,7 @@ MODEL_FILES = {
         'lightning': ('LoraLoaderModelOnly', 'lora_name',
                       'Qwen-Image-Edit-2509-Lightning-8steps-V1.0-bf16.safetensors'),
     },
+    QWEN2509_BASE: QWEN2509_GGUF_FILES,
     QWEN2511_LIGHTNING_4: {
         **QWEN2511_GGUF_FILES,
         'lightning': ('LoraLoaderModelOnly', 'lora_name',
@@ -166,6 +178,7 @@ MODEL_FILES = {
         'lightning': ('LoraLoaderModelOnly', 'lora_name',
                       'Qwen-Image-Edit-2511-Lightning-8steps-V1.0-bf16.safetensors'),
     },
+    QWEN2511_BASE: QWEN2511_GGUF_FILES,
     FIRERED_LIGHTNING: {
         'diffusion': ('UnetLoaderGGUF', 'unet_name', 'FireRed-Image-Edit-1.1-transformer-q4_k_m.gguf'),
         **QWEN_SHARED_FILES,

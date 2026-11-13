@@ -31,25 +31,6 @@ def set_control_state(widget, state):
         widget.configure(state=state)
 
 
-def style_method_scrollbar(combobox):
-    style_name = 'Method.Vertical.TScrollbar'
-    style = ttk.Style(combobox)
-    style.layout(style_name, [
-        ('Vertical.Scrollbar.trough', {'sticky': 'ns', 'children': [
-            ('Vertical.Scrollbar.thumb', {'sticky': 'nswe'}),
-        ]}),
-    ])
-    style.configure(style_name, troughcolor=PANEL_BG, bordercolor=PANEL_BG,
-                    background='#666666', lightcolor='#666666', darkcolor='#666666',
-                    arrowsize=11)
-    thumb_colors = [('pressed', '#929292'), ('active', '#7c7c7c')]
-    style.map(style_name, background=thumb_colors, lightcolor=thumb_colors, darkcolor=thumb_colors)
-
-    # The combobox uses a separate ttk scrollbar inside its popup.
-    popup = combobox.tk.call('ttk::combobox::PopdownWindow', str(combobox))
-    combobox.tk.call(f'{popup}.f.sb', 'configure', '-style', style_name)
-
-
 def apply_theme(window):
     ctk.set_appearance_mode('dark')
     style = ttk.Style(window)
@@ -70,6 +51,7 @@ def apply_theme(window):
     style.configure('TMenubutton', background=SECONDARY_BG, foreground=TEXT, padding=(9, 5), arrowcolor=GOLD_LIGHT)
     style.map('TMenubutton', background=[('active', HOVER_BG)], foreground=[('disabled', DISABLED)],
               arrowcolor=[('disabled', DISABLED)])
+    style.configure('Method.TMenubutton', background=PANEL_BG, padding=(6, 2), anchor='w')
     style.layout('Prompt.TMenubutton', [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [
             ('Menubutton.padding', {'sticky': 'nswe', 'children': [

@@ -1,4 +1,4 @@
-RestoRenate 0.2.74
+RestoRenate 0.2.75
 Windows x64 · Portable
 
 DEUTSCH
@@ -48,6 +48,9 @@ abgeschlossenen Auftrag ertönt der Abschlusston.
 
 Verfahren und Hardware
 
+Im Menü „Verfahren“ sind die Varianten nach Qwen-Modell gruppiert.
+Die Kolorierungsverfahren stehen unter „Kolorieren“.
+
 - Fibo 2.0 Edit Turbo arbeitet mit vier Schritten und einer zum Bild passenden
   Arbeitsfläche um 1 MP. Modell und Textencoder benötigen zusätzlich 13,3 GB.
   Der Bilddecoder wird mit FLUX.2 geteilt. Die Fibo-Gewichte stehen unter
@@ -58,11 +61,11 @@ Verfahren und Hardware
   Das Modell verwendet R32 mit vier integrierten Lightning-Schritten und
   CPU-Offload. Es braucht eine NVIDIA RTX 30 oder 40 mit einem Treiber für
   CUDA 13. Das Verfahren steht nur bei passender NVIDIA-Hardware zur Wahl.
-- Qwen Image Edit 2509 und 2511 · GGUF Lightning sind mit vier oder acht
-  Schritten in den Modi NVIDIA, CPU und AMD (ROCm) auswählbar. Die beiden
-  Schrittzahlen teilen sich pro Modell die Q4_K_M-Datei. Die jeweils andere
-  LightX2V-LoRA benötigt rund 850 MB. Bei vorhandenem Textencoder und VAE
-  kommen für ein GGUF-Modell mit einer LoRA rund 13,9 GB hinzu.
+- Qwen Image Edit 2509 und 2511 bieten Lightning mit vier oder acht
+  Schritten sowie „Ohne Lightning“ in den Modi NVIDIA, CPU und AMD (ROCm).
+  Ohne Lightning verwendet 2509 20 Schritte, 2511 40 Schritte, jeweils mit
+  CFG 4. Pro Modell teilen sich diese Varianten dieselbe Q4_K_M-Datei.
+  Je Lightning-LoRA kommen rund 850 MB hinzu.
 - FireRed Image Edit 1.1 nutzt Q4_K_M GGUF und eine Acht-Schritt-LoRA.
   Das Modell und die LoRA benötigen zusätzlich rund 13,9 GB. FireRed und
   die Qwen-Verfahren teilen sich Textencoder und VAE. Die GGUF-Verfahren
@@ -127,7 +130,7 @@ Dateinamen enthalten Eingabename, fortlaufende Nummer und die verwendeten
 Modelle. Die Nummer läuft pro Eingabename und Ausgabeordner über die
 Ausgabeformate und Verfahren hinweg. Beispiel: Bild_01_Fibo-2.0_Nomos2-MoSR.png.
 Bei Qwen 2509 und 2511 steht die Schrittzahl im Modellzusatz, etwa
-`Qwen-2509-4step` oder `Qwen-2511-8step`. Die Nunchaku-Variante verwendet
+`Qwen-2509-4step` oder `Qwen-2511-40step`. Die Nunchaku-Variante verwendet
 `Qwen-2509-Nunchaku`.
 
 Downloads und Verlauf
@@ -196,6 +199,9 @@ lets the current result finish. A completion sound plays after a successful job.
 
 Methods and hardware
 
+The “Method” menu groups the variants by Qwen model.
+Colorization methods are under “Colorize”.
+
 - Fibo 2.0 Edit Turbo uses four steps and a working canvas around one
   megapixel. The model and text encoder add a 13.3 GB download. It shares the
   image decoder with FLUX.2. The Fibo weights are licensed under CC BY-NC 4.0.
@@ -205,11 +211,11 @@ Methods and hardware
   megapixel. It uses R32 with four integrated Lightning steps and CPU
   offloading. It requires a NVIDIA RTX 30 or 40 series GPU with a CUDA 13
   compatible driver. The method is shown on compatible NVIDIA hardware.
-- Qwen Image Edit 2509 and 2511 · GGUF Lightning offer four or eight steps
-  in NVIDIA, CPU and AMD (ROCm) modes. Both step counts share the same
-  Q4_K_M file for each model. The additional LightX2V LoRA is about 850 MB.
-  With the shared text encoder and VAE already present, each GGUF model
-  and one LoRA add about 13.9 GB.
+- Qwen Image Edit 2509 and 2511 offer four- or eight-step Lightning and
+  “Without Lightning” in NVIDIA, CPU and AMD (ROCm) modes. Without
+  Lightning, 2509 uses 20 steps and 2511 uses 40 steps, both at CFG 4.
+  These variants share one Q4_K_M file per model. Each Lightning LoRA
+  adds about 850 MB.
 - FireRed Image Edit 1.1 uses Q4_K_M GGUF and an eight-step LoRA.
   Its model and LoRA add about 13.9 GB. FireRed and the Qwen methods share
   the text encoder and VAE. The GGUF methods use a working canvas around
@@ -268,7 +274,7 @@ File names include the input stem, a sequence number and the models used.
 The sequence is per input stem and output folder across formats and methods.
 For example, Image_01_Fibo-2.0_Nomos2-MoSR.png.
 Qwen 2509 and 2511 labels include the step count, for example
-`Qwen-2509-4step` or `Qwen-2511-8step`. The Nunchaku variant uses
+`Qwen-2509-4step` or `Qwen-2511-40step`. The Nunchaku variant uses
 `Qwen-2509-Nunchaku`.
 
 Downloads and history
