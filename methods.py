@@ -5,10 +5,11 @@ FIBO2_TURBO = 'fibo2-edit-turbo'
 DEFAULT_METHOD = FIBO2_TURBO
 FLUX2 = 'flux2-klein'
 QWEN2509_NUNCHAKU = 'qwen2509-nunchaku'
+QWEN2509_LIGHTNING = 'qwen2509-lightning-4'
 QWEN2511_LIGHTNING = 'qwen2511-lightning-8'
 FIRERED_LIGHTNING = 'firered11-lightning-8'
-QWEN_METHODS = (QWEN2509_NUNCHAKU, QWEN2511_LIGHTNING)
-GGUF_METHODS = (QWEN2511_LIGHTNING, FIRERED_LIGHTNING)
+QWEN_METHODS = (QWEN2509_NUNCHAKU, QWEN2509_LIGHTNING, QWEN2511_LIGHTNING)
+GGUF_METHODS = (QWEN2509_LIGHTNING, QWEN2511_LIGHTNING, FIRERED_LIGHTNING)
 NUNCHAKU_LOADER = 'NunchakuQwenImageDiTLoader'
 MICROSOFT = 'microsoft'
 DDCOLOR = 'ddcolor'
@@ -47,6 +48,7 @@ METHODS = {
     FIBO2_TURBO: 'Fibo 2.0 Edit Turbo',
     FLUX2: 'FLUX.2 [klein] 4B',
     QWEN2509_NUNCHAKU: 'Qwen Image Edit 2509 · Nunchaku INT4',
+    QWEN2509_LIGHTNING: 'Qwen Image Edit 2509 · GGUF Lightning (4 Schritte)',
     QWEN2511_LIGHTNING: 'Qwen Image Edit 2511 · Lightning (8 Schritte)',
     FIRERED_LIGHTNING: 'FireRed Image Edit 1.1 · Lightning (8 Schritte)',
     MICROSOFT: 'Microsoft · Bringing Old Photos Back to Life',
@@ -59,7 +61,8 @@ METHODS = {
 METHOD_FILENAME_LABELS = {
     FIBO2_TURBO: 'Fibo-2.0',
     FLUX2: 'FLUX2-4B',
-    QWEN2509_NUNCHAKU: 'Qwen-2509',
+    QWEN2509_NUNCHAKU: 'Qwen-2509-Nunchaku',
+    QWEN2509_LIGHTNING: 'Qwen-2509-GGUF-4step',
     QWEN2511_LIGHTNING: 'Qwen-2511',
     FIRERED_LIGHTNING: 'FireRed-1.1',
     MICROSOFT: 'Microsoft',
@@ -82,6 +85,7 @@ LICENSES = {
     FIBO2_TURBO: 'CC BY-NC 4.0 · nicht kommerziell',
     FLUX2: 'Apache 2.0',
     QWEN2509_NUNCHAKU: 'Apache 2.0',
+    QWEN2509_LIGHTNING: 'Apache 2.0',
     QWEN2511_LIGHTNING: 'Apache 2.0',
     FIRERED_LIGHTNING: 'Apache 2.0',
     MICROSOFT: 'MIT-Code',
@@ -127,6 +131,12 @@ MODEL_FILES = {
         'diffusion': (NUNCHAKU_LOADER, 'model_name',
                       'svdq-int4_r32-qwen-image-edit-2509-lightning-4steps-251115.safetensors'),
         **QWEN_SHARED_FILES,
+    },
+    QWEN2509_LIGHTNING: {
+        'diffusion': ('UnetLoaderGGUF', 'unet_name', 'Qwen-Image-Edit-2509-Q4_K_M.gguf'),
+        **QWEN_SHARED_FILES,
+        'lightning': ('LoraLoaderModelOnly', 'lora_name',
+                      'Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors'),
     },
     QWEN2511_LIGHTNING: {
         'diffusion': ('UnetLoaderGGUF', 'unet_name', 'qwen-image-edit-2511-Q4_K_M.gguf'),

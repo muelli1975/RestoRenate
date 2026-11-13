@@ -312,6 +312,26 @@
       "source_path": "lightning-251115/svdq-int4_r32-qwen-image-edit-2509-lightning-4steps-251115.safetensors"
     }
   ],
+  "qwen2509-lightning-4": [
+    {
+      "path": "models/diffusion_models/Qwen-Image-Edit-2509-Q4_K_M.gguf",
+      "size": 13065746976,
+      "sha256": "08f27cdf3e760edef5136ab0afdb9d3ed7a2799bd730b8d5cd9ecb291d808425",
+      "url": "https://huggingface.co/QuantStack/Qwen-Image-Edit-2509-GGUF/resolve/84a3006979126011422eeeefe0c9485ddf431ef5/Qwen-Image-Edit-2509-Q4_K_M.gguf?download=true",
+      "repo": "QuantStack/Qwen-Image-Edit-2509-GGUF",
+      "revision": "84a3006979126011422eeeefe0c9485ddf431ef5",
+      "source_path": "Qwen-Image-Edit-2509-Q4_K_M.gguf"
+    },
+    {
+      "path": "models/loras/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors",
+      "size": 849608296,
+      "sha256": "2a32ce938ec71db2b49a817b4844ae86995569518dea56ee0ddc209cbe8e1377",
+      "url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/d468c534b360e0754c6bf9e38ed49e1e09cd2e2a/Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors?download=true",
+      "repo": "lightx2v/Qwen-Image-Lightning",
+      "revision": "d468c534b360e0754c6bf9e38ed49e1e09cd2e2a",
+      "source_path": "Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors"
+    }
+  ],
   "qwen2511-lightning-8": [
     {
       "path": "models/diffusion_models/qwen-image-edit-2511-Q4_K_M.gguf",

@@ -222,6 +222,7 @@ ENGLISH = {
     'Prompt „{0}“ gespeichert.': 'Prompt “{0}” saved.',
     'Prompt wird verarbeitet': 'Processing prompt',
     'Prüfen': 'Checking',
+    'Qwen Image Edit 2509 · GGUF Lightning (4 Schritte)': 'Qwen Image Edit 2509 · GGUF Lightning (4 steps)',
     'Qwen Image Edit 2511 · Lightning (8 Schritte)': 'Qwen Image Edit 2511 · Lightning (8 steps)',
     'FireRed Image Edit 1.1 · Lightning (8 Schritte)': 'FireRed Image Edit 1.1 · Lightning (8 steps)',
     'Qwen 2509 Nunchaku INT4 benötigt eine NVIDIA-GPU der RTX-30- oder RTX-40-Serie und einen CUDA-13-tauglichen Treiber.':

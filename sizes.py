@@ -3,8 +3,8 @@ from functools import lru_cache
 from math import ceil, floor, sqrt
 
 from language import translate
-from methods import (COLORIZATION_METHODS, FIBO2_TURBO, FIRERED_LIGHTNING, FLUX2, MICROSOFT,
-                     NATIVE_METHODS, QWEN2509_NUNCHAKU, QWEN2511_LIGHTNING, UPSCALING)
+from methods import (COLORIZATION_METHODS, FIBO2_TURBO, FLUX2, GGUF_METHODS, MICROSOFT,
+                     NATIVE_METHODS, QWEN2509_NUNCHAKU, UPSCALING)
 
 NO_RESCALE = 'Ohne Nachskalierung'
 DOUBLE_SIZE = '2×'
@@ -18,7 +18,7 @@ SIZE_CHOICES = (NO_RESCALE, DOUBLE_SIZE, QUADRUPLE_SIZE, FULL_HD, ULTRA_HD, *CUS
 MAX_PIXELS = 60_000_000
 MAX_SIDE = 16_384
 
-# ComfyUI FluxKontextImageScale sizes used by the Qwen 2511 and FireRed workflows.
+# ComfyUI FluxKontextImageScale sizes used by the GGUF workflows.
 KONTEXT_RESOLUTIONS = (
     (672, 1568), (688, 1504), (720, 1456), (752, 1392), (800, 1328),
     (832, 1248), (880, 1184), (944, 1104), (1024, 1024), (1104, 944),
@@ -65,7 +65,7 @@ def fibo_canvas(original):
 def restoration_canvas(original, method):
     if method == FIBO2_TURBO:
         return fibo_canvas(original)
-    if method in (QWEN2511_LIGHTNING, FIRERED_LIGHTNING):
+    if method in GGUF_METHODS:
         aspect = original[0] / original[1]
         return min(KONTEXT_RESOLUTIONS, key=lambda size: abs(aspect - size[0] / size[1]))
     return None
