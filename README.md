@@ -42,9 +42,9 @@ Beschnitt vor der Bearbeitung, einen Vorher-Nachher-Regler und optionale
 Nachskalierung. Nach der Einrichtung läuft die Verarbeitung lokal und
 offline.
 
-Entpacke das portable Windows-x64-Paket in einen kurzen, beschreibbaren Pfad
-und öffne `Start.cmd`. Wähle ein Bild oder einen Ordner, einen Ausgabeordner
-und ein Verfahren. Vor dem Download fehlender Dateien zeigt die App die
+Das portable Windows-x64-Paket in einen kurzen, beschreibbaren Pfad
+entpacken und `Start.cmd` öffnen. Ein Bild oder einen Ordner, einen
+Ausgabeordner und ein Verfahren auswählen. Vor dem Download fehlender Dateien zeigt die App die
 benötigte Downloadmenge an.
 
 Für CPU-Bearbeitung eignen sich besonders Microsoft · Bringing Old Photos
@@ -54,8 +54,8 @@ voreingestellt. AMD (ROCm) ist experimentell und hängt von Grafikkarte und
 Treiber ab. Qwen 2509 Nunchaku braucht eine kompatible NVIDIA RTX 30 oder
 RTX 40 mit passendem Treiber.
 
-Für Änderungen am Quellcode kopierst du die Quelldateien in eine separate
-Kopie des passenden portablen Pakets und startest sie dort mit `Start.cmd`.
+Zum Testen von Quellcodeänderungen die Quelldateien in eine separate Kopie
+des passenden portablen Pakets kopieren und dort `Start.cmd` öffnen.
 Der eigene RestoRenate-Code steht unter der [MIT-Lizenz](LICENSE). Quellen
 und Lizenzen der Fremdkomponenten und Modelle stehen in
 [THIRD_PARTY.txt](THIRD_PARTY.txt).
