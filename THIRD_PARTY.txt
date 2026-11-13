@@ -113,9 +113,8 @@ FLUX.2 [klein] 4B · Apache 2.0.
   https://huggingface.co/black-forest-labs/FLUX.2-klein-4B
   https://huggingface.co/Comfy-Org/Flux-2-Klein-4B
 
-Qwen Image Edit 2509 Nunchaku R32 INT4, Qwen Image Edit 2509 GGUF with
-LightX2V Lightning 4-step LoRA, and Qwen Image Edit 2511 GGUF with
-LightX2V Lightning 8-step LoRA · Apache 2.0.
+Qwen Image Edit 2509 Nunchaku R32 INT4 and Qwen Image Edit 2509 and 2511 GGUF
+with LightX2V Lightning 4-step and 8-step LoRAs · Apache 2.0.
   https://huggingface.co/Qwen/Qwen-Image-Edit-2509
   https://huggingface.co/nunchaku-ai/nunchaku-qwen-image-edit-2509
   https://huggingface.co/QuantStack/Qwen-Image-Edit-2509-GGUF

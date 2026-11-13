@@ -1,4 +1,4 @@
-RestoRenate 0.2.72
+RestoRenate 0.2.73
 Windows x64 · Portable
 
 DEUTSCH
@@ -58,17 +58,16 @@ Verfahren und Hardware
   Das Modell verwendet R32 mit vier integrierten Lightning-Schritten und
   CPU-Offload. Es braucht eine NVIDIA RTX 30 oder 40 mit einem Treiber für
   CUDA 13. Das Verfahren steht nur bei passender NVIDIA-Hardware zur Wahl.
-- Qwen Image Edit 2509 · GGUF Lightning (4 Schritte) nutzt Q4_K_M GGUF und
-  die Vier-Schritt-LoRA von LightX2V. Die Arbeitsfläche liegt um 1 MP.
-  Das Verfahren ist in den Modi NVIDIA, CPU und AMD (ROCm) auswählbar.
-  Bei vorhandenen Qwen-Textencoder- und VAE-Dateien kommen rund 13,9 GB
-  für Modell und LoRA hinzu. Die Gewichte stehen unter Apache 2.0.
-- Qwen Image Edit 2511 und FireRed Image Edit 1.1 nutzen Q4_K_M GGUF und ihre
-  jeweilige Lightning-LoRA mit acht Schritten. Sie wählen eine passende
-  Arbeitsfläche um 1 MP. Ergänzte Ränder entfernt die App anschließend.
-  FireRed-Modell und LoRA benötigen zusätzlich 13,9 GB. Qwen und FireRed
-  nutzen gemeinsame Textencoder- und VAE-Dateien. Die Gewichte stehen unter
-  Apache 2.0.
+- Qwen Image Edit 2509 und 2511 · GGUF Lightning sind mit vier oder acht
+  Schritten in den Modi NVIDIA, CPU und AMD (ROCm) auswählbar. Die beiden
+  Schrittzahlen teilen sich pro Modell die Q4_K_M-Datei. Die jeweils andere
+  LightX2V-LoRA benötigt rund 850 MB. Bei vorhandenem Textencoder und VAE
+  kommen für ein GGUF-Modell mit einer LoRA rund 13,9 GB hinzu.
+- FireRed Image Edit 1.1 nutzt Q4_K_M GGUF und eine Acht-Schritt-LoRA.
+  Das Modell und die LoRA benötigen zusätzlich rund 13,9 GB. FireRed und
+  die Qwen-Verfahren teilen sich Textencoder und VAE. Die GGUF-Verfahren
+  wählen eine Arbeitsfläche um 1 MP. Ergänzte Ränder entfernt die App
+  anschließend. Die Gewichte stehen unter Apache 2.0.
 - Microsoft · Bringing Old Photos Back to Life restauriert mit bis zu
   2048 px an der langen Seite und liefert ein Ergebnis pro Bild. Es gibt
   separate Optionen für Kratzer und Gesichter. Die Gesichtsverbesserung
@@ -127,8 +126,8 @@ dem bereits kolorierten Bild als Eingabe.
 Dateinamen enthalten Eingabename, fortlaufende Nummer und die verwendeten
 Modelle. Die Nummer läuft pro Eingabename und Ausgabeordner über die
 Ausgabeformate und Verfahren hinweg. Beispiel: Bild_01_Fibo-2.0_Nomos2-MoSR.png.
-Bei Qwen 2509 unterscheidet der Modellzusatz `Qwen-2509-Nunchaku` von
-`Qwen-2509-GGUF-4step`.
+Bei Qwen 2509 und 2511 nennt der Modellzusatz die Variante und bei GGUF
+auch die Schrittzahl, etwa `Qwen-2509-Nunchaku` oder `Qwen-2511-GGUF-8step`.
 
 Downloads und Verlauf
 
@@ -205,16 +204,16 @@ Methods and hardware
   megapixel. It uses R32 with four integrated Lightning steps and CPU
   offloading. It requires a NVIDIA RTX 30 or 40 series GPU with a CUDA 13
   compatible driver. The method is shown on compatible NVIDIA hardware.
-- Qwen Image Edit 2509 · GGUF Lightning (4 steps) uses Q4_K_M GGUF and the
-  four-step LightX2V LoRA on a working canvas around one megapixel. The method
-  is selectable in NVIDIA, CPU and AMD (ROCm) modes. With the shared Qwen text
-  encoder and VAE already present, the model and LoRA add about 13.9 GB.
-  The weights are licensed under Apache 2.0.
-- Qwen Image Edit 2511 and FireRed Image Edit 1.1 use Q4_K_M GGUF and their
-  respective eight-step Lightning LoRAs. They pick a working canvas around
+- Qwen Image Edit 2509 and 2511 · GGUF Lightning offer four or eight steps
+  in NVIDIA, CPU and AMD (ROCm) modes. Both step counts share the same
+  Q4_K_M file for each model. The additional LightX2V LoRA is about 850 MB.
+  With the shared text encoder and VAE already present, each GGUF model
+  and one LoRA add about 13.9 GB.
+- FireRed Image Edit 1.1 uses Q4_K_M GGUF and an eight-step LoRA.
+  Its model and LoRA add about 13.9 GB. FireRed and the Qwen methods share
+  the text encoder and VAE. The GGUF methods use a working canvas around
   one megapixel. RestoRenate removes any added padding after processing.
-  The FireRed model and LoRA add a 13.9 GB download. Qwen and FireRed share
-  text encoder and VAE files. The weights are licensed under Apache 2.0.
+  The weights are licensed under Apache 2.0.
 - Microsoft · Bringing Old Photos Back to Life restores images at up to
   2048 px on the long edge and produces one result per image. Scratch repair
   and face enhancement are separate options. Face enhancement downloads
@@ -267,7 +266,8 @@ with the already colorized image.
 File names include the input stem, a sequence number and the models used.
 The sequence is per input stem and output folder across formats and methods.
 For example, Image_01_Fibo-2.0_Nomos2-MoSR.png.
-Qwen 2509 exports use `Qwen-2509-Nunchaku` or `Qwen-2509-GGUF-4step`.
+Qwen 2509 and 2511 labels identify the variant and, for GGUF, the step
+count, for example `Qwen-2509-Nunchaku` or `Qwen-2511-GGUF-8step`.
 
 Downloads and history
 

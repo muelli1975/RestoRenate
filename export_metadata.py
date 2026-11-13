@@ -2,7 +2,7 @@
 import json
 
 APP_NAME = 'RestoRenate'
-APP_VERSION = '0.2.72'
+APP_VERSION = '0.2.73'
 PRIMITIVES = {'INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO', 'COMFY_DYNAMICCOMBO_V3'}
 
 

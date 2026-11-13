@@ -21,7 +21,7 @@ are practical starting points for CPU processing. Large prompt-based models
 can take substantial time and RAM on the CPU. NVIDIA is the default GPU
 mode. AMD (ROCm) is experimental and depends on the Radeon model and driver.
 Qwen 2509 Nunchaku requires a compatible NVIDIA RTX 30 or RTX 40 GPU and driver.
-Qwen 2509 GGUF Lightning (4 steps) is selectable in NVIDIA, CPU and AMD (ROCm) modes.
+Qwen 2509 and 2511 GGUF Lightning offer 4 and 8 steps in NVIDIA, CPU and AMD (ROCm) modes.
 
 ## Source and license
 
@@ -54,7 +54,7 @@ können auf der CPU viel Zeit und Arbeitsspeicher benötigen. NVIDIA ist
 voreingestellt. AMD (ROCm) ist experimentell und hängt von Grafikkarte und
 Treiber ab. Qwen 2509 Nunchaku braucht eine kompatible NVIDIA RTX 30 oder
 RTX 40 mit passendem Treiber.
-Qwen 2509 GGUF Lightning (4 Schritte) ist in den Modi NVIDIA, CPU und AMD (ROCm) auswählbar.
+Qwen 2509 und 2511 GGUF Lightning bieten 4 und 8 Schritte in den Modi NVIDIA, CPU und AMD (ROCm).
 
 Zum Testen von Quellcodeänderungen die Quelldateien in eine separate Kopie
 des passenden portablen Pakets kopieren und dort `Start.cmd` öffnen.

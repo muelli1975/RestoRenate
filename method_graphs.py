@@ -1,6 +1,7 @@
 """ComfyUI graphs for single-photo restoration."""
-from methods import (FIRERED_LIGHTNING, NUNCHAKU_LOADER, QWEN2509_LIGHTNING,
-                     QWEN2509_NUNCHAKU, QWEN2511_LIGHTNING)
+from methods import (FIRERED_LIGHTNING, NUNCHAKU_LOADER, QWEN2509_GGUF_METHODS,
+                     QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU, QWEN2511_GGUF_METHODS,
+                     QWEN2511_LIGHTNING_4)
 
 RESULT_NODE = '14'
 
@@ -12,7 +13,8 @@ def qwen_graph(models, filename, prompt, seed, method):
         graph[str(number)] = {'class_type': kind, 'inputs': inputs}
 
     nunchaku = method == QWEN2509_NUNCHAKU
-    four_steps = method in (QWEN2509_NUNCHAKU, QWEN2509_LIGHTNING)
+    four_steps = method in (QWEN2509_NUNCHAKU, QWEN2509_LIGHTNING_4, QWEN2511_LIGHTNING_4)
+    shift = 3.0 if method in (QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS) else 3.1
     if nunchaku:
         # Keep one transformer block resident to leave room for activations on smaller GPUs.
         add(1, NUNCHAKU_LOADER, model_name=models['diffusion'], cpu_offload='enable',
@@ -23,17 +25,17 @@ def qwen_graph(models, filename, prompt, seed, method):
     add(3, 'VAELoader', vae_name=models['vae'])
     add(4, 'LoadImage', image=filename)
     sampling_model = ['1', 0]
-    if method in (QWEN2509_LIGHTNING, FIRERED_LIGHTNING):
+    if method in (*QWEN2509_GGUF_METHODS, FIRERED_LIGHTNING):
         # These ComfyUI templates apply Lightning before sampling patches.
         add(16, 'LoraLoaderModelOnly', model=sampling_model, lora_name=models['lightning'], strength_model=1.0)
         sampling_model = ['16', 0]
-    add(5, 'ModelSamplingAuraFlow', model=sampling_model, shift=3.0 if four_steps else 3.1)
+    add(5, 'ModelSamplingAuraFlow', model=sampling_model, shift=shift)
     add(6, 'TextEncodeQwenImageEditPlus', clip=['2', 0], vae=['3', 0], prompt=prompt, image1=['4', 0])
     add(7, 'TextEncodeQwenImageEditPlus', clip=['2', 0], vae=['3', 0], prompt='', image1=['4', 0])
     add(8, 'VAEEncode', pixels=['4', 0], vae=['3', 0])
     add(15, 'CFGNorm', model=['5', 0], strength=1.0)
     model, positive, negative = ['15', 0], ['6', 0], ['7', 0]
-    if method == QWEN2511_LIGHTNING:
+    if method in QWEN2511_GGUF_METHODS:
         add(16, 'LoraLoaderModelOnly', model=model, lora_name=models['lightning'], strength_model=1.0)
         add(17, 'FluxKontextMultiReferenceLatentMethod', conditioning=positive, reference_latents_method='index_timestep_zero')
         add(18, 'FluxKontextMultiReferenceLatentMethod', conditioning=negative, reference_latents_method='index_timestep_zero')
