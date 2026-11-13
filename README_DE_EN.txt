@@ -1,4 +1,4 @@
-RestoRenate 0.2.81
+RestoRenate 0.2.82
 Windows x64 · Portable
 
 DEUTSCH
@@ -71,13 +71,13 @@ Verfahren und Hardware
   Das Modell verwendet R32 mit vier integrierten Lightning-Schritten und
   CPU-Offload. Es braucht eine NVIDIA RTX 30 oder 40 mit einem Treiber für
   CUDA 13. Das Verfahren steht nur bei passender NVIDIA-Hardware zur Wahl.
-- Qwen Image Edit 2509 und 2511 bieten Lightning mit vier Schritten sowie
-  „Ohne Lightning“ in den Modi NVIDIA, CPU und AMD (ROCm).
-  Ohne Lightning verwendet 2509 20 Schritte, 2511 40 Schritte, jeweils mit
-  CFG 4. Pro Modell teilen sich diese Varianten dieselbe Q4_K_M-Datei.
+- Qwen Image Edit 2509 und 2511 sind als Basisvariante und mit Lightning
+  (vier Schritte) in den Modi NVIDIA, CPU und AMD (ROCm) verfügbar.
+  In der Basisvariante verwendet 2509 20 Schritte, 2511 40 Schritte, jeweils
+  mit CFG 4. Pro Modell teilen sich beide Varianten dieselbe Q4_K_M-Datei.
   Je Lightning-LoRA kommen rund 850 MB hinzu.
-- FireRed Image Edit 1.1 bietet Lightning mit acht Schritten und
-  „Ohne Lightning“ mit 40 Schritten bei CFG 4. Beide Varianten nutzen
+- FireRed Image Edit 1.1 bietet eine Basisvariante mit 40 Schritten bei
+  CFG 4 und Lightning mit acht Schritten. Beide Varianten nutzen
   dieselbe Q4_K_M-Datei. Für Lightning kommen rund 850 MB für die LoRA hinzu.
   FireRed und die Qwen-Verfahren teilen sich Textencoder und VAE. Die GGUF-Verfahren
   wählen eine Arbeitsfläche um 1 MP. Ergänzte Ränder entfernt die App
@@ -231,13 +231,13 @@ Methods and hardware
   megapixel. It uses R32 with four integrated Lightning steps and CPU
   offloading. It requires a NVIDIA RTX 30 or 40 series GPU with a CUDA 13
   compatible driver. The method is shown on compatible NVIDIA hardware.
-- Qwen Image Edit 2509 and 2511 offer four-step Lightning and
-  “Without Lightning” in NVIDIA, CPU and AMD (ROCm) modes. Without
-  Lightning, 2509 uses 20 steps and 2511 uses 40 steps, both at CFG 4.
+- Qwen Image Edit 2509 and 2511 offer base and four-step Lightning
+  variants in NVIDIA, CPU and AMD (ROCm) modes. The base variants use
+  20 steps for 2509 and 40 steps for 2511, both at CFG 4.
   These variants share one Q4_K_M file per model. Each Lightning LoRA
   adds about 850 MB.
-- FireRed Image Edit 1.1 offers eight-step Lightning and “Without Lightning”
-  with 40 steps at CFG 4. Both variants share the same Q4_K_M file.
+- FireRed Image Edit 1.1 offers a base variant with 40 steps at CFG 4
+  and eight-step Lightning. Both variants share the same Q4_K_M file.
   The Lightning LoRA adds about 850 MB. FireRed and the Qwen methods share
   the text encoder and VAE. The GGUF methods use a working canvas around
   one megapixel. RestoRenate removes any added padding after processing.
