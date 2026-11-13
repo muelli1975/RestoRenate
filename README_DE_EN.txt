@@ -1,4 +1,4 @@
-RestoRenate 0.2.73
+RestoRenate 0.2.74
 Windows x64 · Portable
 
 DEUTSCH
@@ -126,8 +126,9 @@ dem bereits kolorierten Bild als Eingabe.
 Dateinamen enthalten Eingabename, fortlaufende Nummer und die verwendeten
 Modelle. Die Nummer läuft pro Eingabename und Ausgabeordner über die
 Ausgabeformate und Verfahren hinweg. Beispiel: Bild_01_Fibo-2.0_Nomos2-MoSR.png.
-Bei Qwen 2509 und 2511 nennt der Modellzusatz die Variante und bei GGUF
-auch die Schrittzahl, etwa `Qwen-2509-Nunchaku` oder `Qwen-2511-GGUF-8step`.
+Bei Qwen 2509 und 2511 steht die Schrittzahl im Modellzusatz, etwa
+`Qwen-2509-4step` oder `Qwen-2511-8step`. Die Nunchaku-Variante verwendet
+`Qwen-2509-Nunchaku`.
 
 Downloads und Verlauf
 
@@ -266,8 +267,9 @@ with the already colorized image.
 File names include the input stem, a sequence number and the models used.
 The sequence is per input stem and output folder across formats and methods.
 For example, Image_01_Fibo-2.0_Nomos2-MoSR.png.
-Qwen 2509 and 2511 labels identify the variant and, for GGUF, the step
-count, for example `Qwen-2509-Nunchaku` or `Qwen-2511-GGUF-8step`.
+Qwen 2509 and 2511 labels include the step count, for example
+`Qwen-2509-4step` or `Qwen-2511-8step`. The Nunchaku variant uses
+`Qwen-2509-Nunchaku`.
 
 Downloads and history
 
