@@ -69,13 +69,20 @@ def move_box(box: Box, size: tuple[int, int], dx: int, dy: int) -> Box:
     return left + dx, top + dy, right + dx, bottom + dy
 
 
+def aspect_size(scale: float, available: tuple[int, int], aspect: Aspect) -> tuple[int, int]:
+    """Fit proportionally before rounding, so the limiting side can touch the image edge."""
+    aw, ah = aspect
+    max_width, max_height = available
+    limit = min(max_width / aw, max_height / ah)
+    scale = clamp(scale, min(1, limit), limit)
+    return clamp(round(scale * aw), 1, max_width), clamp(round(scale * ah), 1, max_height)
+
+
 def fit_aspect(box: Box, size: tuple[int, int], aspect: Aspect) -> Box:
-    """Keep the center where possible and snap to an exact integer aspect."""
+    """Keep the center where possible and round the dimensions to pixels."""
     width, height = box_size(box)
     aw, ah = aspect
-    preferred = round(sqrt(width * height / (aw * ah)))
-    units = clamp(preferred, 1, min(size[0] // aw, size[1] // ah))
-    width, height = units * aw, units * ah
+    width, height = aspect_size(sqrt(width * height / (aw * ah)), size, aspect)
     left = clamp(round((box[0] + box[2] - width) / 2), 0, size[0] - width)
     top = clamp(round((box[1] + box[3] - height) / 2), 0, size[1] - height)
     return left, top, left + width, top + height
@@ -93,13 +100,16 @@ def resize_box(box: Box, size: tuple[int, int], handle: tuple[int, int],
     dy = (pointer[1] - y) * vertical
     if aspect:
         aw, ah = aspect
-        limit = min(max_width // aw, max_height // ah)
-        if not limit:
+        if not max_width or not max_height:
             return None
-        # Project the pointer onto the line defined by the locked aspect.
-        units = round((max(0, dx) * aw + max(0, dy) * ah) / (aw * aw + ah * ah))
-        units = clamp(units, 1, limit)
-        width, height = units * aw, units * ah
+        old_width, old_height = box_size(box)
+        if (dx, dy) == (old_width, old_height) and old_width and old_height:
+            return box
+        # Follow the dominant change so a horizontal or vertical drag alone can resize a corner.
+        horizontal_change = abs(dx - old_width) / aw
+        vertical_change = abs(dy - old_height) / ah
+        scale = dx / aw if horizontal_change >= vertical_change else dy / ah
+        width, height = aspect_size(scale, (max_width, max_height), aspect)
     else:
         if (horizontal and not max_width) or (vertical and not max_height):
             return None

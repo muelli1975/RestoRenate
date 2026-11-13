@@ -262,8 +262,8 @@ class CropDialog(tk.Toplevel):
     def image_point(self, x, y):
         left, top, width, height = self.display_box
         return (
-            clamp(round((x - left) * self.image.width / width), 0, self.image.width),
-            clamp(round((y - top) * self.image.height / height), 0, self.image.height),
+            round((x - left) * self.image.width / width),
+            round((y - top) * self.image.height / height),
         )
 
     def target(self, x, y):
@@ -290,7 +290,10 @@ class CropDialog(tk.Toplevel):
         target = self.target(event.x, event.y)
         if target is not None:
             self.canvas.focus_set()
-            self.drag = target, self.box, self.image_point(event.x, event.y)
+            x, y = self.image_point(event.x, event.y)
+            if target == 'new':
+                x, y = clamp(x, 0, self.image.width), clamp(y, 0, self.image.height)
+            self.drag = target, self.box, (x, y)
 
     def update_drag(self, event):
         if self.drag is None:

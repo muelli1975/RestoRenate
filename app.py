@@ -236,7 +236,7 @@ class Application:
         self.update_size_controls()
         self.load_method_prompt()
         self.prompt.bind('<<Modified>>', self.prompt_changed)
-        self.window.bind('<Button-1>', self.leave_prompt_on_click, add='+')
+        self.window.bind('<Button-1>', self.leave_editor_on_click, add='+')
         self.check_ready()
         if previous:
             self.restore_view(*previous.reopen, crops=previous.crops)
@@ -956,8 +956,11 @@ class Application:
             if selected != self.prompt.get('1.0', 'end-1c'):
                 self.preset.set(translate('Eigener Text'))
 
-    def leave_prompt_on_click(self, event):
-        if event.widget not in (self.prompt, self.snippets_button) and self.window.focus_get() is self.prompt:
+    def leave_editor_on_click(self, event):
+        focused = self.window.focus_get()
+        if focused is self.prompt and event.widget not in (self.prompt, self.snippets_button):
+            self.window.focus_set()
+        elif focused is self.variant_widget and event.widget is not self.variant_widget:
             self.window.focus_set()
 
     def save_preset(self):
