@@ -51,7 +51,7 @@ def apply_theme(window):
     style.configure('TMenubutton', background=SECONDARY_BG, foreground=TEXT, padding=(9, 5), arrowcolor=GOLD_LIGHT)
     style.map('TMenubutton', background=[('active', HOVER_BG)], foreground=[('disabled', DISABLED)],
               arrowcolor=[('disabled', DISABLED)])
-    style.configure('Method.TMenubutton', background=PANEL_BG, padding=(6, 2), anchor='w')
+    style.configure('Method.TMenubutton', background=PANEL_BG, padding=(6, 2), anchor='w', wraplength=300)
     style.layout('Prompt.TMenubutton', [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [
             ('Menubutton.padding', {'sticky': 'nswe', 'children': [

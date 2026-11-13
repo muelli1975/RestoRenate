@@ -338,7 +338,7 @@ class Application:
         tk.Label(left, textvariable=self.dimensions, bg=PANEL, fg=MUTED, anchor='w',
                  justify='left', wraplength=336).grid(row=7, column=0, sticky='ew', pady=(2, 0))
         label(translate('Verfahren'), 8)
-        self.method_widget = ttk.Menubutton(left, textvariable=self.method, style='Method.TMenubutton', width=1)
+        self.method_widget = ttk.Menubutton(left, textvariable=self.method, style='Method.TMenubutton')
         self.method_widget.grid(row=9, column=0, sticky='ew')
         self.method_menu_options = menu_colors
         self.method_menu = tk.Menu(self.method_widget, **menu_colors)
@@ -535,7 +535,10 @@ class Application:
             if group:
                 if group not in submenus:
                     submenus[group] = tk.Menu(self.method_menu, **self.method_menu_options)
-                    self.method_menu.add_cascade(label=translate(group), menu=submenus[group])
+                    # Tk uses the Windows system menu color for the cascade arrow.
+                    self.method_menu.add_cascade(label=translate(group), menu=submenus[group],
+                                                 background=GOLD, foreground=BG,
+                                                 activebackground=GOLD_LIGHT, activeforeground=BG)
                 menu = submenus[group]
             caption = label.partition(' · ')[2] if group else label
             menu.add_radiobutton(label=caption, variable=self.method, value=label, command=self.choose_method)
