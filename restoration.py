@@ -27,7 +27,7 @@ from method_graphs import (
     RESULT_NODE, append_export, append_upscale,
     fibo2_graph, flux2_graph, microsoft_graph, qwen_graph, standalone_upscale_graph,
 )
-from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, FIBO2_TURBO, FIRERED_LIGHTNING, FLUX2, LANCZOS,
+from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, FIBO2_TURBO, FIRERED_METHODS, FLUX2, LANCZOS,
                      METHOD_FILENAME_LABELS, MICROSOFT, NATIVE_METHODS, NUNCHAKU_LOADER, QWEN_METHODS, REALESRGAN,
                      UPSCALE_FILENAME_LABELS, UPSCALE_FILES, UPSCALE_SCALES,
                      UPSCALING, model_files, resolve_upscaler)
@@ -251,7 +251,7 @@ def restoration_graph(method, models, name, size, crop, prompt, seed, scratches,
         graph = fibo2_graph(models, name, size, prompt, seed)
     elif method == FLUX2:
         graph = flux2_graph(models, name, size, prompt, seed)
-    elif method in (*QWEN_METHODS, FIRERED_LIGHTNING):
+    elif method in (*QWEN_METHODS, *FIRERED_METHODS):
         graph = qwen_graph(models, name, prompt, seed, method)
     else:
         raise ValueError(translate('Unbekanntes Verfahren: {0}', method))

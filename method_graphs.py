@@ -1,5 +1,5 @@
 """ComfyUI graphs for single-photo restoration."""
-from methods import (NUNCHAKU_LOADER, QWEN2509_BASE, QWEN2509_GGUF_METHODS,
+from methods import (FIRERED_BASE, NUNCHAKU_LOADER, QWEN2509_BASE, QWEN2509_GGUF_METHODS,
                      QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU,
                      QWEN2511_BASE, QWEN2511_GGUF_METHODS, QWEN2511_LIGHTNING_4)
 
@@ -43,7 +43,7 @@ def qwen_graph(models, filename, prompt, seed, method):
         add(17, 'FluxKontextMultiReferenceLatentMethod', conditioning=positive, reference_latents_method='index_timestep_zero')
         add(18, 'FluxKontextMultiReferenceLatentMethod', conditioning=negative, reference_latents_method='index_timestep_zero')
         positive, negative = ['17', 0], ['18', 0]
-    base_steps = {QWEN2509_BASE: 20, QWEN2511_BASE: 40}.get(method)
+    base_steps = {QWEN2509_BASE: 20, QWEN2511_BASE: 40, FIRERED_BASE: 40}.get(method)
     steps = base_steps or (4 if four_steps else 8)
     add(9, 'KSampler', model=model, positive=positive, negative=negative, latent_image=['8', 0],
         seed=seed, steps=steps, cfg=4.0 if base_steps else 1.0,

@@ -230,6 +230,7 @@ ENGLISH = {
     'Qwen Image Edit 2511 · Lightning (8 Schritte)': 'Qwen Image Edit 2511 · Lightning (8 steps)',
     'Qwen Image Edit 2511 · Ohne Lightning (40 Schritte)': 'Qwen Image Edit 2511 · Without Lightning (40 steps)',
     'FireRed Image Edit 1.1 · Lightning (8 Schritte)': 'FireRed Image Edit 1.1 · Lightning (8 steps)',
+    'FireRed Image Edit 1.1 · Ohne Lightning (40 Schritte)': 'FireRed Image Edit 1.1 · Without Lightning (40 steps)',
     'Qwen 2509 Nunchaku INT4 benötigt eine NVIDIA-GPU der RTX-30- oder RTX-40-Serie und einen CUDA-13-tauglichen Treiber.':
         'Qwen 2509 Nunchaku INT4 requires an NVIDIA RTX 30 or RTX 40 series GPU and a CUDA 13 compatible driver.',
     'Nunchaku und CUDA werden geprüft …': 'Checking Nunchaku and CUDA …',

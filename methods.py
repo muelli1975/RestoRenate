@@ -12,10 +12,12 @@ QWEN2511_LIGHTNING_4 = 'qwen2511-lightning-4'
 QWEN2511_LIGHTNING_8 = 'qwen2511-lightning-8'
 QWEN2511_BASE = 'qwen2511-base'
 FIRERED_LIGHTNING = 'firered11-lightning-8'
+FIRERED_BASE = 'firered11-base'
 QWEN2509_GGUF_METHODS = (QWEN2509_LIGHTNING_4, QWEN2509_LIGHTNING_8, QWEN2509_BASE)
 QWEN2511_GGUF_METHODS = (QWEN2511_LIGHTNING_4, QWEN2511_LIGHTNING_8, QWEN2511_BASE)
 QWEN_METHODS = (QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS)
-GGUF_METHODS = (*QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS, FIRERED_LIGHTNING)
+FIRERED_METHODS = (FIRERED_LIGHTNING, FIRERED_BASE)
+GGUF_METHODS = (*QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS, *FIRERED_METHODS)
 NUNCHAKU_LOADER = 'NunchakuQwenImageDiTLoader'
 MICROSOFT = 'microsoft'
 DDCOLOR = 'ddcolor'
@@ -61,6 +63,7 @@ METHODS = {
     QWEN2511_LIGHTNING_8: 'Qwen Image Edit 2511 · Lightning (8 Schritte)',
     QWEN2511_BASE: 'Qwen Image Edit 2511 · Ohne Lightning (40 Schritte)',
     FIRERED_LIGHTNING: 'FireRed Image Edit 1.1 · Lightning (8 Schritte)',
+    FIRERED_BASE: 'FireRed Image Edit 1.1 · Ohne Lightning (40 Schritte)',
     MICROSOFT: 'Microsoft · Bringing Old Photos Back to Life',
     DDCOLOR: 'Kolorieren · DDColor',
     DDCOLOR_ARTISTIC: 'Kolorieren · DDColor Artistic',
@@ -71,6 +74,7 @@ METHODS = {
 METHOD_MENU_GROUPS = {
     **dict.fromkeys((QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS), 'Qwen Image Edit 2509'),
     **dict.fromkeys(QWEN2511_GGUF_METHODS, 'Qwen Image Edit 2511'),
+    **dict.fromkeys(FIRERED_METHODS, 'FireRed Image Edit 1.1'),
     **dict.fromkeys(COLORIZATION_METHODS, 'Kolorieren'),
 }
 METHOD_FILENAME_LABELS = {
@@ -83,7 +87,8 @@ METHOD_FILENAME_LABELS = {
     QWEN2511_LIGHTNING_4: 'Qwen-2511-4step',
     QWEN2511_LIGHTNING_8: 'Qwen-2511-8step',
     QWEN2511_BASE: 'Qwen-2511-40step',
-    FIRERED_LIGHTNING: 'FireRed-1.1',
+    FIRERED_LIGHTNING: 'FireRed-1.1-8step',
+    FIRERED_BASE: 'FireRed-1.1-40step',
     MICROSOFT: 'Microsoft',
     DDCOLOR: 'DDColor',
     DDCOLOR_ARTISTIC: 'DDColor-Artistic',
@@ -103,8 +108,7 @@ UPSCALE_FILENAME_LABELS = {
 LICENSES = {
     FIBO2_TURBO: 'CC BY-NC 4.0 · nicht kommerziell',
     FLUX2: 'Apache 2.0',
-    **dict.fromkeys(QWEN_METHODS, 'Apache 2.0'),
-    FIRERED_LIGHTNING: 'Apache 2.0',
+    **dict.fromkeys((*QWEN_METHODS, *FIRERED_METHODS), 'Apache 2.0'),
     MICROSOFT: 'MIT-Code',
     UPSCALING: 'siehe gewähltes Modell',
     DDCOLOR: 'Apache 2.0',
@@ -139,6 +143,10 @@ QWEN2509_GGUF_FILES = {
 }
 QWEN2511_GGUF_FILES = {
     'diffusion': ('UnetLoaderGGUF', 'unet_name', 'qwen-image-edit-2511-Q4_K_M.gguf'),
+    **QWEN_SHARED_FILES,
+}
+FIRERED_GGUF_FILES = {
+    'diffusion': ('UnetLoaderGGUF', 'unet_name', 'FireRed-Image-Edit-1.1-transformer-q4_k_m.gguf'),
     **QWEN_SHARED_FILES,
 }
 MODEL_FILES = {
@@ -180,11 +188,11 @@ MODEL_FILES = {
     },
     QWEN2511_BASE: QWEN2511_GGUF_FILES,
     FIRERED_LIGHTNING: {
-        'diffusion': ('UnetLoaderGGUF', 'unet_name', 'FireRed-Image-Edit-1.1-transformer-q4_k_m.gguf'),
-        **QWEN_SHARED_FILES,
+        **FIRERED_GGUF_FILES,
         'lightning': ('LoraLoaderModelOnly', 'lora_name',
                       'FireRed-Image-Edit-1.1-Lightning-8steps-v1.2.safetensors'),
     },
+    FIRERED_BASE: FIRERED_GGUF_FILES,
     MICROSOFT: {},
     **{method: {} for method in NATIVE_METHODS},
 }

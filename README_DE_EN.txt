@@ -1,4 +1,4 @@
-RestoRenate 0.2.75
+RestoRenate 0.2.76
 Windows x64 · Portable
 
 DEUTSCH
@@ -48,7 +48,7 @@ abgeschlossenen Auftrag ertönt der Abschlusston.
 
 Verfahren und Hardware
 
-Im Menü „Verfahren“ sind die Varianten nach Qwen-Modell gruppiert.
+Im Menü „Verfahren“ sind die Varianten von Qwen und FireRed nach Modell gruppiert.
 Die Kolorierungsverfahren stehen unter „Kolorieren“.
 
 - Fibo 2.0 Edit Turbo arbeitet mit vier Schritten und einer zum Bild passenden
@@ -66,9 +66,10 @@ Die Kolorierungsverfahren stehen unter „Kolorieren“.
   Ohne Lightning verwendet 2509 20 Schritte, 2511 40 Schritte, jeweils mit
   CFG 4. Pro Modell teilen sich diese Varianten dieselbe Q4_K_M-Datei.
   Je Lightning-LoRA kommen rund 850 MB hinzu.
-- FireRed Image Edit 1.1 nutzt Q4_K_M GGUF und eine Acht-Schritt-LoRA.
-  Das Modell und die LoRA benötigen zusätzlich rund 13,9 GB. FireRed und
-  die Qwen-Verfahren teilen sich Textencoder und VAE. Die GGUF-Verfahren
+- FireRed Image Edit 1.1 bietet Lightning mit acht Schritten und
+  „Ohne Lightning“ mit 40 Schritten bei CFG 4. Beide Varianten nutzen
+  dieselbe Q4_K_M-Datei. Für Lightning kommen rund 850 MB für die LoRA hinzu.
+  FireRed und die Qwen-Verfahren teilen sich Textencoder und VAE. Die GGUF-Verfahren
   wählen eine Arbeitsfläche um 1 MP. Ergänzte Ränder entfernt die App
   anschließend. Die Gewichte stehen unter Apache 2.0.
 - Microsoft · Bringing Old Photos Back to Life restauriert mit bis zu
@@ -132,6 +133,7 @@ Ausgabeformate und Verfahren hinweg. Beispiel: Bild_01_Fibo-2.0_Nomos2-MoSR.png.
 Bei Qwen 2509 und 2511 steht die Schrittzahl im Modellzusatz, etwa
 `Qwen-2509-4step` oder `Qwen-2511-40step`. Die Nunchaku-Variante verwendet
 `Qwen-2509-Nunchaku`.
+FireRed verwendet `FireRed-1.1-8step` oder `FireRed-1.1-40step`.
 
 Downloads und Verlauf
 
@@ -199,7 +201,7 @@ lets the current result finish. A completion sound plays after a successful job.
 
 Methods and hardware
 
-The “Method” menu groups the variants by Qwen model.
+The “Method” menu groups Qwen and FireRed variants by model.
 Colorization methods are under “Colorize”.
 
 - Fibo 2.0 Edit Turbo uses four steps and a working canvas around one
@@ -216,8 +218,9 @@ Colorization methods are under “Colorize”.
   Lightning, 2509 uses 20 steps and 2511 uses 40 steps, both at CFG 4.
   These variants share one Q4_K_M file per model. Each Lightning LoRA
   adds about 850 MB.
-- FireRed Image Edit 1.1 uses Q4_K_M GGUF and an eight-step LoRA.
-  Its model and LoRA add about 13.9 GB. FireRed and the Qwen methods share
+- FireRed Image Edit 1.1 offers eight-step Lightning and “Without Lightning”
+  with 40 steps at CFG 4. Both variants share the same Q4_K_M file.
+  The Lightning LoRA adds about 850 MB. FireRed and the Qwen methods share
   the text encoder and VAE. The GGUF methods use a working canvas around
   one megapixel. RestoRenate removes any added padding after processing.
   The weights are licensed under Apache 2.0.
@@ -276,6 +279,7 @@ For example, Image_01_Fibo-2.0_Nomos2-MoSR.png.
 Qwen 2509 and 2511 labels include the step count, for example
 `Qwen-2509-4step` or `Qwen-2511-40step`. The Nunchaku variant uses
 `Qwen-2509-Nunchaku`.
+FireRed uses `FireRed-1.1-8step` or `FireRed-1.1-40step`.
 
 Downloads and history
 
