@@ -84,6 +84,10 @@ def apply_theme(window):
     style.configure('TEntry', fieldbackground=SECONDARY_BG, foreground=TEXT, insertcolor=TEXT)
     style.map('TEntry', fieldbackground=[('disabled', SECONDARY_BG), ('readonly', SECONDARY_BG)],
               foreground=[('disabled', DISABLED), ('readonly', TEXT)])
+    style.configure('TSpinbox', fieldbackground=SECONDARY_BG, background=HOVER_BG,
+                    foreground=TEXT, insertcolor=TEXT, arrowcolor=GOLD_LIGHT)
+    style.map('TSpinbox', fieldbackground=[('disabled', SECONDARY_BG)],
+              foreground=[('disabled', DISABLED)], arrowcolor=[('disabled', DISABLED)])
     style.configure('TCombobox', fieldbackground=PANEL_BG, background=HOVER_BG, arrowcolor=GOLD_LIGHT)
     style.map('TCombobox', fieldbackground=[('disabled', PANEL_BG), ('readonly', PANEL_BG)],
               foreground=[('disabled', DISABLED), ('readonly', TEXT)], arrowcolor=[('disabled', DISABLED)],

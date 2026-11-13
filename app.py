@@ -89,7 +89,8 @@ PRESETS = {
         'Keep the original lighting direction, faces, and framing. Preserve detail in bright areas and deep shadows.'
     ),
 }
-VARIANT_COUNTS = tuple(str(number) for number in range(1, 11))
+MAX_VARIANTS = 100
+VARIANT_COUNTS = {str(count): count for count in range(1, MAX_VARIANTS + 1)}
 BUILTIN_PROCESSING_PRESETS = {
     'Standard': {
         'method': DEFAULT_METHOD, 'preset': DEFAULT_PROMPT_NAME, 'prompt': PRESETS[DEFAULT_PROMPT_NAME], 'variants': 1,
@@ -181,8 +182,8 @@ class Application:
         self.method = tk.StringVar(value=translate(METHODS[self.current_method]))
         self.scratches = tk.BooleanVar(value=bool(self.config.get('scratches', True)))
         self.faces = tk.BooleanVar(value=bool(self.config.get('faces', False)))
-        variants = str(self.config.get('variants', 1))
-        self.variants = tk.StringVar(value=variants if variants in VARIANT_COUNTS else '1')
+        self.variant_count = VARIANT_COUNTS.get(str(self.config.get('variants')), 1)
+        self.variants = tk.StringVar(value=str(self.variant_count))
         self.custom = self.read_custom_presets(self.config.get('presets'))
         draft = self.config.get('prompt_draft')
         self.draft = draft if isinstance(draft, dict) and isinstance(draft.get('prompt'), str) else {}
@@ -229,7 +230,7 @@ class Application:
         self.controls = []
         self.build()
         self.navigation()
-        self.variants.trace_add('write', self.update_seed)
+        self.variants.trace_add('write', self.variant_changed)
         self.size.trace_add('write', self.update_dimensions)
         self.side_pixels.trace_add('write', self.update_dimensions)
         self.update_size_controls()
@@ -382,9 +383,16 @@ class Application:
         self.variant_row = tk.Frame(left, bg=PANEL)
         self.variant_row.grid(row=13, column=0, sticky='ew', pady=(7, 0))
         tk.Label(self.variant_row, text=translate('Varianten pro Bild'), bg=PANEL, fg=INK).pack(side='left')
-        self.variant_widget = ttk.Combobox(self.variant_row, textvariable=self.variants, state='readonly',
-                                           values=VARIANT_COUNTS, width=4, height=10)
+        validate_variants = self.window.register(lambda value: not value or value in VARIANT_COUNTS)
+        self.variant_widget = ttk.Spinbox(
+            self.variant_row, from_=1, to=MAX_VARIANTS, textvariable=self.variants, width=4,
+            validate='key', validatecommand=(validate_variants, '%P'),
+        )
         self.variant_widget.pack(side='left', padx=(8, 0))
+        self.variant_widget.bind('<FocusOut>', self.finish_variant_edit)
+        self.variant_widget.bind('<Return>', self.finish_variant_edit)
+        tk.Label(self.variant_row, text=f'1–{MAX_VARIANTS}', bg=PANEL, fg=MUTED).pack(side='left', padx=(6, 0))
+        self.controls.append(self.variant_widget)
         self.seed_check = checkbox(left, translate('Letzten Seed wiederverwenden'), self.repeat)
         self.seed_check.grid(row=14, column=0, sticky='ew', pady=(6, 0))
         self.seed_label = tk.Label(left, bg=PANEL, fg=MUTED, anchor='w')
@@ -438,9 +446,17 @@ class Application:
         self.progress_bar = ProgressTrack(footer, PANEL, GOLD, BORDER)
         self.progress_bar.pack(fill='x', pady=(4, 0))
 
-    def update_seed(self, *args):
+    def variant_changed(self, *_):
+        self.variant_count = VARIANT_COUNTS.get(self.variants.get(), self.variant_count)
+        self.update_seed()
+
+    def finish_variant_edit(self, event=None):
+        if not self.variants.get():
+            self.variants.set(str(self.variant_count))
+
+    def update_seed(self):
         self.seed_label.configure(text=translate('Letzter Seed  {0}', self.seed) if self.seed is not None else translate('Letzter Seed  —'))
-        reusable = self.seed is not None and self.action is None and self.variants.get() == '1'
+        reusable = self.seed is not None and self.action is None and self.variant_count == 1
         set_control_state(self.seed_check, 'normal' if reusable else 'disabled')
         if self.action is None:
             self.stop_button.configure(text=self.stop_label())
@@ -992,7 +1008,8 @@ class Application:
             if not prompt.strip():
                 messagebox.showinfo('Preset', translate('Bitte einen Prompt eingeben.'), parent=self.window)
                 return
-            variants = int(self.variants.get())
+            self.finish_variant_edit()
+            variants = self.variant_count
             preset.update(prompt=prompt, preset=self.preset_key(), variants=variants)
             if variants == 1 and self.repeat.get() and self.seed is not None:
                 preset['seed'] = self.seed
@@ -1046,13 +1063,12 @@ class Application:
             self.scratches.set(preset.get('scratches', True) is True)
             self.faces.set(preset.get('faces') is True)
         if method not in NO_PROMPT:
-            variants = str(preset.get('variants', 1))
-            self.variants.set(variants if variants in VARIANT_COUNTS else '1')
+            self.variants.set(str(VARIANT_COUNTS.get(str(preset.get('variants')), 1)))
             prompt = preset.get('prompt')
             if isinstance(prompt, str) and prompt.strip():
                 self.draft = {'prompt': prompt, 'preset': preset.get('preset')}
         seed = preset.get('seed')
-        fixed_seed = (method not in NO_PROMPT and self.variants.get() == '1' and
+        fixed_seed = (method not in NO_PROMPT and self.variant_count == 1 and
                       type(seed) is int and 0 <= seed < 2**64)
         if fixed_seed:
             self.seed = seed
@@ -1080,7 +1096,7 @@ class Application:
                     method=self.current_method, prompt_draft=self.draft, presets=self.custom,
                     language=language or self.language,
                     processing_presets=self.processing_presets,
-                    variants=self.variants.get(), scaling=self.scaling,
+                    variants=str(self.variant_count), scaling=self.scaling,
                     scratches=self.scratches.get(), faces=self.faces.get())
         stage = SETTINGS.with_suffix('.tmp')
         stage.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -1096,6 +1112,7 @@ class Application:
         if not self.sources:
             messagebox.showinfo(translate('Eingabe'), translate('Bitte ein Bild oder einen Ordner auswählen.'), parent=self.window)
             return
+        self.finish_variant_edit()
         output_text = self.output.get().strip()
         no_prompt = self.current_method in NO_PROMPT
         prompt = '' if no_prompt else self.prompt.get('1.0', 'end-1c').strip()
@@ -1124,7 +1141,7 @@ class Application:
         ready = setup.ready()
         if not ready and not self.approve_setup(setup, upscaler):
             return
-        variants = 1 if no_prompt else int(self.variants.get())
+        variants = 1 if no_prompt else self.variant_count
         seed = self.seed if not no_prompt and variants == 1 and self.repeat.get() else None
         job = (tuple(self.sources), folder, self.output_format.get(), prompt, seed, variants,
                self.scratches.get(), size_choice, self.crops.copy())
@@ -1148,7 +1165,7 @@ class Application:
     def busy(self, value):
         for control in self.controls:
             set_control_state(control, 'disabled' if value else 'normal')
-        for control in (self.method_widget, self.variant_widget, self.size_widget):
+        for control in (self.method_widget, self.size_widget):
             control.configure(state='disabled' if value else 'readonly')
         self.upscale_options.configure(state='disabled' if value or self.size_choice() == NO_RESCALE else 'readonly')
         self.format_widget.configure(state='disabled' if value else 'readonly')
@@ -1164,7 +1181,7 @@ class Application:
         self.navigation()
 
     def stop_label(self):
-        return translate('Nach Variante stoppen') if self.current_method not in NO_PROMPT and self.variants.get() != '1' else translate('Nach Bild stoppen')
+        return translate('Nach Variante stoppen') if self.current_method not in NO_PROMPT and self.variant_count > 1 else translate('Nach Bild stoppen')
 
     def stop(self):
         self.stop_after.set()

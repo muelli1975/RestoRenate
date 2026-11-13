@@ -1,4 +1,4 @@
-RestoRenate 0.2.69
+RestoRenate 0.2.70
 Windows x64 · Portable
 
 DEUTSCH
@@ -36,9 +36,11 @@ bleiben beim Laden ausgewählt. Die Startvorgabe und „Standard“ verwenden
 Fibo 2.0 Edit Turbo, „Restaurieren und kolorieren 1“ und Nomos2 HQ MoSR 4×.
 Gespeicherte Einstellungen haben beim Start Vorrang.
 
-Start berechnet und speichert das Ergebnis. Für Verfahren mit Prompt sind
-1 bis 10 Varianten mit unterschiedlichen Seeds möglich. Bei einer Variante
-kannst du den letzten Seed wiederverwenden. Während eines Auftrags lässt sich
+Start berechnet und speichert das Ergebnis. Bei Verfahren mit Prompt kannst
+du unter „Varianten pro Bild“ eine Zahl von 1 bis 100 eintippen oder mit den
+Pfeilen einstellen. Bei einer Ordnerauswahl gilt die Anzahl für jedes Bild.
+Die Varianten erhalten unterschiedliche Seeds. Bei einer Variante kannst du
+den letzten Seed wiederverwenden. Während eines Auftrags lässt sich
 der Prompt für den nächsten Auftrag bearbeiten. „Abbrechen“ beendet den
 laufenden Auftrag. „Nach Bild stoppen“ beziehungsweise „Nach Variante
 stoppen“ lässt das aktuelle Ergebnis fertig werden. Nach einem erfolgreich
@@ -177,9 +179,10 @@ folder. The startup defaults and “Standard” use Fibo 2.0 Edit Turbo,
 “Restore and colorize 1” and Nomos2 HQ MoSR 4×. Saved settings take
 precedence at startup.
 
-Start processes and saves the result. Prompt-based methods can produce 1 to
-10 variants using different seeds. For one variant, you can reuse the last
-seed. You can edit the prompt for the next job while the current one runs.
+Start processes and saves the result. For prompt-based methods, type a number
+from 1 to 100 in “Variants per image” or use the arrows. The count applies to
+each image in a folder. Variants use different seeds. For one variant, you can
+reuse the last seed. You can edit the prompt for the next job while it runs.
 “Cancel” ends the current job. “Stop after image” or “Stop after variant”
 lets the current result finish. A completion sound plays after a successful job.
 
