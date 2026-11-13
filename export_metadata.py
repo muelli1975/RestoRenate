@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 APP_NAME = 'RestoRenate'
-APP_VERSION = '0.2.80'
+APP_VERSION = '0.2.81'
 MAX_SEED = 2**64 - 1
 PRIMITIVES = {'INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO', 'COMFY_DYNAMICCOMBO_V3'}
 

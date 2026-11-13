@@ -1,4 +1,4 @@
-RestoRenate 0.2.80
+RestoRenate 0.2.81
 Windows x64 · Portable
 
 DEUTSCH
@@ -140,10 +140,9 @@ dem bereits kolorierten Bild als Eingabe.
 Dateinamen enthalten Eingabename, fortlaufende Nummer und die verwendeten
 Modelle. Die Nummer läuft pro Eingabename und Ausgabeordner über die
 Ausgabeformate und Verfahren hinweg. Beispiel: Bild_01_Fibo-2.0_Nomos2-MoSR.png.
-Bei Qwen 2509 und 2511 steht die Schrittzahl im Modellzusatz, etwa
-`Qwen-2509-4step` oder `Qwen-2511-40step`. Die Nunchaku-Variante verwendet
-`Qwen-2509-Nunchaku`.
-FireRed verwendet `FireRed-1.1-8step` oder `FireRed-1.1-40step`.
+Die Basisvarianten heißen im Dateinamen `Qwen-2509`, `Qwen-2511` und
+`FireRed-1.1`. Lightning ergänzt bei Qwen `-4step` und bei FireRed
+`-8step`. Qwen 2509 mit Nunchaku verwendet `Qwen-2509-Nunchaku`.
 
 Downloads und Verlauf
 
@@ -295,10 +294,9 @@ with the already colorized image.
 File names include the input stem, a sequence number and the models used.
 The sequence is per input stem and output folder across formats and methods.
 For example, Image_01_Fibo-2.0_Nomos2-MoSR.png.
-Qwen 2509 and 2511 labels include the step count, for example
-`Qwen-2509-4step` or `Qwen-2511-40step`. The Nunchaku variant uses
-`Qwen-2509-Nunchaku`.
-FireRed uses `FireRed-1.1-8step` or `FireRed-1.1-40step`.
+The base variants use `Qwen-2509`, `Qwen-2511`, and `FireRed-1.1` in file
+names. Lightning adds `-4step` for Qwen and `-8step` for FireRed. Qwen 2509
+with Nunchaku uses `Qwen-2509-Nunchaku`.
 
 Downloads and history
 
