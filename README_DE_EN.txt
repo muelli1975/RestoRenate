@@ -5,17 +5,17 @@ DEUTSCH
 
 Start und Update
 
-Entpacke die gesamte ZIP in einen kurzen, beschreibbaren Pfad, etwa
-D:\RestoRenate, und öffne Start.cmd. Für ein Update beende RestoRenate und
-kopiere den Inhalt des Ordners RestoRenate aus der ZIP in den bestehenden
-Programmordner neben Start.cmd. Ersetze die Programmdateien. Modelle,
-Einstellungen und eigene Presets kannst du weiterverwenden.
+Die gesamte ZIP in einen kurzen, beschreibbaren Pfad entpacken, etwa
+D:\RestoRenate, und Start.cmd öffnen. Für ein Update RestoRenate beenden
+und den Inhalt des Ordners RestoRenate aus der ZIP in den bestehenden
+Programmordner neben Start.cmd kopieren. Die Programmdateien ersetzen.
+Modelle, Einstellungen und eigene Presets lassen sich weiterverwenden.
 
-Wähle ein Bild oder einen Ordner, den Ausgabeordner und ein Verfahren.
+Ein Bild oder einen Ordner, den Ausgabeordner und ein Verfahren auswählen.
 Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …“
-öffnet einen Rahmen mit Drittelraster. Verschiebe ihn innerhalb der Auswahl
-oder ziehe an seinen Griffen. Wähle „Frei“, ein festes Seitenverhältnis oder
-„Benutzerdefiniert …“ für ein Verhältnis wie 7:5. In einem Ordner lässt sich
+öffnet einen Rahmen mit Drittelraster. Zum Verschieben innerhalb des Rahmens
+ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverhältnis
+oder „Benutzerdefiniert …“ für ein Verhältnis wie 7:5 wählen. In einem Ordner lässt sich
 jedes Bild einzeln beschneiden. „Übernehmen“ setzt den Beschnitt vor der
 Bearbeitung. Die Menüsprache folgt beim ersten Start der Systemsprache.
 
@@ -23,24 +23,24 @@ Prompts und Presets
 
 „Satzbausteine“ neben „Prompt speichern …“ öffnet oberhalb des Buttons die
 vorhandenen Kategorien. Ein Baustein hängt einen englischen Satz an den
-Prompt an. Rechtsklick im Textfeld öffnet das Textmenü. Mit „Prompt
-speichern …“ legst du einen eigenen Text in der gemeinsamen Promptliste ab.
+Prompt an. Rechtsklick im Textfeld öffnet das Textmenü. „Prompt speichern …“
+legt den eigenen Text in der gemeinsamen Promptliste ab.
 Die Modelle mit Texteingabe übernehmen beim Wechsel den aktuellen Prompt.
 „Restaurieren und kolorieren 1“ und „Restaurieren und kolorieren 2“ stammen
 aus den Beispielworkflows von Weird Wonderful AI Art. Der Modellname bei
 einem Prompt kennzeichnet das dafür empfohlene Verfahren.
 
-Unter „Presets“ speicherst du das Verfahren, den Prompt, die Varianten und
-die zugehörigen Ausgabe- und Modelleinstellungen. Eingabe und Ausgabeordner
+Unter „Presets“ lassen sich das Verfahren, der Prompt, die Varianten und
+die zugehörigen Ausgabe- und Modelleinstellungen speichern. Eingabe und Ausgabeordner
 bleiben beim Laden ausgewählt. Die Startvorgabe und „Standard“ verwenden
 Fibo 2.0 Edit Turbo, „Restaurieren und kolorieren 1“ und Nomos2 HQ MoSR 4×.
 Gespeicherte Einstellungen haben beim Start Vorrang.
 
-Start berechnet und speichert das Ergebnis. Bei Verfahren mit Prompt kannst
-du unter „Varianten pro Bild“ eine Zahl von 1 bis 100 eintippen oder mit den
-Pfeilen einstellen. Bei einer Ordnerauswahl gilt die Anzahl für jedes Bild.
-Die Varianten erhalten unterschiedliche Seeds. Bei einer Variante kannst du
-den letzten Seed wiederverwenden. Während eines Auftrags lässt sich
+Start berechnet und speichert das Ergebnis. Bei Verfahren mit Prompt unter
+„Varianten pro Bild“ eine Zahl von 1 bis 100 eintippen oder mit den Pfeilen
+einstellen. Bei einer Ordnerauswahl gilt die Anzahl für jedes Bild.
+Die Varianten erhalten unterschiedliche Seeds. Bei einer Variante lässt
+sich der letzte Seed wiederverwenden. Während eines Auftrags lässt sich
 der Prompt für den nächsten Auftrag bearbeiten. „Abbrechen“ beendet den
 laufenden Auftrag. „Nach Bild stoppen“ beziehungsweise „Nach Variante
 stoppen“ lässt das aktuelle Ergebnis fertig werden. Nach einem erfolgreich
@@ -73,7 +73,7 @@ Verfahren und Hardware
   kolorieren auf der CPU. Sie kombinieren die geschätzten Farben mit der
   Helligkeitsstruktur des Originals. „Ohne Nachskalierung“ ist voreingestellt.
 
-Unter „Berechnung“ wählst du NVIDIA, CPU oder AMD (ROCm). Ein Wechsel gilt
+Unter „Berechnung“ NVIDIA, CPU oder AMD (ROCm) wählen. Ein Wechsel gilt
 nach einem Neustart. Bei einem NVIDIA-Startfehler bietet die App für geeignete
 Verfahren einen CPU-Wechsel für diese Sitzung an. Für CPU-Bearbeitung eignen
 sich besonders Microsoft · Bringing Old Photos Back to Life, die Kolorierung
@@ -101,10 +101,10 @@ Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
 Zielgröße an. Für Restaurierung und „Nur hochskalieren“ sind 2160 px Bildhöhe
 und Nomos2 HQ MoSR 4× voreingestellt.
 
-Die Vorschau zeigt die gespeicherte Datei. Ziehe die Trennlinie zum Vergleich.
-Das Mausrad zoomt, die rechte Maustaste verschiebt die Ansicht.
-„Ansicht einpassen“ setzt den Zoom zurück. Unter „Ergebnisse“ blätterst du
-mit „Zurück“ und „Weiter“ durch fertige Bilder und Varianten. „Ergebnis
+Die Vorschau zeigt die gespeicherte Datei. Zum Vergleichen die Trennlinie
+ziehen. Das Mausrad zoomt, die rechte Maustaste verschiebt die Ansicht.
+„Ansicht einpassen“ setzt den Zoom zurück. Unter „Ergebnisse“ mit „Zurück“
+und „Weiter“ durch fertige Bilder und Varianten blättern. „Ergebnis
 weiterbearbeiten“ übernimmt das angezeigte Ergebnis als Eingabebild.
 Der Status zeigt den Verarbeitungsschritt, das verwendete Gerät und die
 verstrichene Zeit pro Ergebnis.
@@ -152,24 +152,24 @@ Start and update
 
 Extract the entire ZIP to a short, writable path such as D:\RestoRenate and
 open Start.cmd. To update, close RestoRenate and copy the contents of the
-RestoRenate folder in the ZIP into your existing program folder alongside
-Start.cmd. Replace the program files. You can reuse your models, settings
-and custom presets.
+RestoRenate folder in the ZIP into the existing program folder alongside
+Start.cmd. Replace the program files. Models, settings and custom presets
+can be reused.
 
 Choose an image or folder, an output folder and a method. Input formats
 include JPEG, PNG, TIFF, WebP, BMP and AVIF. “Crop …” opens a frame with a
 rule-of-thirds grid. Drag inside the frame to move it or drag a handle to
 resize it. Choose “Free,” a fixed ratio or “Custom …” for a ratio such as
-7:5. For a folder, you can crop each image individually. “Apply” sets the crop
+7:5. Each image in a folder can be cropped individually. “Apply” sets the crop
 before processing. The app initially uses the system display language.
 
 Prompts and presets
 
 “Prompt snippets” beside “Save prompt …” opens the existing categories
 above the button. Choosing a snippet appends an English sentence. Right-click
-the field for text editing commands. “Save prompt …” adds your text to the
-shared prompt list. Methods with text input keep the current prompt when
-you switch between them. “Restore and colorize 1” and “Restore and colorize
+the field for text editing commands. “Save prompt …” adds the current text
+to the shared prompt list. The current prompt carries over when switching
+between methods with text input. “Restore and colorize 1” and “Restore and colorize
 2” come from the Weird Wonderful AI Art example workflows. A model name in a
 prompt label indicates the recommended method for that prompt.
 
@@ -181,8 +181,9 @@ precedence at startup.
 
 Start processes and saves the result. For prompt-based methods, type a number
 from 1 to 100 in “Variants per image” or use the arrows. The count applies to
-each image in a folder. Variants use different seeds. For one variant, you can
-reuse the last seed. You can edit the prompt for the next job while it runs.
+each image in a folder. Variants use different seeds. The last seed can be
+reused for a single variant. The prompt for the next job can be edited while
+the current job runs.
 “Cancel” ends the current job. “Stop after image” or “Stop after variant”
 lets the current result finish. A completion sound plays after a successful job.
 
