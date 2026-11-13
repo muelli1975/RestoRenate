@@ -121,23 +121,32 @@ EDIT_ACTIONS = (
 class PromptMenu:
     def __init__(self, field, snippets_button, colors, language):
         self.field = field
-        english = language == 'en'
         menu = self.menu = tk.Menu(field, **colors)
-        for german, label, event in EDIT_ACTIONS:
-            menu.add_command(label=label if english else german,
-                             command=lambda event=event: field.event_generate(event))
-        menu.add_command(label='Select all' if english else 'Alles auswählen',
-                         command=lambda: field.tag_add('sel', '1.0', 'end-1c'))
-        blocks = tk.Menu(snippets_button, **colors)
-        for german, label, entries in CATEGORIES:
+        for _, _, event in EDIT_ACTIONS:
+            menu.add_command(command=lambda event=event: field.event_generate(event))
+        menu.add_command(command=lambda: field.tag_add('sel', '1.0', 'end-1c'))
+        blocks = self.blocks = tk.Menu(snippets_button, **colors)
+        self.categories = []
+        for _, _, entries in CATEGORIES:
             category = tk.Menu(blocks, **colors)
-            for name_de, name_en, sentence in entries:
-                category.add_command(label=name_en if english else name_de,
-                                     command=lambda sentence=sentence: self.append(sentence))
-            blocks.add_cascade(label=label if english else german, menu=category)
+            for _, _, sentence in entries:
+                category.add_command(command=lambda sentence=sentence: self.append(sentence))
+            blocks.add_cascade(menu=category)
+            self.categories.append(category)
+        self.set_language(language)
         snippets_button.configure(menu=blocks)
         field.bind('<Button-3>', self.popup)
         field.bind('<Shift-F10>', self.popup_at_cursor)
+
+    def set_language(self, language):
+        column = int(language == 'en')
+        for index, action in enumerate(EDIT_ACTIONS):
+            self.menu.entryconfigure(index, label=action[column])
+        self.menu.entryconfigure('end', label=('Alles auswählen', 'Select all')[column])
+        for index, (category, labels) in enumerate(zip(self.categories, CATEGORIES)):
+            self.blocks.entryconfigure(index, label=labels[column])
+            for item, entry in enumerate(labels[2]):
+                category.entryconfigure(item, label=entry[column])
 
     def append(self, sentence):
         if self.field.cget('state') == 'disabled':

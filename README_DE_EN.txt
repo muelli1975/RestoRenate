@@ -1,4 +1,4 @@
-RestoRenate 0.2.82
+RestoRenate 0.2.83
 Windows x64 · Portable
 
 DEUTSCH
@@ -20,11 +20,14 @@ jedes Bild einzeln auswählen und beschneiden. „Übernehmen“ zeigt das ausge
 Bild in der Hauptansicht. „Drehen“ dreht das dort angezeigte Eingabebild um
 90° nach links oder rechts oder um 180°. Ein bestehender Beschnitt dreht mit.
 Die App dreht vor dem Beschnitt und der Bearbeitung. Die Originaldatei bleibt
-erhalten. Die Menüsprache folgt beim ersten Start der Systemsprache.
+erhalten. Die Menüsprache folgt beim ersten Start der Systemsprache und
+lässt sich im laufenden Fenster umschalten. Die Vergleichsansicht bleibt
+mit Zoom und Reglerposition geöffnet.
 
-„Zweites Bild hinzufügen …“ steht für Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B,
-Qwen Image Edit 2509 und 2511 einschließlich Nunchaku sowie FireRed Image
-Edit 1.1 zur Verfügung. Das zweite Bild lässt sich ersetzen oder entfernen.
+„Zweites Bild“ unter der Eingabe steht für Fibo 2.0 Edit Turbo, FLUX.2 [klein]
+4B, Qwen Image Edit 2509 und 2511 einschließlich Nunchaku sowie FireRed Image
+Edit 1.1 zur Verfügung. „Hinzufügen …“ lädt das zweite Bild in die Vorschau.
+Es lässt sich ersetzen oder entfernen.
 Bei einem Ordner gilt es für alle Eingabebilder. Im Prompt lässt sich etwa
 beschreiben, welche Inhalte aus Bild 2 in Bild 1 übernommen werden sollen.
 Für Fibo die Platzhalter `<image_1>` und `<image_2>` verwenden.
@@ -185,11 +188,13 @@ resize it. Choose “Free,” a fixed ratio or “Custom …” for a ratio such
 shows the selected image in the main view. “Rotate” turns the input shown there
 90° left or right or 180°. An existing crop rotates with it. Rotation takes
 place before cropping and processing. The original file is preserved. The
-app initially uses the system display language.
+app initially uses the system display language. The interface language can
+be switched in place while keeping the comparison view, zoom and slider position.
 
-“Add second image …” is available for Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B,
-Qwen Image Edit 2509 and 2511 including Nunchaku, and FireRed Image Edit 1.1.
-The second image can be replaced or removed. For a folder, it applies to all
+“Second image” below the input is available for Fibo 2.0 Edit Turbo, FLUX.2
+[klein] 4B, Qwen Image Edit 2509 and 2511 including Nunchaku, and FireRed Image
+Edit 1.1. “Add …” loads the second image into the preview. It can be replaced
+or removed. For a folder, it applies to all
 inputs. The prompt can describe which content to transfer from image 2 into
 image 1. In Fibo prompts, use the placeholders `<image_1>` and `<image_2>`.
 
