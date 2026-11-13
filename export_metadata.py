@@ -1,8 +1,10 @@
 """Serialize the executed Comfy graph and its editable representation."""
 import json
+from pathlib import Path
 
 APP_NAME = 'RestoRenate'
-APP_VERSION = '0.2.78'
+APP_VERSION = '0.2.79'
+MAX_SEED = 2**64 - 1
 PRIMITIVES = {'INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO', 'COMFY_DYNAMICCOMBO_V3'}
 
 
@@ -15,7 +17,52 @@ def connected(value, graph):
             isinstance(value[0], str) and value[0] in graph and isinstance(value[1], int))
 
 
-def editable_workflow(graph, definitions, source_name):
+def parse_seed(value):
+    if isinstance(value, str) and value.isascii() and value.isdecimal() and len(value) <= 20:
+        value = int(value)
+    return value if type(value) is int and 0 <= value <= MAX_SEED else None
+
+
+def seed_from_metadata(metadata):
+    # The API graph preserves the exact seed, including values above 2**53.
+    for field in ('prompt', 'workflow'):
+        raw = metadata.get(field)
+        if not isinstance(raw, str):
+            continue
+        try:
+            data = json.loads(raw)
+        except (ValueError, RecursionError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        nodes = data.values() if field == 'prompt' else data.get('nodes', [])
+        if field == 'workflow' and not isinstance(nodes, list):
+            continue
+        seeds = set()
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            kind = node.get('class_type' if field == 'prompt' else 'type')
+            if kind not in ('KSampler', 'KSamplerAdvanced', 'RandomNoise'):
+                continue
+            if field == 'prompt':
+                inputs = node.get('inputs')
+                value = inputs.get('seed' if kind == 'KSampler' else 'noise_seed') if isinstance(inputs, dict) else None
+            else:
+                widgets = node.get('widgets_values')
+                slot = int(kind == 'KSamplerAdvanced')
+                value = widgets[slot] if isinstance(widgets, list) and len(widgets) > slot else None
+            seed = parse_seed(value)
+            if seed is not None:
+                seeds.add(seed)
+        if len(seeds) > 1:
+            return None
+        if seeds:
+            return seeds.pop()
+    return None
+
+
+def editable_workflow(graph, definitions, source_name, *, second_image=None):
     """Translate the API graph using the running ComfyUI node definitions."""
     nodes, links = {}, []
     # Graph insertion order follows dependencies in the API graphs produced by the app.
@@ -52,7 +99,7 @@ def editable_workflow(graph, definitions, source_name):
                     choices = field_type if isinstance(field_type, list) else options.get('options', [])
                     value = options.get('default', choices[0] if choices else None)
                 if kind == 'LoadImage' and name == 'image':
-                    value = source_name
+                    value = second_image if key == '30' and second_image else source_name
                 widgets.append(value)
                 if options.get('control_after_generate'):
                     widgets.append('fixed')
@@ -89,11 +136,18 @@ def editor_graph(graph, settings):
     """Recreate the input crop and working-size preparation on the original photo."""
     source_crop = settings.get('source_crop')
     working_crop = settings.get('working_crop')
-    if not (source_crop or working_crop):
+    rotation = settings.get('source_rotation', 0)
+    second_size = settings.get('second_size')
+    if not (source_crop or working_crop or rotation or second_size):
         return graph
     prepared = {}
     result = ['4', 0]
     input_size = tuple(settings['original_size'])
+    if rotation:
+        prepared['93'] = {'class_type': 'ImageRotate', 'inputs': {
+            'image': result, 'rotation': f'{rotation * 90} degrees',
+        }}
+        result = ['93', 0]
     if source_crop:
         x, y, right, bottom = source_crop
         input_size = right - x, bottom - y
@@ -115,12 +169,22 @@ def editor_graph(graph, settings):
                 'image': result, 'left': left, 'top': top, 'right': right, 'bottom': bottom, 'feathering': 0,
             }}
             result = ['92', 0]
+    if second_size and '30' in graph:
+        prepared['94'] = {'class_type': 'ImageScale', 'inputs': {
+            'image': ['30', 0], 'upscale_method': 'lanczos',
+            'width': second_size[0], 'height': second_size[1], 'crop': 'disabled',
+        }}
     if not prepared:
         return graph
-    out = {'4': graph['4'], **prepared}
+    out = {'4': graph['4']}
+    if '30' in graph:
+        out['30'] = graph['30']
+    out.update(prepared)
+    replacements = {'4': result, '30': ['94', 0]} if '94' in prepared else {'4': result}
     for node_id, node in graph.items():
-        if node_id != '4':
-            inputs = {name: (result if value == ['4', 0] else value) for name, value in node['inputs'].items()}
+        if node_id not in out:
+            inputs = {name: replacements.get(value[0], value) if connected(value, graph) and value[1] == 0 else value
+                      for name, value in node['inputs'].items()}
             out[node_id] = {**node, 'inputs': inputs}
     return out
 
@@ -128,7 +192,9 @@ def editor_graph(graph, settings):
 def png_metadata(settings, graph, definitions, source_name):
     if not graph:
         return {}
-    workflow = editable_workflow(editor_graph(graph, settings), definitions, source_name)
+    second = settings.get('second_image')
+    workflow = editable_workflow(editor_graph(graph, settings), definitions, source_name,
+                                 second_image=Path(second).name if second else None)
     return {'prompt': compact(graph, ascii_only=True), 'workflow': compact(workflow, ascii_only=True)}
 
 

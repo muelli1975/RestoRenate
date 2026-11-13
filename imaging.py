@@ -34,25 +34,33 @@ INVALIDATED_TAGS = (
 )
 
 
-def photo_size(path):
+def photo_size(path, *, rotation=0):
     """Read the dimensions in display orientation without decoding pixels."""
     with Image.open(path) as source:
         # Pillow already exposes the oriented dimensions for TIFF.
-        if source.format != 'TIFF' and source.getexif().get(274) in (5, 6, 7, 8):
-            return source.height, source.width
-        return source.size
+        swap = source.format != 'TIFF' and source.getexif().get(274) in (5, 6, 7, 8)
+        return source.size[::-1] if swap != bool(rotation % 2) else source.size
 
 
-def open_photo(path, *, crop=None):
+def open_photo(path, *, crop=None, rotation=0):
     """Return upright, sRGB pixels and optional original resolution metadata."""
     with Image.open(path) as source:
         upright = ImageOps.exif_transpose(source)
+        if rotation:
+            with upright:
+                upright = upright.transpose({
+                    1: Image.Transpose.ROTATE_270,
+                    2: Image.Transpose.ROTATE_180,
+                    3: Image.Transpose.ROTATE_90,
+                }[rotation])
         if crop is not None:
             with upright:
                 if upright.size != crop.original_size:
                     raise ValueError(translate('Die Bildgröße hat sich geändert. Bitte den Beschnitt neu wählen.'))
                 upright = upright.crop(crop.box)
         dpi = source.info.get('dpi')
+        if dpi and rotation % 2:
+            dpi = dpi[::-1]
         profile = source.info.get('icc_profile')
         alpha = (upright.convert('RGBA').getchannel('A')
                  if 'A' in upright.getbands() or 'transparency' in upright.info else None)

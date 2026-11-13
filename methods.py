@@ -6,17 +6,16 @@ DEFAULT_METHOD = FIBO2_TURBO
 FLUX2 = 'flux2-klein'
 QWEN2509_NUNCHAKU = 'qwen2509-nunchaku'
 QWEN2509_LIGHTNING_4 = 'qwen2509-lightning-4'
-QWEN2509_LIGHTNING_8 = 'qwen2509-lightning-8'
 QWEN2509_BASE = 'qwen2509-base'
 QWEN2511_LIGHTNING_4 = 'qwen2511-lightning-4'
-QWEN2511_LIGHTNING_8 = 'qwen2511-lightning-8'
 QWEN2511_BASE = 'qwen2511-base'
 FIRERED_LIGHTNING = 'firered11-lightning-8'
 FIRERED_BASE = 'firered11-base'
-QWEN2509_GGUF_METHODS = (QWEN2509_LIGHTNING_4, QWEN2509_LIGHTNING_8, QWEN2509_BASE)
-QWEN2511_GGUF_METHODS = (QWEN2511_LIGHTNING_4, QWEN2511_LIGHTNING_8, QWEN2511_BASE)
+QWEN2509_GGUF_METHODS = (QWEN2509_LIGHTNING_4, QWEN2509_BASE)
+QWEN2511_GGUF_METHODS = (QWEN2511_LIGHTNING_4, QWEN2511_BASE)
 QWEN_METHODS = (QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS)
 FIRERED_METHODS = (FIRERED_LIGHTNING, FIRERED_BASE)
+TWO_IMAGE_METHODS = (FIBO2_TURBO, FLUX2, *QWEN_METHODS, *FIRERED_METHODS)
 GGUF_METHODS = (*QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS, *FIRERED_METHODS)
 NUNCHAKU_LOADER = 'NunchakuQwenImageDiTLoader'
 MICROSOFT = 'microsoft'
@@ -57,10 +56,8 @@ METHODS = {
     FLUX2: 'FLUX.2 [klein] 4B',
     QWEN2509_NUNCHAKU: 'Qwen Image Edit 2509 · Nunchaku INT4',
     QWEN2509_LIGHTNING_4: 'Qwen Image Edit 2509 · Lightning (4 Schritte)',
-    QWEN2509_LIGHTNING_8: 'Qwen Image Edit 2509 · Lightning (8 Schritte)',
     QWEN2509_BASE: 'Qwen Image Edit 2509 · Ohne Lightning (20 Schritte)',
     QWEN2511_LIGHTNING_4: 'Qwen Image Edit 2511 · Lightning (4 Schritte)',
-    QWEN2511_LIGHTNING_8: 'Qwen Image Edit 2511 · Lightning (8 Schritte)',
     QWEN2511_BASE: 'Qwen Image Edit 2511 · Ohne Lightning (40 Schritte)',
     FIRERED_LIGHTNING: 'FireRed Image Edit 1.1 · Lightning (8 Schritte)',
     FIRERED_BASE: 'FireRed Image Edit 1.1 · Ohne Lightning (40 Schritte)',
@@ -76,10 +73,8 @@ METHOD_FILENAME_LABELS = {
     FLUX2: 'FLUX2-4B',
     QWEN2509_NUNCHAKU: 'Qwen-2509-Nunchaku',
     QWEN2509_LIGHTNING_4: 'Qwen-2509-4step',
-    QWEN2509_LIGHTNING_8: 'Qwen-2509-8step',
     QWEN2509_BASE: 'Qwen-2509-20step',
     QWEN2511_LIGHTNING_4: 'Qwen-2511-4step',
-    QWEN2511_LIGHTNING_8: 'Qwen-2511-8step',
     QWEN2511_BASE: 'Qwen-2511-40step',
     FIRERED_LIGHTNING: 'FireRed-1.1-8step',
     FIRERED_BASE: 'FireRed-1.1-40step',
@@ -164,21 +159,11 @@ MODEL_FILES = {
         'lightning': ('LoraLoaderModelOnly', 'lora_name',
                       'Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors'),
     },
-    QWEN2509_LIGHTNING_8: {
-        **QWEN2509_GGUF_FILES,
-        'lightning': ('LoraLoaderModelOnly', 'lora_name',
-                      'Qwen-Image-Edit-2509-Lightning-8steps-V1.0-bf16.safetensors'),
-    },
     QWEN2509_BASE: QWEN2509_GGUF_FILES,
     QWEN2511_LIGHTNING_4: {
         **QWEN2511_GGUF_FILES,
         'lightning': ('LoraLoaderModelOnly', 'lora_name',
                       'Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors'),
-    },
-    QWEN2511_LIGHTNING_8: {
-        **QWEN2511_GGUF_FILES,
-        'lightning': ('LoraLoaderModelOnly', 'lora_name',
-                      'Qwen-Image-Edit-2511-Lightning-8steps-V1.0-bf16.safetensors'),
     },
     QWEN2511_BASE: QWEN2511_GGUF_FILES,
     FIRERED_LIGHTNING: {

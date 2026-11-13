@@ -6,7 +6,9 @@ Local image restoration, colorization, and AI-powered editing for Windows.
 
 RestoRenate can restore damaged images, colorize black-and-white originals,
 and edit images using text prompts. It supports individual images and folders,
-cropping before processing, a before-and-after slider, and optional upscaling.
+rotation and cropping before processing, a before-and-after slider, and
+optional upscaling. Compatible edit models accept a second image. The seed
+can be entered or imported from a PNG containing a ComfyUI workflow.
 Processing runs locally and works offline after the selected models and
 runtime have been downloaded.
 
@@ -21,7 +23,7 @@ are practical starting points for CPU processing. Large prompt-based models
 can take substantial time and RAM on the CPU. NVIDIA is the default GPU
 mode. AMD (ROCm) is experimental and depends on the Radeon model and driver.
 Qwen 2509 Nunchaku requires a compatible NVIDIA RTX 30 or RTX 40 GPU and driver.
-Qwen 2509 and 2511 offer Lightning and standard processing in NVIDIA, CPU and AMD (ROCm) modes.
+Qwen 2509 and 2511 offer four-step Lightning and standard processing in NVIDIA, CPU and AMD (ROCm) modes.
 
 ## Source and license
 
@@ -39,9 +41,11 @@ of third-party components and model weights.
 
 RestoRenate restauriert beschädigte Bilder, koloriert Schwarzweißbilder
 und bearbeitet Bilder per Prompt. Es unterstützt Einzelbilder und Ordner,
-Beschnitt vor der Bearbeitung, einen Vorher-Nachher-Regler und optionale
-Nachskalierung. Nach der Einrichtung läuft die Verarbeitung lokal und
-offline.
+Drehen und Beschnitt vor der Bearbeitung, einen Vorher-Nachher-Regler und
+optionale Nachskalierung. Kompatible Edit-Modelle können ein zweites Bild
+einbeziehen. Der Seed lässt sich eingeben oder aus einer PNG-Datei mit
+ComfyUI-Workflow übernehmen. Nach der Einrichtung läuft die Verarbeitung
+lokal und offline.
 
 Das portable Windows-x64-Paket in einen kurzen, beschreibbaren Pfad
 entpacken und `Start.cmd` öffnen. Ein Bild oder einen Ordner, einen
@@ -54,7 +58,8 @@ können auf der CPU viel Zeit und Arbeitsspeicher benötigen. NVIDIA ist
 voreingestellt. AMD (ROCm) ist experimentell und hängt von Grafikkarte und
 Treiber ab. Qwen 2509 Nunchaku braucht eine kompatible NVIDIA RTX 30 oder
 RTX 40 mit passendem Treiber.
-Qwen 2509 und 2511 bieten Lightning und die reguläre Berechnung in den Modi NVIDIA, CPU und AMD (ROCm).
+Qwen 2509 und 2511 bieten Lightning mit vier Schritten und die reguläre
+Berechnung in den Modi NVIDIA, CPU und AMD (ROCm).
 
 Zum Testen von Quellcodeänderungen die Quelldateien in eine separate Kopie
 des passenden portablen Pakets kopieren und dort `Start.cmd` öffnen.

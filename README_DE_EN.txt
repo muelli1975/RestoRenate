@@ -1,4 +1,4 @@
-RestoRenate 0.2.78
+RestoRenate 0.2.79
 Windows x64 · Portable
 
 DEUTSCH
@@ -16,8 +16,18 @@ Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …�
 öffnet einen Rahmen mit Drittelraster. Zum Verschieben innerhalb des Rahmens
 ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverhältnis
 oder „Benutzerdefiniert …“ für ein Verhältnis wie 7:5 wählen. In einem Ordner lässt sich
-jedes Bild einzeln beschneiden. „Übernehmen“ setzt den Beschnitt vor der
-Bearbeitung. Die Menüsprache folgt beim ersten Start der Systemsprache.
+jedes Bild einzeln auswählen und beschneiden. „Übernehmen“ zeigt das ausgewählte
+Bild in der Hauptansicht. „Drehen“ dreht das dort angezeigte Eingabebild um
+90° nach links oder rechts oder um 180°. Ein bestehender Beschnitt dreht mit.
+Die App dreht vor dem Beschnitt und der Bearbeitung. Die Originaldatei bleibt
+erhalten. Die Menüsprache folgt beim ersten Start der Systemsprache.
+
+„Zweites Bild hinzufügen …“ steht für Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B,
+Qwen Image Edit 2509 und 2511 einschließlich Nunchaku sowie FireRed Image
+Edit 1.1 zur Verfügung. Das zweite Bild lässt sich ersetzen oder entfernen.
+Bei einem Ordner gilt es für alle Eingabebilder. Im Prompt lässt sich etwa
+beschreiben, welche Inhalte aus Bild 2 in Bild 1 übernommen werden sollen.
+Für Fibo die Platzhalter `<image_1>` und `<image_2>` verwenden.
 
 Prompts und Presets
 
@@ -39,8 +49,11 @@ Gespeicherte Einstellungen haben beim Start Vorrang.
 Start berechnet und speichert das Ergebnis. Bei Verfahren mit Prompt unter
 „Varianten pro Bild“ eine Zahl von 1 bis 100 eintippen oder mit den Pfeilen
 einstellen. Bei einer Ordnerauswahl gilt die Anzahl für jedes Bild.
-Die Varianten erhalten unterschiedliche Seeds. Bei einer Variante lässt
-sich der letzte Seed wiederverwenden. Während eines Auftrags lässt sich
+Bei leerem Seed-Feld wählt die App Zufallswerte. Einen festen Seed eintippen,
+mit „Letzten übernehmen“ aus dem zuletzt berechneten Ergebnis übernehmen
+oder mit „Aus PNG übernehmen …“ aus den ComfyUI-Metadaten einer PNG-Datei
+lesen. Bei mehreren Varianten zählt die App vom festen Seed aus pro Bild
+jeweils um eins hoch. Während eines Auftrags lässt sich
 der Prompt für den nächsten Auftrag bearbeiten. „Abbrechen“ beendet den
 laufenden Auftrag. „Nach Bild stoppen“ beziehungsweise „Nach Variante
 stoppen“ lässt das aktuelle Ergebnis fertig werden. Nach einem erfolgreich
@@ -58,11 +71,12 @@ Verfahren und Hardware
   Das Modell verwendet R32 mit vier integrierten Lightning-Schritten und
   CPU-Offload. Es braucht eine NVIDIA RTX 30 oder 40 mit einem Treiber für
   CUDA 13. Das Verfahren steht nur bei passender NVIDIA-Hardware zur Wahl.
-- Qwen Image Edit 2509 und 2511 bieten Lightning mit vier oder acht
-  Schritten sowie „Ohne Lightning“ in den Modi NVIDIA, CPU und AMD (ROCm).
+- Qwen Image Edit 2509 und 2511 bieten Lightning mit vier Schritten sowie
+  „Ohne Lightning“ in den Modi NVIDIA, CPU und AMD (ROCm).
   Ohne Lightning verwendet 2509 20 Schritte, 2511 40 Schritte, jeweils mit
   CFG 4. Pro Modell teilen sich diese Varianten dieselbe Q4_K_M-Datei.
   Je Lightning-LoRA kommen rund 850 MB hinzu.
+  Gespeicherte Qwen-Presets mit acht Schritten wechseln auf vier Schritte.
 - FireRed Image Edit 1.1 bietet Lightning mit acht Schritten und
   „Ohne Lightning“ mit 40 Schritten bei CFG 4. Beide Varianten nutzen
   dieselbe Q4_K_M-Datei. Für Lightning kommen rund 850 MB für die LoRA hinzu.
@@ -146,8 +160,8 @@ fehlgeschlagenen Download kann das passende ComfyUI-Archiv manuell unter
 downloads abgelegt werden. RestoRenate prüft es vor dem Entpacken. Quellen
 und Lizenzen stehen in THIRD_PARTY.txt.
 
-logs/jobs.jsonl verknüpft die Ergebnisse und gespeicherten Beschnitte mit
-ihrer Eingabe. Bei erneuter Auswahl eines Bilds oder Ordners lädt die App
+logs/jobs.jsonl verknüpft die Ergebnisse, Beschnitte und Drehungen mit ihrer
+Eingabe. Bei erneuter Auswahl eines Bilds oder Ordners lädt die App
 dessen verfügbare Ergebnisse. „Verlauf löschen …“ entfernt diese Zuordnung
 nach Bestätigung. Die exportierten Bilder bleiben auf der Festplatte.
 Technische Logs werden ab 2 MiB rotiert und beim Start nach 30 Tagen
@@ -169,8 +183,17 @@ Choose an image or folder, an output folder and a method. Input formats
 include JPEG, PNG, TIFF, WebP, BMP and AVIF. “Crop …” opens a frame with a
 rule-of-thirds grid. Drag inside the frame to move it or drag a handle to
 resize it. Choose “Free,” a fixed ratio or “Custom …” for a ratio such as
-7:5. Each image in a folder can be cropped individually. “Apply” sets the crop
-before processing. The app initially uses the system display language.
+7:5. Each image in a folder can be selected and cropped individually. “Apply”
+shows the selected image in the main view. “Rotate” turns the input shown there
+90° left or right or 180°. An existing crop rotates with it. Rotation takes
+place before cropping and processing. The original file is preserved. The
+app initially uses the system display language.
+
+“Add second image …” is available for Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B,
+Qwen Image Edit 2509 and 2511 including Nunchaku, and FireRed Image Edit 1.1.
+The second image can be replaced or removed. For a folder, it applies to all
+inputs. The prompt can describe which content to transfer from image 2 into
+image 1. In Fibo prompts, use the placeholders `<image_1>` and `<image_2>`.
 
 Prompts and presets
 
@@ -190,8 +213,11 @@ precedence at startup.
 
 Start processes and saves the result. For prompt-based methods, type a number
 from 1 to 100 in “Variants per image” or use the arrows. The count applies to
-each image in a folder. Variants use different seeds. The last seed can be
-reused for a single variant. The prompt for the next job can be edited while
+each image in a folder. Leaving the seed field blank uses random seeds. A
+fixed seed can be entered, copied from the last result with “Use last seed,”
+or read from a PNG's ComfyUI metadata with “Import from PNG …”. For multiple
+variants, the fixed seed is incremented by one per variant for each image.
+The prompt for the next job can be edited while
 the current job runs.
 “Cancel” ends the current job. “Stop after image” or “Stop after variant”
 lets the current result finish. A completion sound plays after a successful job.
@@ -207,11 +233,12 @@ Methods and hardware
   megapixel. It uses R32 with four integrated Lightning steps and CPU
   offloading. It requires a NVIDIA RTX 30 or 40 series GPU with a CUDA 13
   compatible driver. The method is shown on compatible NVIDIA hardware.
-- Qwen Image Edit 2509 and 2511 offer four- or eight-step Lightning and
+- Qwen Image Edit 2509 and 2511 offer four-step Lightning and
   “Without Lightning” in NVIDIA, CPU and AMD (ROCm) modes. Without
   Lightning, 2509 uses 20 steps and 2511 uses 40 steps, both at CFG 4.
   These variants share one Q4_K_M file per model. Each Lightning LoRA
   adds about 850 MB.
+  Saved eight-step Qwen presets switch to four steps.
 - FireRed Image Edit 1.1 offers eight-step Lightning and “Without Lightning”
   with 40 steps at CFG 4. Both variants share the same Q4_K_M file.
   The Lightning LoRA adds about 850 MB. FireRed and the Qwen methods share
@@ -287,7 +314,7 @@ v0.45.0 archive. Model files are shared. If a ComfyUI download fails, put the
 corresponding archive in downloads. RestoRenate verifies it before extraction.
 See THIRD_PARTY.txt for sources and licenses.
 
-logs/jobs.jsonl links results and saved crops to their inputs. Selecting
+logs/jobs.jsonl links results, crops, and rotations to their inputs. Selecting
 an image or folder again restores its available results. “Clear history …”
 removes these links after confirmation. The exported images stay on disk.
 Technical logs rotate at 2 MiB and are cleaned up at startup after 30 days.

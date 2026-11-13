@@ -12,8 +12,10 @@ import sys
 from threading import Event, Thread
 import time
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, font, messagebox, simpledialog, ttk
 import traceback
+
+from PIL import Image, ImageTk
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
@@ -23,15 +25,16 @@ from language import LANGUAGE_LABELS, configure_language, translate
 from comparison import Comparison
 from crop import CropRegion
 from crop_dialog import edit_crops
-from export_metadata import APP_NAME, APP_VERSION
+from export_metadata import APP_NAME, APP_VERSION, MAX_SEED, parse_seed, seed_from_metadata
 from imaging import EXTENSIONS, FORMATS, collect, exiftool_executable, open_photo, photo_size
 from local_backend import Backend, BackendStartError
 from portable_setup import AMD, COMPUTE_DEVICES, CPU, GPU_HINTS, NVIDIA, ComputeUnavailable, Setup, SetupCancelled
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import choose_preloads, format_download_size, preload_label
 from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES,
-                     METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU, available_methods,
-                     UPSCALE_LICENSES, UPSCALERS, UPSCALING,
+                     METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU,
+                     QWEN2511_LIGHTNING_4, available_methods,
+                     TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
                      resolve_upscaler, uses_comfy)
 from sizes import (CUSTOM_SIZES, MAX_SIDE, NO_RESCALE, SIZE_CHOICES, ULTRA_HD, method_size,
                    needs_enlargement, output_size, restoration_size, size_choices)
@@ -91,6 +94,10 @@ PRESETS = {
 }
 MAX_VARIANTS = 100
 VARIANT_COUNTS = {str(count): count for count in range(1, MAX_VARIANTS + 1)}
+REPLACED_METHODS = {
+    'qwen2509-lightning-8': QWEN2509_LIGHTNING_4,
+    'qwen2511-lightning-8': QWEN2511_LIGHTNING_4,
+}
 BUILTIN_PROCESSING_PRESETS = {
     'Standard': {
         'method': DEFAULT_METHOD, 'preset': DEFAULT_PROMPT_NAME, 'prompt': PRESETS[DEFAULT_PROMPT_NAME], 'variants': 1,
@@ -143,9 +150,15 @@ def compute_label(compute):
 def read_processing_presets(saved):
     if not isinstance(saved, dict):
         return {}
-    presets = {name: preset for name, preset in saved.items()
-               if isinstance(name, str) and name.strip() and isinstance(preset, dict)
-               and isinstance(preset.get('method'), str) and preset['method'] in METHODS}
+    presets = {}
+    for name, preset in saved.items():
+        if not (isinstance(name, str) and name.strip() and isinstance(preset, dict)):
+            continue
+        method = preset.get('method')
+        if isinstance(method, str):
+            method = REPLACED_METHODS.get(method, method)
+            if method in METHODS:
+                presets[name] = dict(preset, method=method)
     for name in BUILTIN_PROCESSING_PRESETS.keys() & presets.keys():
         own_name = translate('{0} (eigenes Preset)', name)
         number = 2
@@ -174,6 +187,8 @@ class Application:
         self.active_compute = previous.active_compute if previous else selected_compute
         self.compute = tk.StringVar(value=selected_compute)
         previous_method = self.config.get('method')
+        if isinstance(previous_method, str):
+            previous_method = REPLACED_METHODS.get(previous_method, previous_method)
         self.method_ids = self.available_method_ids()
         self.current_method = (
             previous_method if isinstance(previous_method, str) and previous_method in self.method_ids.values()
@@ -188,9 +203,9 @@ class Application:
         draft = self.config.get('prompt_draft')
         self.draft = draft if isinstance(draft, dict) and isinstance(draft.get('prompt'), str) else {}
         self.processing_presets = read_processing_presets(self.config.get('processing_presets'))
-        self.seed = self.config.get('seed')
-        if not isinstance(self.seed, int) or not 0 <= self.seed < 2**64:
-            self.seed = None
+        self.seed = parse_seed(self.config.get('seed'))
+        fixed_seed = parse_seed(self.config.get('fixed_seed'))
+        self.seed_value = tk.StringVar(value='' if fixed_seed is None else str(fixed_seed))
         self.events = Queue()
         self.cancelled, self.stop_after = Event(), Event()
         self.backend = previous.backend if previous else Backend(ROOT, compute=self.active_compute)
@@ -198,6 +213,8 @@ class Application:
         self.closing = False
         self.sources = []
         self.crops = {}
+        self.rotations = {}
+        self.second_image = None
         self.results = []
         self.index = -1
         self.status = tk.StringVar(value=translate('Bereit'))
@@ -221,7 +238,6 @@ class Application:
         self.preview_size = None
         self.load_scaling()
         self.preset = tk.StringVar(value=translate(DEFAULT_PROMPT_NAME))
-        self.repeat = tk.BooleanVar()
         self.elapsed = tk.StringVar()
         self.device = tk.StringVar()
         self.image_started = None
@@ -239,7 +255,8 @@ class Application:
         self.window.bind('<Button-1>', self.leave_editor_on_click, add='+')
         self.check_ready()
         if previous:
-            self.restore_view(*previous.reopen, crops=previous.crops)
+            self.restore_view(*previous.reopen, crops=previous.crops, rotations=previous.rotations,
+                              second_image=previous.second_image)
         self.window.after(75, self.poll)
 
     def build(self):
@@ -298,12 +315,29 @@ class Application:
         label(translate('Eingabe'), 0, (0, 2))
         entry = ttk.Entry(left, textvariable=self.input_value, state='readonly')
         entry.grid(row=1, column=0, sticky='ew')
-        paths = tk.Frame(left, bg=PANEL)
-        paths.grid(row=2, column=0, sticky='ew', pady=(4, 0))
-        button(paths, translate('Bild …'), self.choose_photo).pack(side='left')
-        button(paths, translate('Ordner …'), self.choose_folder).pack(side='left', padx=6)
-        self.crop_button = button(paths, translate('Beschnitt …'), self.edit_crop, state='disabled')
+        input_actions = tk.Frame(left, bg=PANEL)
+        input_actions.grid(row=2, column=0, sticky='ew', pady=(4, 0))
+        paths = tk.Frame(input_actions, bg=PANEL)
+        paths.pack(fill='x')
+        button(paths, translate('Bild …'), self.choose_photo, width=-1, style='Input.TButton').pack(side='left')
+        button(paths, translate('Ordner …'), self.choose_folder, width=-1,
+               style='Input.TButton').pack(side='left', padx=4)
+        self.crop_button = button(paths, translate('Beschnitt …'), self.edit_crop, state='disabled',
+                                  width=-1, style='Input.TButton')
         self.crop_button.pack(side='left')
+        self.rotate_button = ttk.Menubutton(paths, text=translate('Drehen'), width=-1, style='Input.TMenubutton')
+        self.rotate_button.pack(side='left', padx=(4, 0))
+        rotations = tk.Menu(self.rotate_button, **menu_colors)
+        for caption, turn in (('90° links', -1), ('90° rechts', 1), ('180°', 2), ('Drehung zurücksetzen', None)):
+            rotations.add_command(label=translate(caption), command=lambda turn=turn: self.rotate_source(turn))
+        self.rotate_button.configure(menu=rotations)
+        self.second_row = tk.Frame(input_actions, bg=PANEL)
+        self.second_preview = tk.Label(self.second_row, bg=PANEL, fg=MUTED, anchor='w', compound='left')
+        self.second_button = ttk.Button(self.second_row, command=self.choose_second_image,
+                                        width=-1, style='Input.TButton')
+        self.second_button.pack(side='left')
+        self.remove_second_button = ttk.Button(self.second_row, text=translate('Entfernen'),
+                                               command=self.clear_second_image, width=-1, style='Input.TButton')
 
         label(translate('Ausgabeordner'), 3)
         destination = tk.Frame(left, bg=PANEL)
@@ -393,10 +427,19 @@ class Application:
         self.variant_widget.bind('<Return>', self.finish_variant_edit)
         tk.Label(self.variant_row, text=f'1–{MAX_VARIANTS}', bg=PANEL, fg=MUTED).pack(side='left', padx=(6, 0))
         self.controls.append(self.variant_widget)
-        self.seed_check = checkbox(left, translate('Letzten Seed wiederverwenden'), self.repeat)
-        self.seed_check.grid(row=14, column=0, sticky='ew', pady=(6, 0))
-        self.seed_label = tk.Label(left, bg=PANEL, fg=MUTED, anchor='w')
-        self.seed_label.grid(row=15, column=0, sticky='ew')
+        self.seed_row = tk.Frame(left, bg=PANEL)
+        self.seed_row.grid(row=14, column=0, sticky='ew', pady=(6, 0))
+        tk.Label(self.seed_row, text=translate('Seed (leer = Zufall)'), bg=PANEL, fg=INK).pack(side='left')
+        self.seed_entry = ttk.Entry(self.seed_row, textvariable=self.seed_value, width=21)
+        self.seed_entry.pack(side='left', fill='x', expand=True, padx=(8, 0))
+        self.seed_actions = tk.Frame(left, bg=PANEL)
+        self.seed_actions.grid(row=15, column=0, sticky='ew', pady=(4, 0))
+        self.last_seed_button = ttk.Button(self.seed_actions, text=translate('Letzten übernehmen'),
+                                           command=lambda: self.seed_value.set(str(self.seed)))
+        self.last_seed_button.pack(side='left')
+        self.png_seed_button = ttk.Button(self.seed_actions, text=translate('Aus PNG übernehmen …'),
+                                          command=self.import_seed)
+        self.png_seed_button.pack(side='left', padx=(6, 0))
         buttons = tk.Frame(left, bg=PANEL)
         buttons.grid(row=16, column=0, sticky='ew', pady=(7, 0))
         self.start_button = ttk.Button(buttons, text='Start', command=self.start_clicked, style='Primary.TButton')
@@ -455,11 +498,35 @@ class Application:
             self.variants.set(str(self.variant_count))
 
     def update_seed(self):
-        self.seed_label.configure(text=translate('Letzter Seed  {0}', self.seed) if self.seed is not None else translate('Letzter Seed  —'))
-        reusable = self.seed is not None and self.action is None and self.variant_count == 1
-        set_control_state(self.seed_check, 'normal' if reusable else 'disabled')
+        self.seed_entry.configure(state='normal' if self.action is None else 'disabled')
+        self.png_seed_button.configure(state='normal' if self.action is None else 'disabled')
+        self.last_seed_button.configure(state='normal' if self.seed is not None and self.action is None else 'disabled')
         if self.action is None:
             self.stop_button.configure(text=self.stop_label())
+
+    def import_seed(self):
+        title = translate('Aus PNG übernehmen …')
+        path = filedialog.askopenfilename(parent=self.window, title=title, filetypes=[('PNG', '*.png')])
+        if not path:
+            return
+        try:
+            with Image.open(path) as image:
+                if image.format != 'PNG':
+                    raise ValueError(translate('Bitte eine PNG-Datei wählen.'))
+                seed = seed_from_metadata(image.info)
+                if seed is None:
+                    raise ValueError(translate('In dieser PNG-Datei wurde kein eindeutiger Seed gefunden.'))
+        except (OSError, ValueError, SyntaxError) as exc:
+            messagebox.showinfo(title, str(exc), parent=self.window)
+        else:
+            self.seed_value.set(str(seed))
+
+    def fixed_seed(self):
+        value = self.seed_value.get().strip()
+        seed = parse_seed(value)
+        if value and seed is None:
+            raise ValueError(translate('Der Seed muss eine ganze Zahl von 0 bis {0} sein.', MAX_SEED))
+        return seed
 
     def scaling_changed(self, event=None):
         if not self.action:
@@ -628,7 +695,7 @@ class Application:
         finally:
             self.events.put(('idle', (False, None)))
 
-    def pick_sources(self, selected, *, crops=None, show_input=False, preview_source=None):
+    def pick_sources(self, selected, *, crops=None, rotations=None, show_input=False, preview_source=None):
         if not selected:
             return
         path = Path(selected).resolve()
@@ -640,10 +707,11 @@ class Application:
             messagebox.showerror(translate('Eingabe'), str(exc), parent=self.window)
             return
         crops = {source: crop for source, crop in (crops or {}).items() if source in sources}
+        rotations = {source: turn for source, turn in (rotations or {}).items() if source in sources}
         source = preview_source if preview_source in sources else sources[0]
         before = None
         try:
-            before, _ = open_photo(source, crop=crops.get(source))
+            before, _ = open_photo(source, crop=crops.get(source), rotation=rotations.get(source, 0))
         except (OSError, ValueError) as exc:
             if path.is_file():
                 messagebox.showerror(translate('Eingabe'), str(exc), parent=self.window)
@@ -651,6 +719,9 @@ class Application:
             self.status.set(translate('Vorschau für {0}: {1}', source.name, exc))
         self.sources = sources
         self.crops = crops
+        self.rotations = rotations
+        self.second_image = None
+        self.update_second_image()
         self.preview_source = source
         self.preview_size = before.size if before else None
         self.update_dimensions()
@@ -683,7 +754,7 @@ class Application:
         if self.action or not self.sources:
             return
         selected = self.results[self.index][0] if self.index >= 0 else self.preview_source
-        result = edit_crops(self.window, self.sources, self.crops, selected)
+        result = edit_crops(self.window, self.sources, self.crops, selected, rotations=self.rotations)
         if result is None:
             return
         source, crops = result
@@ -696,11 +767,83 @@ class Application:
             self.status.set(translate('Beschnitt übernommen.' if crops else 'Beschnitt zurückgesetzt.'))
         self.check_ready()
 
+    def rotate_source(self, turns):
+        if self.action or not self.sources:
+            return
+        source = self.results[self.index][0] if self.index >= 0 else self.preview_source
+        previous = self.rotations.get(source, 0)
+        rotation = 0 if turns is None else (previous + turns) % 4
+        if rotation == previous:
+            return
+        if rotation:
+            self.rotations[source] = rotation
+        else:
+            self.rotations.pop(source, None)
+        if source in self.crops:
+            self.crops[source] = self.crops[source].rotated(rotation - previous)
+        self.preview_source = source
+        if self.refresh_input_preview():
+            self.status.set(translate('Drehung übernommen.' if rotation else 'Drehung zurückgesetzt.'))
+        self.check_ready()
+
+    def choose_second_image(self):
+        title = translate('Zweites Bild auswählen')
+        name = filedialog.askopenfilename(parent=self.window, title=title,
+                                         filetypes=[(translate(label), pattern) for label, pattern in FILE_TYPES])
+        if not name:
+            return
+        try:
+            self.set_second_image(Path(name).resolve())
+        except (OSError, ValueError, SyntaxError) as exc:
+            messagebox.showerror(title, str(exc), parent=self.window)
+
+    def set_second_image(self, path):
+        if not path.is_file() or path.suffix.lower() not in EXTENSIONS:
+            raise ValueError(translate('Bitte ein unterstütztes Bild auswählen.'))
+        image, _ = open_photo(path)
+        with image:
+            image.thumbnail((36, 30), Image.Resampling.LANCZOS)
+            thumbnail = ImageTk.PhotoImage(image, master=self.window)
+        self.second_image = path
+        self.second_preview.configure(image=thumbnail)
+        self.second_preview.image = thumbnail
+        self.update_second_image()
+
+    def clear_second_image(self):
+        self.second_image = None
+        self.update_second_image()
+
+    def update_second_image(self):
+        if self.current_method not in TWO_IMAGE_METHODS:
+            self.second_row.pack_forget()
+            return
+        self.second_row.pack(fill='x', pady=(4, 0))
+        path = self.second_image
+        self.second_button.configure(text=translate('Ersetzen …' if path else 'Zweites Bild hinzufügen …'),
+                                     state='normal' if self.sources and not self.action else 'disabled')
+        if path:
+            name = path.name
+            label_font = font.Font(root=self.window, font=self.second_preview.cget('font'))
+            if label_font.measure(name) > 98:
+                stem = path.stem
+                while stem and label_font.measure(stem + '…' + path.suffix) > 98:
+                    stem = stem[:-1]
+                name = stem + '…' + path.suffix
+            self.second_preview.configure(text=translate('Bild 2\n{0}', name))
+            self.second_preview.pack(side='left', padx=(0, 4), before=self.second_button)
+            self.remove_second_button.configure(state='disabled' if self.action else 'normal')
+            self.remove_second_button.pack(side='left', padx=(4, 0))
+        else:
+            self.second_preview.configure(image='')
+            self.second_preview.image = None
+            self.second_preview.pack_forget()
+            self.remove_second_button.pack_forget()
+
     def refresh_input_preview(self):
         self.index = -1
         source = self.preview_source
         try:
-            before, _ = open_photo(source, crop=self.crops.get(source))
+            before, _ = open_photo(source, crop=self.crops.get(source), rotation=self.rotations.get(source, 0))
         except (OSError, ValueError, SyntaxError) as exc:
             before = None
             self.status.set(translate('Vorschau für {0}: {1}', source.name, exc))
@@ -715,7 +858,7 @@ class Application:
             return crop.size
         if source == self.preview_source and self.preview_size is not None:
             return self.preview_size
-        return photo_size(source)
+        return photo_size(source, rotation=self.rotations.get(source, 0))
 
     def clear_history(self):
         if self.action or self.closing:
@@ -764,16 +907,19 @@ class Application:
                         continue
                     output = Path(output)
                     recorded.pop(output, None)
-                    recorded[output] = Path(source), CropRegion.from_record(entry)
+                    turn = entry.get('source_rotation', 0)
+                    if type(turn) is not int or not 0 <= turn <= 3:
+                        turn = 0
+                    recorded[output] = Path(source), CropRegion.from_record(entry), turn
         except OSError:
             pass
         results = []
-        for output, (source, crop) in recorded.items():
+        for output, (source, crop, turn) in recorded.items():
             if source not in source_set or not output.is_absolute():
                 continue
             try:
                 if output.is_file():
-                    results.append((source, output, crop))
+                    results.append((source, output, crop, turn))
             except OSError:
                 continue
         return results
@@ -897,6 +1043,7 @@ class Application:
 
     def load_method_prompt(self):
         method = self.current_method
+        self.update_second_image()
         self.stop_button.configure(text=self.stop_label())
         self.microsoft_options.grid_remove()
         self.prompt_heading.set(translate('Restaurierung') if method == MICROSOFT else 'Prompt')
@@ -907,11 +1054,11 @@ class Application:
         if method in NO_PROMPT:
             if method == MICROSOFT:
                 self.microsoft_options.grid()
-            for widget in (self.preset_widget, self.prompt, self.variant_row, self.seed_check, self.seed_label):
+            for widget in (self.preset_widget, self.prompt, self.variant_row, self.seed_row, self.seed_actions):
                 widget.grid_remove()
             self.prompt_actions.grid_remove()
             return
-        for widget in (self.preset_widget, self.prompt, self.variant_row, self.seed_check, self.seed_label):
+        for widget in (self.preset_widget, self.prompt, self.variant_row, self.seed_row, self.seed_actions):
             widget.grid()
         self.prompt_actions.grid()
         self.preset_widget.configure(values=self.preset_names())
@@ -960,7 +1107,7 @@ class Application:
         focused = self.window.focus_get()
         if focused is self.prompt and event.widget not in (self.prompt, self.snippets_button):
             self.window.focus_set()
-        elif focused is self.variant_widget and event.widget is not self.variant_widget:
+        elif focused in (self.variant_widget, self.seed_entry) and event.widget is not focused:
             self.window.focus_set()
 
     def save_preset(self):
@@ -1012,10 +1159,14 @@ class Application:
                 messagebox.showinfo('Preset', translate('Bitte einen Prompt eingeben.'), parent=self.window)
                 return
             self.finish_variant_edit()
-            variants = self.variant_count
-            preset.update(prompt=prompt, preset=self.preset_key(), variants=variants)
-            if variants == 1 and self.repeat.get() and self.seed is not None:
-                preset['seed'] = self.seed
+            preset.update(prompt=prompt, preset=self.preset_key(), variants=self.variant_count)
+            try:
+                seed = self.fixed_seed()
+            except ValueError as exc:
+                messagebox.showinfo('Seed', str(exc), parent=self.window)
+                return
+            if seed is not None:
+                preset['seed'] = seed
         try:
             size, side_pixels = self.selected_size()
             if not 1 <= side_pixels <= MAX_SIDE:
@@ -1070,12 +1221,8 @@ class Application:
             prompt = preset.get('prompt')
             if isinstance(prompt, str) and prompt.strip():
                 self.draft = {'prompt': prompt, 'preset': preset.get('preset')}
-        seed = preset.get('seed')
-        fixed_seed = (method not in NO_PROMPT and self.variant_count == 1 and
-                      type(seed) is int and 0 <= seed < 2**64)
-        if fixed_seed:
-            self.seed = seed
-        self.repeat.set(fixed_seed)
+            seed = parse_seed(preset.get('seed'))
+            self.seed_value.set('' if seed is None else str(seed))
         self.update_seed()
         self.update_size_controls()
         self.load_method_prompt()
@@ -1096,6 +1243,7 @@ class Application:
         self.remember_prompt()
         self.remember_scaling()
         data = dict(output=self.output.get(), format=self.output_format.get(), seed=self.seed, compute=self.compute.get(),
+                    fixed_seed=parse_seed(self.seed_value.get().strip()),
                     method=self.current_method, prompt_draft=self.draft, presets=self.custom,
                     language=language or self.language,
                     processing_presets=self.processing_presets,
@@ -1137,6 +1285,11 @@ class Application:
         except ValueError as exc:
             messagebox.showinfo(translate('Zielgröße'), str(exc), parent=self.window)
             return
+        try:
+            seed = None if no_prompt else self.fixed_seed()
+        except ValueError as exc:
+            messagebox.showinfo('Seed', str(exc), parent=self.window)
+            return
         upscaler = self.effective_upscaler(all_sources=True)
         setup = self.setup_for_job(upscaler)
         if setup is None:
@@ -1145,9 +1298,9 @@ class Application:
         if not ready and not self.approve_setup(setup, upscaler):
             return
         variants = 1 if no_prompt else self.variant_count
-        seed = self.seed if not no_prompt and variants == 1 and self.repeat.get() else None
+        second_image = self.second_image if self.current_method in TWO_IMAGE_METHODS else None
         job = (tuple(self.sources), folder, self.output_format.get(), prompt, seed, variants,
-               self.scratches.get(), size_choice, self.crops.copy())
+               self.scratches.get(), size_choice, self.crops.copy(), self.rotations.copy(), second_image)
         self.save_settings()
         self.launch('run' if ready else 'run_setup', job, upscaler=upscaler)
 
@@ -1216,7 +1369,7 @@ class Application:
             if self.stop_after.is_set() or self.cancelled.is_set():
                 self.events.put(('done', translate('Vor dem ersten Bild beendet.')))
                 return
-            sources, folder, output_format, prompt, fixed_seed, variants, scratches, size_choice, crops = job
+            sources, folder, output_format, prompt, fixed_seed, variants, scratches, size_choice, crops, rotations, second_image = job
             exiftool = None if output_format == 'PNG' else exiftool_executable(ROOT)
             client, definitions, models, device, colorizer = None, {}, {}, 'CPU', None
             if uses_comfy(method, upscaler):
@@ -1239,10 +1392,13 @@ class Application:
             random_source = secrets.SystemRandom()
             for index, source in enumerate(sources, 1):
                 crop = crops.get(source)
+                rotation = rotations.get(source, 0)
                 if self.stop_after.is_set() or self.cancelled.is_set():
                     break
-                if method in NO_PROMPT or fixed_seed is not None:
-                    seeds = [fixed_seed]
+                if method in NO_PROMPT:
+                    seeds = [None]
+                elif fixed_seed is not None:
+                    seeds = ((fixed_seed + offset) % (MAX_SEED + 1) for offset in range(variants))
                 else:
                     seeds = random_source.sample(range(2**63 - 1), variants)
                 staged_id = secrets.token_hex(16)
@@ -1266,12 +1422,12 @@ class Application:
                             method=method, scratches=scratches, faces=faces,
                             staged_id=staged_id,
                             size_choice=size_choice, upscaler=upscaler, definitions=definitions, colorizer=colorizer,
-                            source_crop=crop,
+                            source_crop=crop, source_rotation=rotation, second_image=second_image,
                         )
                         record.update(status='ok', output=str(output), metadata_warnings=warning or '')
                         completed += 1
                         warnings += int(bool(warning))
-                        self.events.put(('result', (source, output, seed, crop)))
+                        self.events.put(('result', (source, output, seed, crop, rotation)))
                     except SetupCancelled:
                         record.update(status='cancelled')
                         raise
@@ -1335,11 +1491,11 @@ class Application:
                     self.progress_bar.set(100)
                     self.update_elapsed()
                     self.image_started = None
-                    source, output, seed, crop = value
+                    source, output, seed, crop, rotation = value
                     if seed is not None:
                         self.seed = seed
                     follow_latest = self.index < 0 or self.index == len(self.results) - 1
-                    self.results.append((source, output, crop))
+                    self.results.append((source, output, crop, rotation))
                     if follow_latest:
                         self.index = len(self.results) - 1
                         self.show_result()
@@ -1412,11 +1568,11 @@ class Application:
             self.pick_sources(self.results[self.index][1])
 
     def show_result(self, *, reset_divider=False):
-        source, output, crop = self.results[self.index]
+        source, output, crop, rotation = self.results[self.index]
         before = None
         after = None
         try:
-            before, _ = open_photo(source, crop=crop)
+            before, _ = open_photo(source, crop=crop, rotation=rotation)
             after, _ = open_photo(output)
         except (OSError, ValueError) as exc:
             self.caption.set(translate('{0} · Vorschau nicht verfügbar', output.name))
@@ -1435,27 +1591,33 @@ class Application:
         self.clear_history_button.configure(state='normal' if not self.action and JOBS_LOG.is_file() else 'disabled')
         self.crop_button.configure(
             state='normal' if self.sources and not self.action else 'disabled',
-            text=translate('Beschnitt aktiv …' if self.crops else 'Beschnitt …'),
+            style='Input.Primary.TButton' if self.crops else 'Input.TButton',
         )
+        self.rotate_button.configure(state='normal' if self.sources and not self.action else 'disabled')
+        self.update_second_image()
 
     def change_language(self, language):
         if language == self.language or self.action or self.closing:
             return
         selected = self.results[self.index][1] if 0 <= self.index < len(self.results) else None
         self.save_settings(language=language)
-        self.reopen = (self.window.geometry(), self.window.state(), self.input_value.get(),
-                       selected, self.repeat.get(), self.preview_source)
+        self.reopen = (self.window.geometry(), self.window.state(), self.input_value.get(), selected, self.preview_source)
         self.destroy_window()
 
-    def restore_view(self, geometry, state, source, selected, repeat, preview_source, *, crops):
-        self.repeat.set(repeat)
+    def restore_view(self, geometry, state, source, selected, preview_source, *, crops, rotations, second_image):
         self.window.geometry(geometry)
         if state == 'zoomed':
             self.window.state(state)
         if not source:
             return
-        self.pick_sources(source, crops=crops, show_input=selected is None, preview_source=preview_source)
-        for index, (_, output, _) in enumerate(self.results):
+        self.pick_sources(source, crops=crops, rotations=rotations, show_input=selected is None,
+                          preview_source=preview_source)
+        if second_image is not None:
+            try:
+                self.set_second_image(second_image)
+            except (OSError, ValueError, SyntaxError) as exc:
+                self.status.set(translate('Vorschau: {0}', exc))
+        for index, (_, output, _, _) in enumerate(self.results):
             if output == selected and index != self.index:
                 self.index = index
                 self.show_result(reset_divider=True)

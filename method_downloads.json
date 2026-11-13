@@ -332,29 +332,7 @@
       "source_path": "Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors"
     }
   ],
-  "qwen2509-lightning-8": [
-    {
-      "path": "models/loras/Qwen-Image-Edit-2509-Lightning-8steps-V1.0-bf16.safetensors",
-      "size": 849608296,
-      "sha256": "b5c48ba90d22294cc4e20ea4a347496e2136295ad438ff79ad4fe841f28d7f72",
-      "url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/d468c534b360e0754c6bf9e38ed49e1e09cd2e2a/Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-8steps-V1.0-bf16.safetensors?download=true",
-      "repo": "lightx2v/Qwen-Image-Lightning",
-      "revision": "d468c534b360e0754c6bf9e38ed49e1e09cd2e2a",
-      "source_path": "Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-8steps-V1.0-bf16.safetensors"
-    }
-  ],
   "qwen2511-lightning-4": [
-    {
-      "path": "models/loras/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
-      "size": 849608296,
-      "sha256": "22226e8d05d354bb356627d428809f5afd7819399b077238a2b70a82883a904f",
-      "url": "https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/107d238d68b8387e32843d0b4a2e24ceb0d3ad86/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors?download=true",
-      "repo": "lightx2v/Qwen-Image-Edit-2511-Lightning",
-      "revision": "107d238d68b8387e32843d0b4a2e24ceb0d3ad86",
-      "source_path": "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors"
-    }
-  ],
-  "qwen2511-lightning-8": [
     {
       "path": "models/diffusion_models/qwen-image-edit-2511-Q4_K_M.gguf",
       "size": 13127088736,
@@ -365,13 +343,13 @@
       "source_path": "qwen-image-edit-2511-Q4_K_M.gguf"
     },
     {
-      "path": "models/loras/Qwen-Image-Edit-2511-Lightning-8steps-V1.0-bf16.safetensors",
+      "path": "models/loras/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
       "size": 849608296,
-      "sha256": "a9e81a58a78f260f67b337a6f615e8fa4cd3bc79847c77b7d61a581b789b1ba8",
-      "url": "https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/2b639803688b62a8d20adec7192e349d0bc0503b/Qwen-Image-Edit-2511-Lightning-8steps-V1.0-bf16.safetensors?download=true",
+      "sha256": "22226e8d05d354bb356627d428809f5afd7819399b077238a2b70a82883a904f",
+      "url": "https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/107d238d68b8387e32843d0b4a2e24ceb0d3ad86/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors?download=true",
       "repo": "lightx2v/Qwen-Image-Edit-2511-Lightning",
-      "revision": "2b639803688b62a8d20adec7192e349d0bc0503b",
-      "source_path": "Qwen-Image-Edit-2511-Lightning-8steps-V1.0-bf16.safetensors"
+      "revision": "107d238d68b8387e32843d0b4a2e24ceb0d3ad86",
+      "source_path": "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors"
     }
   ],
   "firered11-lightning-8": [

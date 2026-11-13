@@ -47,6 +47,17 @@ class CropRegion:
     def size(self):
         return box_size(self.box)
 
+    def rotated(self, turns):
+        width, height = self.original_size
+        left, top, right, bottom = self.box
+        aspect = self.aspect
+        for _ in range(turns % 4):
+            left, top, right, bottom = height - bottom, left, height - top, right
+            width, height = height, width
+            if aspect is not None:
+                aspect = aspect[::-1]
+        return CropRegion((width, height), (left, top, right, bottom), aspect)
+
     @classmethod
     def from_record(cls, record):
         size, box = record.get('original_size'), record.get('source_crop')

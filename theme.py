@@ -70,6 +70,8 @@ def apply_theme(window):
     style.configure('TMenubutton', background=SECONDARY_BG, foreground=TEXT, padding=(9, 5), arrowcolor=GOLD_LIGHT)
     style.map('TMenubutton', background=[('active', HOVER_BG)], foreground=[('disabled', DISABLED)],
               arrowcolor=[('disabled', DISABLED)])
+    for input_style in ('Input.TButton', 'Input.Primary.TButton', 'Input.TMenubutton'):
+        style.configure(input_style, padding=(5, 5))
     style.layout('Prompt.TMenubutton', [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [
             ('Menubutton.padding', {'sticky': 'nswe', 'children': [

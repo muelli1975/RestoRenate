@@ -21,7 +21,7 @@ from language import translate
 from export_metadata import APP_VERSION, output_graph, set_output_size
 from imaging import open_photo, prepare, save_result
 from photo_colors import Colorizer
-from sizes import (NO_RESCALE, method_size, needs_enlargement, output_size,
+from sizes import (NO_RESCALE, limited_size, method_size, needs_enlargement, output_size,
                    restoration_canvas, restoration_size)
 from method_graphs import (
     RESULT_NODE, append_export, append_upscale,
@@ -30,7 +30,7 @@ from method_graphs import (
 from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, FIBO2_TURBO, FIRERED_METHODS, FLUX2, LANCZOS,
                      METHOD_FILENAME_LABELS, MICROSOFT, NATIVE_METHODS, NUNCHAKU_LOADER, QWEN_METHODS, REALESRGAN,
                      UPSCALE_FILENAME_LABELS, UPSCALE_FILES, UPSCALE_SCALES,
-                     UPSCALING, model_files, resolve_upscaler)
+                     TWO_IMAGE_METHODS, UPSCALING, model_files, resolve_upscaler)
 from portable_setup import SetupCancelled, contained
 
 PHASES = {
@@ -244,15 +244,15 @@ def generate(client, graph, status, cancelled, progress=lambda value: None, node
             connection.shutdown()
 
 
-def restoration_graph(method, models, name, size, crop, prompt, seed, scratches, faces):
+def restoration_graph(method, models, name, size, crop, prompt, seed, scratches, faces, *, second_image=None):
     if method == MICROSOFT:
         graph = microsoft_graph(name, size, scratches, faces)
     elif method == FIBO2_TURBO:
-        graph = fibo2_graph(models, name, size, prompt, seed)
+        graph = fibo2_graph(models, name, size, prompt, seed, second_image=second_image)
     elif method == FLUX2:
-        graph = flux2_graph(models, name, size, prompt, seed)
+        graph = flux2_graph(models, name, size, prompt, seed, second_image=second_image)
     elif method in (*QWEN_METHODS, *FIRERED_METHODS):
-        graph = qwen_graph(models, name, prompt, seed, method)
+        graph = qwen_graph(models, name, prompt, seed, method, second_image=second_image)
     else:
         raise ValueError(translate('Unbekanntes Verfahren: {0}', method))
     return append_export(graph, crop)
@@ -271,19 +271,22 @@ def processing_settings(record, model_name, graph):
             'prompt': record['prompt'], 'seed': record['seed'], 'sampling': sampling,
             'original_size': record['original_size'], 'working_size': record['working_size'],
             'working_crop': record.get('active_crop'), 'output_size': record['output_size'], 'upscaler': model_name,
-            **({'source_crop': record['source_crop']} if 'source_crop' in record else {}),
+            **{key: record[key] for key in ('source_crop', 'source_rotation', 'second_image', 'second_size')
+               if key in record},
             **{key: record[key] for key in ('scratches', 'faces') if key in record}}
 
 
 def restore(client, models, source, folder, output_format, exiftool, prompt, seed, status, cancelled, record,
             progress=lambda value: None, method=DEFAULT_METHOD, scratches=True, faces=False,
             staged_id=None, size_choice=(None, 2160), upscaler=None, definitions=None, colorizer=None,
-            source_crop=None):
+            source_crop=None, source_rotation=0, second_image=None):
     started = time.monotonic()
     timing = record['seconds_by_stage'] = {}
     status(translate('Bild wird vorbereitet …'))
     progress(None)
-    original, dpi = open_photo(source, crop=source_crop)
+    if second_image is not None and method not in TWO_IMAGE_METHODS:
+        raise ValueError(translate('Dieses Verfahren verarbeitet nur ein Bild.'))
+    original, dpi = open_photo(source, crop=source_crop, rotation=source_rotation)
     choice, side_pixels = size_choice
     choice = method_size(method, choice)
     expected = output_size(original.size, choice, side_pixels, method=method)
@@ -292,6 +295,10 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
     record.update(original_size=source_size, output_size=expected)
     if source_crop:
         record['source_crop'] = source_crop.box
+    if source_rotation:
+        record['source_rotation'] = source_rotation
+    if second_image is not None:
+        record['second_image'] = str(second_image)
     if method == MICROSOFT:
         record.update(scratches=scratches, faces=faces)
 
@@ -340,11 +347,26 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
     input_dir = client.root / 'work/input'
     name = 'foto_' + (staged_id or uuid.uuid4().hex) + '.png'
     staged = input_dir / name
+    reference = staged.with_name(staged.stem + '_2.png') if second_image is not None else None
     descriptor = None
     try:
         input_dir.mkdir(parents=True, exist_ok=True)
         with prepared:
             prepared.save(staged, 'PNG')
+        if reference is not None:
+            second, _ = open_photo(second_image)
+            with second:
+                if method == FLUX2:
+                    second_size = restoration_size(second.size, method)
+                    second_size = tuple(max(32, round(edge / 32) * 32) for edge in second_size)
+                else:
+                    second_size = limited_size(second.size, max_pixels=1024**2)
+                if second_size == second.size:
+                    second.save(reference, 'PNG')
+                else:
+                    with second.resize(second_size, Image.Resampling.LANCZOS) as resized:
+                        resized.save(reference, 'PNG')
+            record['second_size'] = second_size
         current = crop[2:]
         use_model = upscaler != LANCZOS and needs_enlargement(current, expected)
         model_name = LANCZOS if current != expected else None
@@ -360,7 +382,8 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         if native:
             graph = standalone_upscale_graph(name, model_name)
         else:
-            graph = restoration_graph(method, models, name, record['working_size'], crop, prompt, seed, scratches, faces)
+            graph = restoration_graph(method, models, name, record['working_size'], crop, prompt, seed, scratches, faces,
+                                      second_image=reference.name if reference is not None else None)
             if use_model:
                 append_upscale(graph, model_name)
         if choice != NO_RESCALE:
@@ -381,6 +404,8 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
             return export(upscaled, model_name, output_graph(graph, RESULT_NODE))
     finally:
         staged.unlink(missing_ok=True)
+        if reference is not None:
+            reference.unlink(missing_ok=True)
         if descriptor is not None:
             relative = Path(descriptor.get('subfolder', '')) / descriptor['filename']
             contained(client.root / 'work/temp/temp', relative).unlink(missing_ok=True)

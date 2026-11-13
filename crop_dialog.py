@@ -20,7 +20,7 @@ CURSORS = {
 
 
 class CropDialog(tk.Toplevel):
-    def __init__(self, parent, sources, crops, selected):
+    def __init__(self, parent, sources, crops, selected, *, rotations=None):
         super().__init__(parent)
         self.transient(parent)
         self.title(translate('Bild beschneiden'))
@@ -31,6 +31,7 @@ class CropDialog(tk.Toplevel):
         self.geometry(f'{width}x{height}')
         self.sources = tuple(sources)
         self.crops = dict(crops)
+        self.rotations = rotations or {}
         self.result = None
         self.image = None
         self.index = None
@@ -84,7 +85,8 @@ class CropDialog(tk.Toplevel):
 
     def load_source(self, index):
         try:
-            image, _ = open_photo(self.sources[index])
+            source = self.sources[index]
+            image, _ = open_photo(source, rotation=self.rotations.get(source, 0))
         except (OSError, ValueError, SyntaxError) as exc:
             if self.source_choice is not None:
                 self.source_choice.current(index if self.index is None else self.index)
@@ -327,8 +329,8 @@ class CropDialog(tk.Toplevel):
         return 'break'
 
 
-def edit_crops(parent, sources, crops, selected):
-    dialog = CropDialog(parent, sources, crops, selected)
+def edit_crops(parent, sources, crops, selected, *, rotations=None):
+    dialog = CropDialog(parent, sources, crops, selected, rotations=rotations)
     if not dialog.winfo_viewable():
         dialog.wait_visibility()
     dialog.grab_set()

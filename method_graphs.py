@@ -6,7 +6,7 @@ from methods import (FIRERED_BASE, NUNCHAKU_LOADER, QWEN2509_BASE, QWEN2509_GGUF
 RESULT_NODE = '14'
 
 
-def qwen_graph(models, filename, prompt, seed, method):
+def qwen_graph(models, filename, prompt, seed, method, *, second_image=None):
     graph = {}
 
     def add(number, kind, **inputs):
@@ -25,6 +25,8 @@ def qwen_graph(models, filename, prompt, seed, method):
     add(2, 'CLIPLoader', clip_name=models['text'], type='qwen_image', device='default')
     add(3, 'VAELoader', vae_name=models['vae'])
     add(4, 'LoadImage', image=filename)
+    if second_image:
+        add(30, 'LoadImage', image=second_image)
     sampling_model = ['1', 0]
     if 'lightning' in models and not qwen2511:
         # These ComfyUI templates apply Lightning before sampling patches.
@@ -33,6 +35,9 @@ def qwen_graph(models, filename, prompt, seed, method):
     add(5, 'ModelSamplingAuraFlow', model=sampling_model, shift=shift)
     add(6, 'TextEncodeQwenImageEditPlus', clip=['2', 0], vae=['3', 0], prompt=prompt, image1=['4', 0])
     add(7, 'TextEncodeQwenImageEditPlus', clip=['2', 0], vae=['3', 0], prompt='', image1=['4', 0])
+    if second_image:
+        for node in ('6', '7'):
+            graph[node]['inputs']['image2'] = ['30', 0]
     add(8, 'VAEEncode', pixels=['4', 0], vae=['3', 0])
     add(15, 'CFGNorm', model=['5', 0], strength=1.0)
     model, positive, negative = ['15', 0], ['6', 0], ['7', 0]
@@ -52,8 +57,7 @@ def qwen_graph(models, filename, prompt, seed, method):
     return graph
 
 
-def fibo2_graph(models, filename, size, prompt, seed):
-    # Single-reference edit from the native Turbo template with direct prompt input.
+def fibo2_graph(models, filename, size, prompt, seed, *, second_image=None):
     width, height = size
     graph = {}
 
@@ -64,8 +68,12 @@ def fibo2_graph(models, filename, size, prompt, seed):
     add(2, 'CLIPLoader', clip_name=models['text'], type='fibo2', device='default')
     add(3, 'VAELoader', vae_name=models['vae'])
     add(4, 'LoadImage', image=filename)
+    if second_image:
+        add(30, 'LoadImage', image=second_image)
     add(6, 'TextEncodeFibo2', clip=['2', 0], vae=['3', 0], prompt=prompt, negative_prompt='',
         width=width, height=height, batch_size=1, **{'images.image_1': ['4', 0]})
+    if second_image:
+        graph['6']['inputs']['images.image_2'] = ['30', 0]
     add(9, 'KSampler', model=['1', 0], positive=['6', 0], negative=['6', 1], latent_image=['6', 2],
         seed=seed, steps=4, cfg=1.0, sampler_name='euler', scheduler='simple', denoise=1.0)
     add(10, 'VAEDecode', samples=['9', 0], vae=['3', 0])
@@ -114,7 +122,7 @@ def standalone_upscale_graph(filename, model_name):
     return append_upscale(graph, model_name)
 
 
-def flux2_graph(models, filename, size, prompt, seed):
+def flux2_graph(models, filename, size, prompt, seed, *, second_image=None):
     width, height = size
     graph = {}
 
@@ -134,7 +142,14 @@ def flux2_graph(models, filename, size, prompt, seed):
     add(17, 'Flux2Scheduler', steps=4, width=width, height=height)
     add(18, 'KSamplerSelect', sampler_name='euler')
     add(19, 'RandomNoise', noise_seed=seed)
-    add(20, 'CFGGuider', model=['1', 0], positive=['8', 0], negative=['15', 0], cfg=1.0)
+    positive, negative = ['8', 0], ['15', 0]
+    if second_image:
+        add(30, 'LoadImage', image=second_image)
+        add(31, 'VAEEncode', pixels=['30', 0], vae=['3', 0])
+        add(32, 'ReferenceLatent', conditioning=positive, latent=['31', 0])
+        add(33, 'ReferenceLatent', conditioning=negative, latent=['31', 0])
+        positive, negative = ['32', 0], ['33', 0]
+    add(20, 'CFGGuider', model=['1', 0], positive=positive, negative=negative, cfg=1.0)
     add(9, 'SamplerCustomAdvanced', noise=['19', 0], guider=['20', 0], sampler=['18', 0],
         sigmas=['17', 0], latent_image=['16', 0])
     add(10, 'VAEDecode', samples=['9', 0], vae=['3', 0])
