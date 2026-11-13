@@ -1,0 +1,25 @@
+{
+  "version": "0.1",
+  "runtime": {
+    "path": "downloads/ComfyUI_windows_portable_nvidia_v0.44.0.7z",
+    "size": 2054382457,
+    "sha256": "7170c2db49c182a81adcc051e80234f99dd891656fb200737f87797876348f96",
+    "url": "https://github.com/Comfy-Org/ComfyUI/releases/download/v0.44.0/ComfyUI_windows_portable_nvidia.7z"
+  },
+  "extra_packages": [
+    "protobuf==7.36.2",
+    "spandrel==0.4.2"
+  ],
+  "extractor_sha256": "256feca8e274e5da655e2a284fabafd9f554365eb164862089dacd4e8276d282",
+  "models": [
+    {
+      "path": "models/upscale_models/4x-UltraSharpV2.safetensors",
+      "size": 139792588,
+      "sha256": "2b5db674aa8f3864a696dccd1d07d7cc0500fbf220f35044cd30eee9a7f971a7",
+      "url": "https://huggingface.co/Kim2091/UltraSharpV2/resolve/2d1db39ff692c111da92112d49f833e4ad7035ae/4x-UltraSharpV2.safetensors?download=true",
+      "repo": "Kim2091/UltraSharpV2",
+      "revision": "2d1db39ff692c111da92112d49f833e4ad7035ae",
+      "source_path": "4x-UltraSharpV2.safetensors"
+    }
+  ]
+}

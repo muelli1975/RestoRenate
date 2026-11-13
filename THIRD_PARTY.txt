@@ -1,0 +1,167 @@
+RestoRenate · Third-party components
+
+Portable setup and backend process code adapted from Christoph Müller's
+DDD-Test 0.2 under the MIT license. See LICENSE.
+
+Components included in the source or portable Windows package
+
+Completion sound assets/ready.wav, shared with DepthTricia, StereoFine,
+TransCora and Wigglinde.
+  https://github.com/muelli1975/DepthTricia/blob/063d5bf48a759fd8fa189465601b9a19340952b0/assets/ready.wav
+
+Python and Tcl/Tk: Python Software Foundation and Tcl/Tk contributors.
+  https://www.python.org/
+  See runtime/python/LICENSE.txt and the included notices.
+
+NumPy and Pillow:
+  https://numpy.org/ · https://python-pillow.org/
+  Notices are in runtime/python/Lib/site-packages/*.dist-info.
+
+CustomTkinter 5.2.2, darkdetect 0.8.0 and Packaging 25.0:
+  License notices are in runtime/python/Lib/site-packages/*.dist-info.
+
+7zr.exe: Igor Pavlov's reduced 7-Zip console executable.
+  https://www.7-zip.org/a/7zr.exe
+  See tools/7zip-LICENSE.txt and tools/7zip-SOURCE.txt.
+
+ExifTool 13.62 Windows x64: Phil Harvey and Windows launcher contributors.
+  https://exiftool.org/
+  https://sourceforge.net/projects/exiftool/files/exiftool-13.62_64.zip/download
+  SHA-256 of the source binary archive:
+  9c79e97a9444ba1f893da1dcbcae378fba0c0a0112afd8bf426b396c75f884ce
+  See tools/exiftool for upstream and Strawberry Perl notices.
+
+Truststore 0.10.5 · MIT.
+  https://pypi.org/project/truststore/0.10.5/
+  Its original notice is in runtime/python/Lib/site-packages/truststore-0.10.5.dist-info.
+
+websocket-client 1.9.0 · Apache 2.0.
+  https://pypi.org/project/websocket-client/1.9.0/
+  Original notices are in runtime/python/Lib/site-packages/websocket_client-1.9.0.dist-info.
+
+protobuf, Spandrel and GGUF wheels from PyPI.
+  Each wheel retains its original license and metadata.
+
+ComfyUI-GGUF · Apache 2.0. Installed for Qwen 2511 and FireRed 1.1 Lightning.
+  https://github.com/city96/ComfyUI-GGUF/tree/6ea2651e7df66d7585f6ffee804b20e92fb38b8a
+  See vendor/ComfyUI-GGUF/LICENSE. RestoRenate requests ComfyUI's
+  non-dynamic patcher for the GGUF model before applying the GGUF patcher.
+
+ComfyUI-nunchaku Qwen-Image loader and its supporting modules · Apache 2.0.
+  https://github.com/nunchux-ai/ComfyUI-nunchaku/tree/b600f879a777fdef1466c362e850f7e8c31bf89a
+  See vendor/RestoRenate-Nunchaku/LICENCE.txt. The app registers only the
+  Qwen-Image loader.
+
+Downloaded after confirmation
+
+ComfyUI portable NVIDIA/CPU v0.44.0 and AMD v0.45.0 · GPL-3.0.
+  https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.44.0
+  https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.45.0
+  The downloaded archive retains its upstream notices.
+
+Restoration and colorization prompt examples by Weird Wonderful AI Art.
+  https://weirdwonderfulai.art/resources/ai-powered-photo-restoration-using-qwen-image-edit/
+  https://weirdwonderfulai.art/resources/ai-powered-photo-restoration-using-flux-kontext-dev/
+
+Short colorization prompt and inspiration for the noise reduction preset.
+  https://modl.run/guides/restore-old-photos/#prompt-cookbook
+
+FLUX.2 [klein] 4B repair and colorization prompt from the ComfyUI community.
+  https://www.reddit.com/r/comfyui/comments/1qe9ql3/repair_and_colorize_images_with_flux2_klein_4b/
+
+Fibo 2.0 Edit Turbo by Bria AI · CC BY-NC 4.0.
+  https://huggingface.co/briaai/Fibo-2.0-edit-turbo
+  https://huggingface.co/Comfy-Org/Fibo-2.0
+  https://creativecommons.org/licenses/by-nc/4.0/
+  Sampling follows the native four-step ComfyUI template.
+  https://github.com/Comfy-Org/workflow_templates/blob/v0.11.98/templates/image_fibo2_edit_turbo_pe.json
+  Working canvas sizes follow TextEncodeFibo2 in ComfyUI.
+  https://github.com/Comfy-Org/ComfyUI/blob/v0.44.0/comfy_extras/nodes_fibo2.py
+
+4x UltraSharp, 4x UltraSharpV2 and 4x UltraSharpV2 Lite by Kim2091 · CC BY-NC-SA 4.0.
+  https://huggingface.co/Kim2091/UltraSharp
+  https://github.com/Kim2091/Kim2091-Models/releases/tag/4x-UltraSharpV2
+  https://huggingface.co/Kim2091/UltraSharpV2
+  https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Optional model packages
+
+FireRed Image Edit 1.1 GGUF Q4_K_M and Lightning 8-step LoRA v1.2 · Apache 2.0.
+  https://huggingface.co/FireRedTeam/FireRed-Image-Edit-1.1-ComfyUI/tree/8625b60ec52d4fa0d128d8a6ebc8adba296f8592
+  Sampling follows the FireRed 1.1 blueprint in ComfyUI v0.44.0.
+
+Microsoft · Bringing Old Photos Back to Life and its Haoming02 adaptation.
+  https://github.com/microsoft/Bringing-Old-Photos-Back-to-Life
+  https://github.com/Haoming02/comfyui-old-photo-restoration
+  https://github.com/Haoming02/BOP-B2L-Backend/tree/bfe2d3f48049a9c61d0ac9e3ead7f76e5b3bcf4f
+  Upstream MIT notice in vendor/FotoRestaurierung-Microsoft/backend/LICENSE.
+  Microsoft checkpoints are retrieved from their original release.
+  The optional dlib landmark model was trained on iBUG 300-W, whose
+  dataset license excludes commercial use.
+  https://dlib.net/face_landmark_detection.py.html
+  Verified dependency wheels retain their own licenses.
+
+The generative graph structures and sampling settings use the native
+ComfyUI examples and the packaged ComfyUI workflow templates as references.
+  https://github.com/Comfy-Org/workflow_templates
+
+Pinned download URLs, versions, sizes and SHA-256 hashes are in
+download_manifest.json and method_downloads.json.
+
+FLUX.2 [klein] 4B · Apache 2.0.
+  https://huggingface.co/black-forest-labs/FLUX.2-klein-4B
+  https://huggingface.co/Comfy-Org/Flux-2-Klein-4B
+
+Qwen Image Edit 2509 Nunchaku R32 INT4 and Qwen Image Edit 2511 GGUF with
+LightX2V Lightning 8-step LoRA · Apache 2.0.
+  https://huggingface.co/Qwen/Qwen-Image-Edit-2509
+  https://huggingface.co/nunchaku-ai/nunchaku-qwen-image-edit-2509
+  https://huggingface.co/Qwen/Qwen-Image-Edit-2511
+  https://huggingface.co/unsloth/Qwen-Image-Edit-2511-GGUF
+  https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning
+  https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI
+  https://github.com/nunchux-ai/ComfyUI-nunchaku/tree/b600f879a777fdef1466c362e850f7e8c31bf89a/example_workflows
+  https://docs.comfy.org/tutorials/image/qwen/qwen-image-edit-2511
+
+Vitoom Nunchaku CUDA extension (community build), Diffusers, PEFT and
+Accelerate are installed into the private NVIDIA runtime for Nunchaku.
+  https://huggingface.co/tonera/vitoom-nunchaku
+  https://pypi.org/project/diffusers/0.42.0/
+  https://pypi.org/project/peft/0.21.2/
+  https://pypi.org/project/accelerate/1.15.0/
+
+Real-ESRGAN · BSD 3-Clause.
+  https://github.com/xinntao/Real-ESRGAN
+  https://huggingface.co/nateraw/real-esrgan
+  https://huggingface.co/Comfy-Org/Real-ESRGAN
+
+SwinIR-S 4× by Jingyun Liang and contributors · Apache 2.0.
+  https://github.com/JingyunLiang/SwinIR
+  https://github.com/JingyunLiang/SwinIR/blob/main/LICENSE
+  https://github.com/JingyunLiang/SwinIR/releases/tag/v0.0
+  https://huggingface.co/deepinv/swinir/commit/60340ac174f568a506f728807a8b62ff03e3cf82
+
+Remacri 4× by foolhardy · CC BY-NC-SA 4.0.
+  https://openmodeldb.info/models/4x-Remacri
+  https://huggingface.co/FacehugmanIII/4x_foolhardy_Remacri
+
+RealWebPhoto v4 DAT2 and Nomos2 HQ MoSR 4× by Philip Hofmann
+(Helaman / Phips) · CC BY 4.0.
+  https://huggingface.co/Phips/4xRealWebPhoto_v4_dat2
+  https://huggingface.co/Phips/4xNomos2_hq_mosr
+
+NMKD Siax 4× by Nmkd · WTFPL.
+  https://openmodeldb.info/models/4x-NMKD-Siax-CX
+  https://huggingface.co/f5aiteam/ComfyUI/blob/main/ESRGAN/4x_NMKD-Siax_200k.pth
+
+DDColor and DDColor Artistic · Apache 2.0, CPU ONNX models.
+  https://github.com/piddnad/DDColor
+
+DeOldify Stable and DeOldify Artistic by Jason Antic · MIT, CPU ONNX models.
+  https://github.com/jantic/DeOldify
+
+The colorization models use the ONNX exports listed by FaceFusion.
+  https://huggingface.co/facefusion/models-3.0.0
+  https://docs.facefusion.io/introduction/licenses
+The optional ONNX Runtime, FlatBuffers and Packaging wheels retain the
+license notices included in their original distributions.
