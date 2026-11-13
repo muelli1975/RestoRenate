@@ -32,10 +32,9 @@ from portable_setup import AMD, COMPUTE_DEVICES, CPU, GPU_HINTS, NVIDIA, Compute
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import choose_preloads, format_download_size, preload_label
 from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES,
-                     METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU,
-                     QWEN2511_LIGHTNING_4, available_methods,
+                     METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
                      TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
-                     resolve_upscaler, uses_comfy)
+                     available_methods, resolve_upscaler, uses_comfy)
 from sizes import (CUSTOM_SIZES, MAX_SIDE, NO_RESCALE, SIZE_CHOICES, ULTRA_HD, method_size,
                    needs_enlargement, output_size, restoration_size, size_choices)
 from photo_colors import Colorizer
@@ -94,10 +93,6 @@ PRESETS = {
 }
 MAX_VARIANTS = 100
 VARIANT_COUNTS = {str(count): count for count in range(1, MAX_VARIANTS + 1)}
-REPLACED_METHODS = {
-    'qwen2509-lightning-8': QWEN2509_LIGHTNING_4,
-    'qwen2511-lightning-8': QWEN2511_LIGHTNING_4,
-}
 BUILTIN_PROCESSING_PRESETS = {
     'Standard': {
         'method': DEFAULT_METHOD, 'preset': DEFAULT_PROMPT_NAME, 'prompt': PRESETS[DEFAULT_PROMPT_NAME], 'variants': 1,
@@ -150,23 +145,10 @@ def compute_label(compute):
 def read_processing_presets(saved):
     if not isinstance(saved, dict):
         return {}
-    presets = {}
-    for name, preset in saved.items():
-        if not (isinstance(name, str) and name.strip() and isinstance(preset, dict)):
-            continue
-        method = preset.get('method')
-        if isinstance(method, str):
-            method = REPLACED_METHODS.get(method, method)
-            if method in METHODS:
-                presets[name] = dict(preset, method=method)
-    for name in BUILTIN_PROCESSING_PRESETS.keys() & presets.keys():
-        own_name = translate('{0} (eigenes Preset)', name)
-        number = 2
-        while own_name in presets:
-            own_name = translate('{0} (eigenes Preset {1})', name, number)
-            number += 1
-        presets[own_name] = presets.pop(name)
-    return presets
+    return {name: preset for name, preset in saved.items()
+            if isinstance(name, str) and name.strip() and name not in BUILTIN_PROCESSING_PRESETS
+            and isinstance(preset, dict) and isinstance(preset.get('method'), str)
+            and preset['method'] in METHODS}
 
 
 class Application:
@@ -187,8 +169,6 @@ class Application:
         self.active_compute = previous.active_compute if previous else selected_compute
         self.compute = tk.StringVar(value=selected_compute)
         previous_method = self.config.get('method')
-        if isinstance(previous_method, str):
-            previous_method = REPLACED_METHODS.get(previous_method, previous_method)
         self.method_ids = self.available_method_ids()
         self.current_method = (
             previous_method if isinstance(previous_method, str) and previous_method in self.method_ids.values()
@@ -964,21 +944,11 @@ class Application:
         return name in PRESETS
 
     def read_custom_presets(self, saved):
-        custom = {}
         if not isinstance(saved, dict):
-            return custom
-        for name, prompt in saved.items():
-            if not isinstance(name, str) or not isinstance(prompt, str):
-                continue
-            if self.reserved_preset(name):
-                own_name = translate('{0} (eigener Prompt)', name)
-                number = 2
-                while own_name in saved or own_name in custom:
-                    own_name = translate('{0} (eigener Prompt {1})', name, number)
-                    number += 1
-                name = own_name
-            custom[name] = prompt
-        return custom
+            return {}
+        return {name: prompt for name, prompt in saved.items()
+                if isinstance(name, str) and name.strip() and isinstance(prompt, str)
+                and not self.reserved_preset(name)}
 
     def remember_prompt(self):
         if self.current_method not in NO_PROMPT:

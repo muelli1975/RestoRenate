@@ -1,4 +1,4 @@
-RestoRenate 0.2.79
+RestoRenate 0.2.80
 Windows x64 · Portable
 
 DEUTSCH
@@ -76,7 +76,6 @@ Verfahren und Hardware
   Ohne Lightning verwendet 2509 20 Schritte, 2511 40 Schritte, jeweils mit
   CFG 4. Pro Modell teilen sich diese Varianten dieselbe Q4_K_M-Datei.
   Je Lightning-LoRA kommen rund 850 MB hinzu.
-  Gespeicherte Qwen-Presets mit acht Schritten wechseln auf vier Schritte.
 - FireRed Image Edit 1.1 bietet Lightning mit acht Schritten und
   „Ohne Lightning“ mit 40 Schritten bei CFG 4. Beide Varianten nutzen
   dieselbe Q4_K_M-Datei. Für Lightning kommen rund 850 MB für die LoRA hinzu.
@@ -238,7 +237,6 @@ Methods and hardware
   Lightning, 2509 uses 20 steps and 2511 uses 40 steps, both at CFG 4.
   These variants share one Q4_K_M file per model. Each Lightning LoRA
   adds about 850 MB.
-  Saved eight-step Qwen presets switch to four steps.
 - FireRed Image Edit 1.1 offers eight-step Lightning and “Without Lightning”
   with 40 steps at CFG 4. Both variants share the same Q4_K_M file.
   The Lightning LoRA adds about 850 MB. FireRed and the Qwen methods share

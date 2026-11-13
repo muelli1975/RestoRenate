@@ -1,7 +1,6 @@
 """Bounded local diagnostics. Result history is managed by the application."""
 from codecs import getincrementaldecoder
 from io import TextIOBase
-import os
 from pathlib import Path
 from threading import Lock
 import time
@@ -31,19 +30,6 @@ def _is_utf8_continuation(byte):
     return byte & 0xC0 == 0x80
 
 
-def _trim_legacy_log(path, info):
-    with path.open('r+b') as log:
-        log.seek(-MAX_LOG_BYTES, os.SEEK_END)
-        tail = log.read()
-        start = 0
-        while start < len(tail) and _is_utf8_continuation(tail[start]):
-            start += 1
-        log.seek(0)
-        log.write(tail[start:])
-        log.truncate()
-    os.utime(path, ns=(info.st_atime_ns, info.st_mtime_ns))
-
-
 def prepare_technical_logs(folder):
     """Apply startup retention to the app's own logs and their two backups."""
     cutoff = time.time() - MAX_LOG_AGE
@@ -57,8 +43,6 @@ def prepare_technical_logs(folder):
                     info = path.stat()
                     if info.st_mtime < cutoff:
                         path.unlink()
-                    elif info.st_size > MAX_LOG_BYTES:
-                        _trim_legacy_log(path, info)
                 except OSError:
                     # Logs on read-only media must not prevent startup.
                     pass
@@ -97,12 +81,8 @@ class TechnicalLog(TextIOBase):
         self.path.parent.mkdir(parents=True, exist_ok=True)
         if self.path.is_symlink():
             return
-        if self.path.is_file():
-            info = self.path.stat()
-            if info.st_size > MAX_LOG_BYTES:
-                _trim_legacy_log(self.path, info)
-            if self.path.stat().st_size + len(data) > MAX_LOG_BYTES:
-                _rotate(self.path)
+        if self.path.is_file() and self.path.stat().st_size + len(data) > MAX_LOG_BYTES:
+            _rotate(self.path)
         start = 0
         while start < len(data):
             end = min(start + MAX_LOG_BYTES, len(data))
