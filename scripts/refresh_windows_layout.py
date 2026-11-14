@@ -14,7 +14,7 @@ ARCHIVE = 'RestoRenate_1.0_Windows_x64.zip'
 PREVIOUS_SHA256 = '2a191233d4f7c990a0c4128ed52c1d108a4ede4def00949eafe1dffc13fc4954'
 ROOT_FILES = {'RestoRenate.exe', 'README_DE_EN.txt', 'LICENSE', 'THIRD_PARTY.txt'}
 UPDATED_CODE = {'app.py', 'bootstrap.py', 'language.py', 'portable_paths.py', 'portable_setup.py',
-                'preload_models.py', 'theme.py'}
+                'preload_models.py', 'theme.py', 'methods.py'}
 
 
 def build(original, destination):

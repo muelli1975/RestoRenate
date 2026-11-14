@@ -2,7 +2,7 @@ name: Refresh RestoRenate 1.0 Windows archive
 
 on:
   push:
-    branches: [main]
+    branches: [main, windows-focus-preview]
     paths: ['.github/workflows/refresh-windows-v1.0.yml']
   workflow_dispatch:
 
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: restorenate-v1-windows-layout
+  group: restorenate-v1-windows-layout-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
-      RESTORENATE_PREVIOUS_SHA256: 97818437ef3357760edae015abe66537d45e0ab44dd42956e86b1693e35ada2d
+      RESTORENATE_PREVIOUS_SHA256: 00cd258fd63d5972c101e02a155e19ea9e876ce03f2393df46409ba65874a04d
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -48,6 +48,9 @@ jobs:
           }
           [void]$app.CloseMainWindow()
           & "$root/runtime/python/python.exe" -c "import sys; from pathlib import Path; sys.path.insert(0, 'dist/smoke/RestoRenate/_internal'); from portable_paths import ROOT; from portable_setup import Setup; assert (ROOT / 'assets/restorenate.ico').is_file(); assert Setup().root == ROOT"
+          if ($LASTEXITCODE -ne 0) { throw 'Portable layout check failed' }
+          & "$root/runtime/python/python.exe" tests/windows_controls.py $root
+          if ($LASTEXITCODE -ne 0) { throw 'Windows control check failed' }
       - uses: actions/upload-artifact@v4
         with:
           name: windows-v1.0-layout
@@ -58,6 +61,7 @@ jobs:
 
   publish:
     needs: verify
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
