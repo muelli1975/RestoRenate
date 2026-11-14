@@ -523,8 +523,9 @@ class Application:
         self.second_name.pack(fill='x', expand=True)
         actions = tk.Frame(details, bg=SECONDARY_BG)
         actions.pack(fill='x')
+        actions.columnconfigure(0, weight=1)
         self.second_button = ttk.Button(actions, command=self.choose_second_image, width=-1, style='Input.TButton')
-        self.second_button.grid(row=0, column=0, sticky='w')
+        self.second_button.grid(row=0, column=0, sticky='ew')
         self.second_rotate_button = self.labelled(ttk.Menubutton, actions, 'Drehen ▾', width=-1,
                                                   style='Reference.TMenubutton')
         self.second_rotate_button.grid(row=0, column=1, padx=(4, 0), sticky='w')

@@ -13,7 +13,8 @@ def check_reference_controls(gui, image_path):
         return widget.winfo_rootx(), widget.winfo_rooty(), widget.winfo_width(), widget.winfo_height()
 
     window.update()
-    initial = [bounds(widget) for widget in (row, gui.second_preview, gui.second_name)]
+    steady_widgets = (row, gui.second_preview, gui.second_name, gui.second_button, gui.second_rotate_button)
+    initial = [bounds(widget) for widget in steady_widgets]
     assert row.winfo_viewable() and not remove.winfo_ismapped()
     assert str(remove.cget('compound')) == 'image'
     with ImageTk.getimage(gui.reference_remove_icon) as icon:
@@ -25,7 +26,7 @@ def check_reference_controls(gui, image_path):
     for _ in range(2):
         gui.set_second_image(image_path)
         window.update()
-        assert [bounds(widget) for widget in (row, gui.second_preview, gui.second_name)] == initial
+        assert [bounds(widget) for widget in steady_widgets] == initial
         x, y, width, _ = bounds(remove)
         assert row.winfo_rootx() + row.winfo_width() - x - width == 7
         assert y - row.winfo_rooty() == 5
@@ -34,4 +35,4 @@ def check_reference_controls(gui, image_path):
         window.update()
         assert gui.second_image is None and gui.second_rotation == 0
         assert not remove.winfo_ismapped()
-        assert [bounds(widget) for widget in (row, gui.second_preview, gui.second_name)] == initial
+        assert [bounds(widget) for widget in steady_widgets] == initial
