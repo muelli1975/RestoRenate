@@ -1,6 +1,6 @@
 # RestoRenate 1.0
 
-[Windows download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux preview](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [macOS preview](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-macos-preview) · [Deutsch](README_DE.md) · [Detailed guide](README_DE_EN.txt)
+[Windows download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [macOS download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-macos-preview) · [Deutsch](README_DE.md) · [Detailed guide](README_DE_EN.txt)
 
 RestoRenate is a local desktop tool for restoring, colorizing and upscaling photos. With text prompts and supported models, it can also edit an image or use a second photo as a reference. The interface is available in English and German.
 
@@ -17,12 +17,12 @@ Restored and colorized with Fibo 2.0 Edit Turbo. Original photograph from the Li
 | Platform | Package and requirements |
 | --- | --- |
 | Windows x64 | Extract the [portable ZIP](https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_Windows_x64.zip) to a short, writable path such as `D:\RestoRenate` and open `RestoRenate.exe`. Python and ExifTool are included. |
-| Ubuntu 24.04 x86-64 | Portable preview. Extract the `.tar.gz` to a writable folder and run `./Start.sh` in a graphical desktop session. |
-| macOS 15 or newer, Apple Silicon | Portable preview. Extract the ZIP to a writable folder and open `RestoRenate.app` from that folder. |
+| Ubuntu 24.04 x86-64 | Portable release. Extract the `.tar.gz` to a writable folder and run `./Start.sh` in a graphical desktop session. |
+| macOS 15 or newer, Apple Silicon | Portable release. Extract the ZIP to a writable folder and open `RestoRenate.app` from that folder. |
 
-Both previews include Python, Tk and ExifTool. ExifTool uses the system Perl. The app downloads the selected models and processing libraries into the program folder when needed. [Linux builds](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml) · [macOS builds](https://github.com/muelli1975/RestoRenate/actions/workflows/macos.yml)
+The Linux and macOS packages include Python, Tk and ExifTool. ExifTool uses the system Perl. The app downloads the selected models and processing libraries into the program folder when needed. [Linux builds](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml) · [macOS builds](https://github.com/muelli1975/RestoRenate/actions/workflows/macos.yml)
 
-Windows offers CPU and NVIDIA modes, plus experimental AMD ROCm. The Linux preview defaults to CPU and offers experimental modes for NVIDIA (CUDA 13-compatible driver) and AMD ([hardware and drivers compatible with ROCm 7.2](https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2/docs/compatibility/compatibilityrad/native_linux/native_linux_compatibility.html)). The macOS preview defaults to Apple Metal (MPS) and also offers CPU processing. Nunchaku INT4 is available on supported Windows NVIDIA systems.
+Windows offers CPU and NVIDIA modes, plus experimental AMD ROCm. The Linux release defaults to CPU and offers experimental modes for NVIDIA (CUDA 13-compatible driver) and AMD ([hardware and drivers compatible with ROCm 7.2](https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2/docs/compatibility/compatibilityrad/native_linux/native_linux_compatibility.html)). The macOS release defaults to Apple Metal (MPS) and also offers CPU processing. Nunchaku INT4 is available on supported Windows NVIDIA systems.
 
 When updating Windows, close RestoRenate and extract the package into a clean folder. To keep an existing setup, copy `models`, `backend`, `downloads`, `settings` and the existing runtime subfolders and download receipts as needed. Extract the new package in full to keep its `_internal`, `assets` and `tools` together.
 

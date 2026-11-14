@@ -114,21 +114,26 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: RestoRenate-Linux-x64-Preview
-      - name: Publish Linux preview
+      - name: Publish Linux release
         shell: bash
         run: |
           set -euo pipefail
           sha256sum -c SHA256SUMS.txt
+          # Keep the published tag and filename so existing download URLs still work.
           tag=v1.0-linux-preview
           file=RestoRenate_Linux_x64_Preview.tar.gz
+          asset_label='RestoRenate_1.0_Linux_x64.tar.gz'
+          title='RestoRenate 1.0 for Linux (Ubuntu 24.04 x64)'
+          notes='Portable release for Ubuntu 24.04 x86-64. Extract the archive and run ./Start.sh in a graphical desktop session. Python, Tk and ExifTool are included. GitHub Actions checks CPU processing and ROCm setup. NVIDIA and AMD GPU inference remain experimental.'
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$tag" "$file" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$tag" "$file#$asset_label" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$tag" "$file" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --prerelease --latest=false --title 'RestoRenate for Linux x64 · Preview' \
-              --notes 'Ubuntu 24.04 x86-64. See README_DE.md or README.md for requirements.'
+            gh release create "$tag" "$file#$asset_label" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --latest=false --title "$title" \
+              --notes "$notes"
           fi
-          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --latest=false --notes \
-            'Portable preview for Ubuntu 24.04 x86-64. Extract the archive and run Start.sh. Python, Tk and ExifTool are included. GitHub Actions checks CPU processing and ROCm setup. NVIDIA and AMD GPU inference are experimental.'
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest=false \
+            --title "$title" --notes "$notes"
           actual=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$file\") | .digest")
           test "$actual" = "sha256:$(cut -d' ' -f1 SHA256SUMS.txt)"
+          test "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq .isPrerelease)" = false

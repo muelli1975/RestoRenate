@@ -83,21 +83,26 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: RestoRenate-macOS-AppleSilicon-Preview
-      - name: Publish macOS preview
+      - name: Publish macOS release
         shell: bash
         run: |
           set -euo pipefail
           sha256sum -c SHA256SUMS.txt
+          # Keep the published tag and filename so existing download URLs still work.
           tag=v1.0-macos-preview
           file=RestoRenate_macOS_AppleSilicon_Preview.zip
+          asset_label='RestoRenate_1.0_macOS_AppleSilicon.zip'
+          title='RestoRenate 1.0 for macOS (Apple Silicon)'
+          notes='Portable release for macOS 15 or newer on Apple Silicon. Extract the ZIP and open RestoRenate.app from its folder. Python, Tk and ExifTool are included. GitHub Actions checks Apple Metal upscaling.'
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$tag" "$file" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$tag" "$file#$asset_label" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$tag" "$file" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --prerelease --latest=false --title 'RestoRenate for macOS Apple Silicon – Preview' \
-              --notes 'macOS 15 or newer on Apple Silicon. See README_DE.md or README.md for prerequisites. GitHub Actions checks Apple Metal upscaling.'
+            gh release create "$tag" "$file#$asset_label" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --latest=false --title "$title" \
+              --notes "$notes"
           fi
-          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --latest=false --notes \
-            'Portable preview for macOS 15 or newer on Apple Silicon. Extract the ZIP and open RestoRenate.app from its folder. Python, Tk and ExifTool are included. GitHub Actions checks Apple Metal upscaling.'
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest=false \
+            --title "$title" --notes "$notes"
           actual=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$file\") | .digest")
           test "$actual" = "sha256:$(cut -d' ' -f1 SHA256SUMS.txt)"
+          test "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq .isPrerelease)" = false
