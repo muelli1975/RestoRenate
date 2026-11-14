@@ -24,6 +24,7 @@ from restoration import Client, restore, select_models
 from sizes import DOUBLE_SIZE, NO_RESCALE
 from theme import BORDER, GOLD_LIGHT
 from output_destination import check_output_destination
+from reference_controls import check_reference_controls
 
 
 def record(method, models):
@@ -41,6 +42,7 @@ def test_gui(source):
             assert style.lookup(field, 'bordercolor', ('focus', 'disabled')) == BORDER, field
             assert style.lookup(field, 'bordercolor') == BORDER, field
         gui.pick_sources(source)
+        check_reference_controls(gui, source)
         gui.set_second_image(source)
         gui.second_rotation_menu.invoke(1)
         window.update()

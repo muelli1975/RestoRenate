@@ -40,8 +40,8 @@ from photo_colors import Colorizer
 from progress_track import ProgressTrack
 from prompt_menu import PromptMenu
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
-                   TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, checkbox,
-                   set_control_state, style_method_scrollbar)
+                   TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, DANGER_TEXT, apply_theme, checkbox,
+                   remove_icon, set_control_state, style_method_scrollbar)
 from restoration import Client, restore, select_models
 from technical_logs import TechnicalLog, prepare_technical_logs
 from titlebar import install_tk_titlebars
@@ -509,12 +509,22 @@ class Application:
         self.second_preview_item = self.second_preview.create_image(width / 2 + 1, height / 2 + 1)
         details = tk.Frame(self.second_row, bg=SECONDARY_BG)
         details.pack(side='left', fill='both', expand=True, pady=4, padx=(0, 6))
-        self.labelled(tk.Label, details, 'Zweites Bild', bg=SECONDARY_BG, fg=INK, anchor='w').pack(fill='x')
+        heading = tk.Frame(details, bg=SECONDARY_BG)
+        heading.pack(fill='x')
+        self.reference_remove_icons = (remove_icon(heading, DANGER_TEXT), remove_icon(heading, DISABLED))
+        active_icon, disabled_icon = self.reference_remove_icons
+        self.remove_second_button = self.labelled(
+            ttk.Button, heading, 'Entfernen', image=(active_icon, 'disabled', disabled_icon),
+            compound='image', command=self.clear_second_image, style='RemoveReference.TButton',
+        )
+        self.remove_second_button.pack(side='right')
+        self.labelled(tk.Label, heading, 'Zweites Bild', bg=SECONDARY_BG, fg=INK, anchor='w').pack(
+            side='left', fill='x', expand=True,
+        )
         self.second_name = tk.Label(details, bg=SECONDARY_BG, fg=MUTED, anchor='w', width=1)
         self.second_name.pack(fill='x', expand=True)
         actions = tk.Frame(details, bg=SECONDARY_BG)
         actions.pack(fill='x')
-        actions.columnconfigure(2, weight=1)
         self.second_button = ttk.Button(actions, command=self.choose_second_image, width=-1, style='Input.TButton')
         self.second_button.grid(row=0, column=0, sticky='w')
         self.second_rotate_button = self.labelled(ttk.Menubutton, actions, 'Drehen ▾', width=-1,
@@ -525,9 +535,6 @@ class Application:
             self.second_rotation_menu.add_command(label=translate(label),
                                                   command=lambda turns=turns: self.rotate_second_image(turns))
         self.second_rotate_button.configure(menu=self.second_rotation_menu)
-        self.remove_second_button = ttk.Button(actions, text='×', command=self.clear_second_image,
-                                               width=-1, style='RemoveReference.TButton')
-        self.remove_second_button.grid(row=0, column=3, padx=(4, 0), sticky='e')
 
     def variant_changed(self, *_):
         self.variant_count = VARIANT_COUNTS.get(self.variants.get(), self.variant_count)
@@ -886,7 +893,8 @@ class Application:
         if self.current_method not in TWO_IMAGE_METHODS:
             self.second_row.pack_forget()
             return
-        self.second_row.pack(fill='x', pady=(4, 0))
+        if not self.second_row.winfo_manager():
+            self.second_row.pack(fill='x', pady=(4, 0))
         path = self.second_image
         self.second_button.configure(text=translate('Ersetzen …' if path else 'Hinzufügen …'),
                                      state='normal' if self.sources and not self.action else 'disabled')

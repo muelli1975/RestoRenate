@@ -2,6 +2,7 @@
 from tkinter import ttk
 
 import customtkinter as ctk
+from PIL import Image, ImageDraw, ImageTk
 
 APP_BG = '#111111'
 SECONDARY_BG = '#181818'
@@ -24,6 +25,24 @@ def checkbox(parent, text, variable, command=None):
                            bg_color=PANEL_BG, fg_color=GOLD, hover_color=GOLD_LIGHT,
                            border_color=BORDER, checkmark_color=TEXT, text_color=TEXT,
                            text_color_disabled=DISABLED, corner_radius=4, font=('Segoe UI', 13))
+
+
+def remove_icon(master, color):
+    """Draw a centered cross with the same stroke on every platform."""
+    scale = 4
+    size = 13
+    with Image.new('RGBA', (size * scale, size * scale)) as canvas:
+        mark = ImageDraw.Draw(canvas)
+        near = 3 * scale
+        far = (size - 3) * scale - 1
+        for start, end in (((near, near), (far, far)), ((near, far), (far, near))):
+            mark.line((start, end), fill=color, width=11)
+        # Round the stroke ends symmetrically, then antialias at display size.
+        radius = 5
+        for x in (near, far):
+            for y in (near, far):
+                mark.ellipse((x - radius, y - radius, x + radius, y + radius), fill=color)
+        return ImageTk.PhotoImage(canvas.resize((size, size), Image.Resampling.LANCZOS), master=master)
 
 
 def set_control_state(widget, state):
@@ -81,12 +100,12 @@ def apply_theme(window):
               arrowcolor=[('disabled', DISABLED)])
     for input_style in ('Input.TButton', 'Input.Primary.TButton', 'Input.TMenubutton'):
         style.configure(input_style, padding=(5, 2))
-    style.configure('RemoveReference.TButton', foreground=DANGER_TEXT, padding=(5, 0),
-                    font=('Segoe UI', 12, 'bold'))
-    style.map('RemoveReference.TButton', foreground=[('disabled', DISABLED)],
-              bordercolor=[('active', DANGER_HOVER), ('!disabled', DANGER)],
-              lightcolor=[('active', DANGER_HOVER), ('!disabled', DANGER)],
-              darkcolor=[('active', DANGER_HOVER), ('!disabled', DANGER)])
+    style.configure('RemoveReference.TButton', width=0, padding=(5, 3), relief='flat',
+                    background=SECONDARY_BG, bordercolor=SECONDARY_BG,
+                    lightcolor=SECONDARY_BG, darkcolor=SECONDARY_BG)
+    icon_border = [('disabled', SECONDARY_BG), ('active', BORDER), ('!active', SECONDARY_BG)]
+    style.map('RemoveReference.TButton', bordercolor=icon_border,
+              lightcolor=icon_border, darkcolor=icon_border)
     flat_menu_layout = [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [
             ('Menubutton.padding', {'sticky': 'nswe', 'children': [

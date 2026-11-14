@@ -2,10 +2,11 @@ name: Refresh RestoRenate 1.0 Windows archive
 
 on:
   push:
-    branches: [main, windows-focus-preview, output-folder-preview]
+    branches: [main, windows-focus-preview, output-folder-preview, reference-button-preview]
     paths:
       - '.github/workflows/refresh-windows-v1.0.yml'
       - 'tests/output_destination.py'
+      - 'tests/reference_controls.py'
       - 'tests/windows_controls.py'
   workflow_dispatch:
 
@@ -22,7 +23,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
-      RESTORENATE_PREVIOUS_SHA256: e202499d6eb7367d0195225c53db87af5e6118ac621ae91e792fc449a329840f
+      RESTORENATE_PREVIOUS_SHA256: 88e91ff20102e0feaaf29f224d13461577a59f322d3150f899deb109df51b5ba
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,6 +55,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Portable layout check failed' }
           & "$root/runtime/python/python.exe" tests/windows_controls.py $root
           if ($LASTEXITCODE -ne 0) { throw 'Windows control check failed' }
+      - uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: windows-reference-control
+          path: dist/smoke/reference-controls.png
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: windows-v1.0-layout
