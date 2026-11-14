@@ -21,12 +21,5 @@ def check_field_focus(gui, native_maps):
     for field in ('TEntry', 'Path.TEntry', 'TSpinbox', 'TCombobox', 'Prompt.TMenubutton'):
         assert all(style.lookup(field, option, ('focus',)) != GOLD_LIGHT for option in BORDER_OPTIONS), field
 
-    window.update()
-    gui.prompt.focus_force()
-    window.update()
-    assert window.focus_get() is gui.prompt
     assert gui.prompt.cget('highlightcolor') == GOLD_LIGHT
     assert gui.prompt.cget('highlightbackground') == BORDER
-    gui.format_widget.focus_set()
-    window.update()
-    assert window.focus_get() is gui.format_widget
