@@ -61,8 +61,9 @@ def apply_theme(window):
     style = ttk.Style(window)
     style.theme_use('clam')
     style.configure('.', background=APP_BG, foreground=TEXT, font=('Segoe UI', 10),
-                    bordercolor=BORDER, darkcolor=BORDER, lightcolor=BORDER, focuscolor=GOLD_LIGHT)
-    style.configure('TButton', background=SECONDARY_BG, foreground=TEXT, padding=(9, 5), focusthickness=1)
+                    bordercolor=BORDER, darkcolor=BORDER, lightcolor=BORDER)
+    style.configure('TButton', background=SECONDARY_BG, foreground=TEXT, padding=(9, 5), focusthickness=1,
+                    focuscolor=GOLD_LIGHT)
     style.map('TButton', background=[('disabled', SECONDARY_BG), ('active', HOVER_BG)],
               foreground=[('disabled', DISABLED)], bordercolor=[('disabled', BORDER), ('active', GOLD)],
               darkcolor=[('disabled', BORDER), ('active', GOLD)], lightcolor=[('disabled', BORDER), ('active', GOLD)])
@@ -102,9 +103,8 @@ def apply_theme(window):
     style.layout('Reference.TMenubutton', flat_menu_layout)
     style.configure('Reference.TMenubutton', borderwidth=1, relief='raised', padding=(5, 2))
     style.configure('Prompt.TMenubutton', borderwidth=1, relief='raised', padding=(9, 2))
-    style.map('Prompt.TMenubutton', bordercolor=[('active', GOLD), ('focus', GOLD_LIGHT)],
-              darkcolor=[('active', GOLD), ('focus', GOLD_LIGHT)],
-              lightcolor=[('active', GOLD), ('focus', GOLD_LIGHT)])
+    style.map('Prompt.TMenubutton', bordercolor=[('active', GOLD)],
+              darkcolor=[('active', GOLD)], lightcolor=[('active', GOLD)])
     style.configure('TEntry', fieldbackground=SECONDARY_BG, foreground=TEXT, insertcolor=TEXT)
     style.map('TEntry', fieldbackground=[('disabled', SECONDARY_BG), ('readonly', SECONDARY_BG)],
               foreground=[('disabled', DISABLED), ('readonly', TEXT)])
@@ -121,9 +121,6 @@ def apply_theme(window):
               background=[('disabled', HOVER_BG), ('active', BORDER)],
               selectbackground=[('disabled', PANEL_BG), ('readonly', PANEL_BG)],
               selectforeground=[('disabled', DISABLED), ('readonly', TEXT)])
-    field_border = [('disabled', BORDER), ('focus', GOLD_LIGHT), ('!focus', BORDER)]
-    for field_style in ('TEntry', 'TSpinbox', 'TCombobox'):
-        style.map(field_style, bordercolor=field_border, lightcolor=field_border, darkcolor=field_border)
     window.option_add('*TCombobox*Listbox.background', SECONDARY_BG)
     window.option_add('*TCombobox*Listbox.foreground', TEXT)
     window.option_add('*TCombobox*Listbox.selectBackground', HOVER_BG)

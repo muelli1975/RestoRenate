@@ -12,7 +12,7 @@ sys.path.insert(0, str(root / '_internal'))
 
 import app
 from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALING, resolve_upscaler
-from theme import BORDER, GOLD_LIGHT
+from field_focus import check_field_focus, field_focus_maps
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
 
@@ -28,6 +28,8 @@ with Image.new('RGB', (48, 32), '#303030') as image:
 
 window = tk.Tk()
 try:
+    ttk.Style(window).theme_use('clam')
+    native_focus = field_focus_maps(window)
     gui = app.Application(window)
     window.geometry('950x720')
     gui.pick_sources(image_path)
@@ -52,10 +54,7 @@ try:
         center_y = (min(dy for _, dy in pixels) + max(dy for _, dy in pixels)) / 2
         assert abs(center_x - (width - 1) / 2) <= 1, (center_x, width, pixels)
         assert abs(center_y - (height - 1) / 2) <= 1, (center_y, height, pixels)
-    style = ttk.Style(window)
-    for field in ('TEntry', 'Path.TEntry', 'TSpinbox', 'TCombobox'):
-        for states, color in [((), BORDER), (('focus',), GOLD_LIGHT), (('disabled', 'focus'), BORDER)]:
-            assert style.lookup(field, 'bordercolor', states) == color, (field, states)
+    check_field_focus(gui, native_focus)
 finally:
     window.destroy()
 

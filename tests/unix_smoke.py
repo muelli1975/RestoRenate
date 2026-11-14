@@ -22,7 +22,7 @@ from portable_setup import CPU, MACOS, MPS, UNIX_RUNTIME, Setup
 from preload_models import PreloadDialog
 from restoration import Client, restore, select_models
 from sizes import DOUBLE_SIZE, NO_RESCALE
-from theme import BORDER, GOLD_LIGHT
+from field_focus import check_field_focus, field_focus_maps
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
 
@@ -34,13 +34,11 @@ def record(method, models):
 def test_gui(source):
     window = tk.Tk()
     try:
+        ttk.Style(window).theme_use('clam')
+        native_focus = field_focus_maps(window)
         gui = app.Application(window)
         window.geometry('950x720')
-        style = ttk.Style(window)
-        for field in ('TEntry', 'Path.TEntry', 'TSpinbox', 'TCombobox'):
-            assert style.lookup(field, 'bordercolor', ('focus',)) == GOLD_LIGHT, field
-            assert style.lookup(field, 'bordercolor', ('focus', 'disabled')) == BORDER, field
-            assert style.lookup(field, 'bordercolor') == BORDER, field
+        check_field_focus(gui, native_focus)
         gui.pick_sources(source)
         check_reference_controls(gui, source)
         gui.set_second_image(source)
