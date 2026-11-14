@@ -88,11 +88,18 @@ def apply_theme(window):
               arrowcolor=[('disabled', DISABLED)])
     for input_style in ('Input.TButton', 'Input.Primary.TButton', 'Input.TMenubutton'):
         style.configure(input_style, padding=(5, 2))
-    style.configure('RemoveReference.TButton', width=0, padding=(5, 3), relief='flat',
+    style.layout('RemoveReference.TButton', [
+        ('Button.border', {'sticky': 'nswe', 'children': [
+            ('Button.focus', {'sticky': 'nswe', 'children': [
+                ('Button.label', {'sticky': 'nswe'}),
+            ]}),
+        ]}),
+    ])
+    style.configure('RemoveReference.TButton', anchor='center', width=0, relief='flat',
                     background=SECONDARY_BG, bordercolor=SECONDARY_BG,
                     lightcolor=SECONDARY_BG, darkcolor=SECONDARY_BG)
     icon_border = [('disabled', SECONDARY_BG), ('active', BORDER), ('!active', SECONDARY_BG)]
-    style.map('RemoveReference.TButton', bordercolor=icon_border,
+    style.map('RemoveReference.TButton', bordercolor=icon_border, relief=[('!disabled', 'flat')],
               lightcolor=icon_border, darkcolor=icon_border)
     flat_menu_layout = [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [

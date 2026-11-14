@@ -48,8 +48,8 @@ try:
         assert pixels, 'The rendered button has no red cross.'
         center_x = (min(dx for dx, _ in pixels) + max(dx for dx, _ in pixels)) / 2
         center_y = (min(dy for _, dy in pixels) + max(dy for _, dy in pixels)) / 2
-        assert abs(center_x - (width - 1) / 2) <= 1
-        assert abs(center_y - (height - 1) / 2) <= 1
+        assert abs(center_x - (width - 1) / 2) <= 1, (center_x, width, pixels)
+        assert abs(center_y - (height - 1) / 2) <= 1, (center_y, height, pixels)
     style = ttk.Style(window)
     for field in ('TEntry', 'Path.TEntry', 'TSpinbox', 'TCombobox'):
         for states, color in [((), BORDER), (('focus',), GOLD_LIGHT), (('disabled', 'focus'), BORDER)]:
