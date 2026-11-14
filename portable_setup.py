@@ -31,15 +31,21 @@ from technical_logs import TechnicalLog, drain_process_log
 NVIDIA = 'nvidia'
 AMD = 'amd'
 CPU = 'cpu'
+MPS = 'mps'
 LINUX = sys.platform.startswith('linux')
-COMPUTE_DEVICES = {NVIDIA: 'NVIDIA', **({} if LINUX else {AMD: 'AMD (ROCm)'}), CPU: 'CPU'}
-DEFAULT_COMPUTE = CPU if LINUX else NVIDIA
+MACOS = sys.platform == 'darwin'
+UNIX_RUNTIME = LINUX or MACOS
+COMPUTE_DEVICES = ({MPS: 'Apple Metal (MPS)', CPU: 'CPU'} if MACOS else
+                   {NVIDIA: 'NVIDIA', AMD: 'AMD (ROCm)', CPU: 'CPU'})
+DEFAULT_COMPUTE = MPS if MACOS else CPU if LINUX else NVIDIA
+LINUX_TORCH_INDEX = {NVIDIA: 'cu130', AMD: 'rocm7.2', CPU: 'cpu'}
 COMFY_COMMIT = '2c75dc1b379a59e0880619d029607af5169a62ef'
-LINUX_TORCH_PACKAGES = ('torch==2.14.0', 'torchvision==0.29.0')
-LINUX_COMFY_REQUIREMENTS = 'constraints-comfy-linux.txt'
-LINUX_MICROSOFT_PACKAGES = ('opencv-python-headless==5.0.0.93', 'scikit-image==0.26.0')
+TORCH_PACKAGES = ('torch==2.14.0', 'torchvision==0.29.0')
+COMFY_CONSTRAINTS = 'constraints-comfy-unix.txt'
+MICROSOFT_PACKAGES = ('opencv-python-headless==5.0.0.93', 'scikit-image==0.26.0')
 GPU_HINTS = {
     NVIDIA: 'NVIDIA/CUDA ist nicht verfügbar. Prüfe den NVIDIA-Treiber.',
+    MPS: 'Apple Metal (MPS) ist nicht verfügbar. Prüfe die macOS-Version und die Hardware.',
     AMD: ('AMD/ROCm konnte die Grafikkarte nicht verwenden. Prüfe, ob deine Radeon '
           'und der installierte Treiber vom ROCm-Paket unterstützt werden.'),
 }
@@ -68,7 +74,9 @@ class ComputeUnavailable(RuntimeError):
 
 
 def compute_label(compute):
-    return translate('AMD (ROCm) · experimentell') if compute == AMD else COMPUTE_DEVICES[compute]
+    if compute == AMD:
+        return translate('AMD (ROCm) · experimentell')
+    return COMPUTE_DEVICES[compute]
 
 
 def contained(root, relative):
@@ -116,11 +124,12 @@ class Setup:
         self.compute = compute
         self.runtime = self.manifest['runtime']
         self.backend_root = self.root / 'backend'
-        if LINUX:
-            self.backend_root /= f'linux-{compute}'
+        if UNIX_RUNTIME:
+            self.unix_platform = 'macos' if MACOS else 'linux'
+            self.backend_root /= f'{self.unix_platform}-{compute}'
             self.runtime = None
-            self.linux_constraints = code / LINUX_COMFY_REQUIREMENTS
-            self.signature += '/linux/' + COMFY_COMMIT + '/' + hashlib.sha256(self.linux_constraints.read_bytes()).hexdigest()
+            self.comfy_constraints = code / COMFY_CONSTRAINTS
+            self.signature += f'/{self.unix_platform}/' + COMFY_COMMIT + '/' + hashlib.sha256(self.comfy_constraints.read_bytes()).hexdigest()
         elif compute == AMD:
             self.runtime = json.loads((code / 'amd_runtime.json').read_bytes())
             self.backend_root /= 'amd'
@@ -129,7 +138,7 @@ class Setup:
         self.faces = method == MICROSOFT and faces
         self.comfy = uses_comfy(method, resolve_upscaler(method, upscaler))
         optional = json.loads((code / 'method_downloads.json').read_text(encoding='utf-8'))
-        if LINUX and method == MICROSOFT:
+        if UNIX_RUNTIME and method == MICROSOFT:
             optional[MICROSOFT] = [spec for spec in optional[MICROSOFT] if not spec['path'].endswith('.whl')]
         elif compute == AMD and method == MICROSOFT:
             optional[MICROSOFT] = [
@@ -138,8 +147,8 @@ class Setup:
         self.models = model_specs(self.manifest, optional, method, self.faces, upscaler)
         self.nunchaku_runtime = optional['nunchaku-runtime'] if method == QWEN2509_NUNCHAKU else []
         self.colorizer_path = contained(self.root, optional[method][0]['path']) if method in COLORIZATION_METHODS else None
-        self.color_runtime = optional['color-runtime'] if self.colorizer_path and not LINUX else []
-        self.color_runtime_path = None if LINUX else self.root / 'runtime/color-python'
+        self.color_runtime = optional['color-runtime'] if self.colorizer_path and not UNIX_RUNTIME else []
+        self.color_runtime_path = None if UNIX_RUNTIME else self.root / 'runtime/color-python'
         if self.color_runtime:
             self.models.extend(self.color_runtime)
         self.notify, self.transfer, self.cancelled = notify, transfer, cancelled
@@ -149,8 +158,8 @@ class Setup:
         except (OSError, ValueError):
             self.state = {'files': {}}
         self.state.setdefault('files', {})
-        if LINUX:
-            self.backend_state = self.state.setdefault(f'linux_{compute}_backend', {})
+        if UNIX_RUNTIME:
+            self.backend_state = self.state.setdefault(f'{self.unix_platform}_{compute}_backend', {})
         else:
             self.backend_state = self.state.setdefault('amd_backend', {}) if compute == AMD else self.state
         self.log = self.root / 'logs/setup.log'
@@ -343,7 +352,7 @@ class Setup:
 
     def paths(self, backend=None):
         backend = self.backend_root if backend is None else backend
-        if LINUX:
+        if UNIX_RUNTIME:
             python, comfy = backend / 'venv/bin/python', backend / 'ComfyUI'
             return (python, comfy) if python.is_file() and (comfy / 'main.py').is_file() else None
         for base in (backend / 'ComfyUI_windows_portable', backend):
@@ -381,7 +390,7 @@ class Setup:
             reader.join(timeout=5)
 
     def runtime_ready(self):
-        if LINUX:
+        if UNIX_RUNTIME:
             return self.paths() is not None and self.backend_state.get('dependencies_signature') == self.signature
         return self.paths() and self.backend_state.get('runtime_sha256') == self.runtime['sha256']
 
@@ -413,7 +422,7 @@ class Setup:
             return 'Modelldownload erforderlich'
         if any(remaining.values()):
             return 'Laufzeit-Download erforderlich'
-        if LINUX and self.comfy and not self.runtime_ready():
+        if UNIX_RUNTIME and self.comfy and not self.runtime_ready():
             return 'Laufzeit-Installation erforderlich'
         return 'Prüfung erforderlich'
 
@@ -428,7 +437,7 @@ class Setup:
                 (comfy / 'custom_nodes' / GGUF_NODE / '__init__.py').is_file())
 
     def ready(self):
-        if self.nunchaku_runtime and (LINUX or self.compute != NVIDIA):
+        if self.nunchaku_runtime and (UNIX_RUNTIME or self.compute != NVIDIA):
             return False
         if not self.color_ready() or not all(self.valid(spec) for spec in self.models):
             return False
@@ -441,19 +450,19 @@ class Setup:
                 (self.method != MICROSOFT or (self.microsoft_dependencies_ready() and microsoft_ready(self, paths[1]))))
 
     def install_packages(self, python, *packages):
-        if LINUX:
-            self.install_linux_packages(python, *packages)
+        if UNIX_RUNTIME:
+            self.install_unix_packages(python, *packages)
             return
         self.command([python, '-I', '-X', 'utf8', '-m', 'pip', '--isolated', 'install', '--no-cache-dir',
                       '--no-index', '--find-links', self.root / 'vendor/wheels',
                       '--no-warn-script-location', '--only-binary=:all:', *packages])
 
-    def install_linux_packages(self, python, *packages, index='https://pypi.org/simple'):
+    def install_unix_packages(self, python, *packages, index='https://pypi.org/simple'):
         self.command([python, '-I', '-X', 'utf8', '-m', 'pip', '--isolated', '--disable-pip-version-check',
                       'install', '--no-cache-dir', '--only-binary=:all:', '--index-url', index,
-                      '--constraint', self.linux_constraints, *packages])
+                      '--constraint', self.comfy_constraints, *packages])
 
-    def prepare_linux_runtime(self):
+    def prepare_unix_runtime(self):
         self.notify(translate('ComfyUI wird eingerichtet …'))
         self.backend_root.mkdir(parents=True, exist_ok=True)
         comfy = self.backend_root / 'ComfyUI'
@@ -469,28 +478,29 @@ class Setup:
         environment = self.backend_root / 'venv'
         self.command([sys.executable, '-I', '-m', 'venv', environment])
         python = environment / 'bin/python'
-        index = 'cu130' if self.compute == NVIDIA else 'cpu'
-        self.install_linux_packages(python, *LINUX_TORCH_PACKAGES, index=f'https://download.pytorch.org/whl/{index}')
-        self.install_linux_packages(python, '-r', comfy / 'requirements.txt', *self.manifest['extra_packages'])
+        if LINUX:
+            index = LINUX_TORCH_INDEX[self.compute]
+            self.install_unix_packages(python, *TORCH_PACKAGES, index=f'https://download.pytorch.org/whl/{index}')
+        self.install_unix_packages(python, '-r', comfy / 'requirements.txt', *self.manifest['extra_packages'])
         self.command([python, '-I', '-X', 'utf8', '-c', 'import torch, google.protobuf, sentencepiece, spandrel'])
         self.backend_state['dependencies_signature'] = self.signature
         self.persist()
 
     def microsoft_dependencies_ready(self):
-        if not LINUX:
+        if not UNIX_RUNTIME:
             return True
         receipts = self.backend_state.get('microsoft_packages', {})
         return receipts.get('main') == self.signature and (not self.faces or receipts.get('faces') == self.signature)
 
     def ensure_microsoft_dependencies(self, python):
-        if not LINUX or self.microsoft_dependencies_ready():
+        if not UNIX_RUNTIME or self.microsoft_dependencies_ready():
             return
         receipts = self.backend_state.setdefault('microsoft_packages', {})
         if receipts.get('main') != self.signature:
-            self.install_linux_packages(python, *LINUX_MICROSOFT_PACKAGES)
+            self.install_unix_packages(python, *MICROSOFT_PACKAGES)
             receipts['main'] = self.signature
         if self.faces and receipts.get('faces') != self.signature:
-            self.install_linux_packages(python, 'dlib-bin==20.0.1.post1')
+            self.install_unix_packages(python, 'dlib-bin==20.0.1.post1')
             receipts['faces'] = self.signature
         self.persist()
 
@@ -499,10 +509,14 @@ class Setup:
             return
         label = compute_label(self.compute)
         self.notify(translate('GPU-Berechnung wird geprüft · {0} …', label))
-        torch_backend = 'torch.version.hip' if self.compute == AMD else 'torch.version.cuda'
-        probe = (f'import torch; assert {torch_backend} and torch.cuda.is_available(); '
-                 'assert (torch.ones(1, device="cuda") + 1).item() == 2; '
-                 'print(torch.cuda.get_device_name(0))')
+        if self.compute == MPS:
+            probe = ('import torch; assert torch.backends.mps.is_available(); '
+                     'assert (torch.ones(1, device="mps") + 1).item() == 2; print("Apple Metal (MPS)")')
+        else:
+            torch_backend = 'torch.version.hip' if self.compute == AMD else 'torch.version.cuda'
+            probe = (f'import torch; assert {torch_backend} and torch.cuda.is_available(); '
+                     'assert (torch.ones(1, device="cuda") + 1).item() == 2; '
+                     'print(torch.cuda.get_device_name(0))')
         try:
             self.command([python, '-I', '-X', 'utf8', '-c', probe])
         except SetupCancelled:
@@ -527,7 +541,7 @@ class Setup:
 
     def ensure(self):
         self.check()
-        if self.nunchaku_runtime and (LINUX or self.compute != NVIDIA):
+        if self.nunchaku_runtime and (UNIX_RUNTIME or self.compute != NVIDIA):
             raise ComputeUnavailable(translate(NUNCHAKU_GPU_REQUIRED))
         if not self.comfy:
             if self.ready():
@@ -539,7 +553,7 @@ class Setup:
                 self.download(spec)
             self.ensure_color_runtime()
             return None
-        if not LINUX and len(str(self.root)) > 80:
+        if not UNIX_RUNTIME and len(str(self.root)) > 80:
             raise RuntimeError(translate('Bitte das gesamte Programm in einen kürzeren Pfad entpacken, z. B. D:\\RestoRenate. Windows kann sonst lange Dateinamen der Laufzeit nicht öffnen.'))
         if self.ready():
             self.notify(translate('Verfahren ist bereit.'))
@@ -555,18 +569,18 @@ class Setup:
             self.notify(translate('Modelldateien geprüft. Verfahren ist bereit.'))
             return self.paths()
         runtime_missing = not self.runtime_ready()
-        if runtime_missing and not LINUX:
+        if runtime_missing and not UNIX_RUNTIME:
             self.adopt_runtime_archive(self.runtime)
         required = self.remaining_download_bytes() + 2 * 1024**3
         if runtime_missing:
-            required += (3 if LINUX and self.compute == CPU else 8) * 1024**3
+            required += (3 if UNIX_RUNTIME and self.compute in (CPU, MPS) else 8) * 1024**3
         if shutil.disk_usage(self.root).free < required:
             raise RuntimeError(translate(
                                    'Für die Einrichtung werden derzeit mindestens {0:.1f} GB freier Speicher im Programm-Laufwerk benötigt.',
                                    required / 1000000000.0,
                                ))
-        if runtime_missing and LINUX:
-            self.prepare_linux_runtime()
+        if runtime_missing and UNIX_RUNTIME:
+            self.prepare_unix_runtime()
         elif runtime_missing:
             archive = self.download(self.runtime)
             extractor = contained(self.root, 'tools/7zr.exe')

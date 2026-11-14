@@ -1,0 +1,96 @@
+name: Build and test macOS Apple Silicon
+
+on:
+  push:
+    branches: [unix-gpu-preview, main]
+    paths-ignore: ['.github/workflows/refresh-windows-v1.0.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restorenate-macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Python with Tk and ExifTool
+        run: brew install python-tk@3.12 exiftool
+      - name: Build a clean package
+        shell: bash
+        run: |
+          set -euo pipefail
+          root='package/RestoRenate'
+          mkdir -p "$root/_internal" dist
+          cp Start.command Start.sh requirements-unix.txt README.md README_DE.md README_DE_EN.txt LICENSE THIRD_PARTY.txt "$root/"
+          cp -r assets vendor "$root/"
+          cp ./*.py constraints-comfy-unix.txt download_manifest.json method_downloads.json exiftool_restorenate.config "$root/_internal/"
+          chmod +x "$root/Start.command" "$root/Start.sh"
+          (cd package && zip -qr ../dist/RestoRenate_macOS_AppleSilicon_Preview.zip RestoRenate)
+          (cd dist && shasum -a 256 RestoRenate_macOS_AppleSilicon_Preview.zip > SHA256SUMS.txt)
+      - name: Run the extracted package on Apple Silicon
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -q dist/RestoRenate_macOS_AppleSilicon_Preview.zip -d fresh
+          root="$PWD/fresh/RestoRenate"
+          export RESTORENATE_PYTHON="$(brew --prefix python@3.12)/bin/python3.12"
+          "$root/Start.command" &
+          app=$!
+          trap 'kill "$app" 2>/dev/null || true' EXIT
+          for _ in $(seq 1 180); do
+            if ! kill -0 "$app" 2>/dev/null; then wait "$app"; exit 1; fi
+            if [[ -f "$root/logs/application.lock" ]]; then break; fi
+            sleep 1
+          done
+          test -f "$root/logs/application.lock"
+          sleep 2
+          kill "$app"
+          wait "$app" || true
+          trap - EXIT
+          "$root/runtime/macos-app/bin/python" tests/unix_smoke.py "$root"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RestoRenate-macOS-AppleSilicon-Preview
+          path: dist/*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: macos-diagnostics
+          path: fresh/RestoRenate/logs/*.log
+          if-no-files-found: ignore
+
+  publish:
+    needs: macos
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: RestoRenate-macOS-AppleSilicon-Preview
+      - name: Publish macOS preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c SHA256SUMS.txt
+          tag=v1.0-macos-preview
+          file=RestoRenate_macOS_AppleSilicon_Preview.zip
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" "$file" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$tag" "$file" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --prerelease --latest=false --title 'RestoRenate for macOS Apple Silicon – Preview' \
+              --notes 'macOS 15 or newer on Apple Silicon. See README_DE.md or README.md for prerequisites. GitHub Actions checks Apple Metal upscaling.'
+          fi
+          actual=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$file\") | .digest")
+          test "$actual" = "sha256:$(cut -d' ' -f1 SHA256SUMS.txt)"

@@ -1,6 +1,6 @@
 # RestoRenate 1.0
 
-[Windows-Download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux-Vorschau](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [English](README.md) · [Ausführliche Anleitung](README_DE_EN.txt)
+[Windows-Download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux-Vorschau](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [macOS-Vorschau](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-macos-preview) · [English](README.md) · [Ausführliche Anleitung](README_DE_EN.txt)
 
 RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner. Mit unterstützten Modellen lassen sich Bilder auch per Prompt bearbeiten oder anhand eines zweiten Fotos verändern. Die Oberfläche ist auf Deutsch und Englisch verfügbar.
 
@@ -12,8 +12,9 @@ Die App fragt vor dem Download fehlender Modelle und Laufzeitdateien nach. Nach 
 | --- | --- |
 | Windows x64 | Die [portable ZIP](https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_Windows_x64.zip) in einen kurzen, beschreibbaren Pfad wie `D:\RestoRenate` entpacken und `RestoRenate.exe` öffnen. Python und ExifTool sind enthalten. |
 | Ubuntu 24.04 x86-64 | Die Linux-Vorschau wird mit [GitHub Actions](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml) gebaut und geprüft. `python3.12-venv`, `python3-tk`, `git` und `libimage-exiftool-perl` installieren, das `.tar.gz` in einen beschreibbaren Ordner entpacken und `./Start.sh` aufrufen. Das Skript legt die Python-Umgebung im Programmordner an. |
+| macOS 15 oder neuer, Apple Silicon | Python 3.12 mit Tk und ExifTool installieren (`brew install python-tk@3.12 exiftool`). `git` muss verfügbar sein. Die ZIP in einen beschreibbaren Ordner entpacken und `Start.command` öffnen oder `./Start.sh` im Terminal aufrufen. Die Vorschau wird mit [GitHub Actions](https://github.com/muelli1975/RestoRenate/actions/workflows/macos.yml) gebaut und geprüft. |
 
-Unter Windows stehen CPU und NVIDIA sowie AMD ROCm als experimentelle Option zur Wahl. Die Linux-Vorschau startet standardmäßig auf der CPU und bietet NVIDIA mit einem CUDA-13-tauglichen Treiber als experimentelle Option an. Nunchaku INT4 ist auf unterstützten NVIDIA-Systemen unter Windows verfügbar. macOS-Pakete sind geplant.
+Unter Windows stehen CPU und NVIDIA sowie AMD ROCm als experimentelle Option zur Wahl. Die Linux-Vorschau startet standardmäßig auf der CPU und bietet experimentelle Modi für NVIDIA (CUDA-13-tauglicher Treiber) und AMD ([mit ROCm 7.2 kompatible Hardware und Treiber](https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2/docs/compatibility/compatibilityrad/native_linux/native_linux_compatibility.html)). Die macOS-Vorschau verwendet standardmäßig Apple Metal (MPS) und bietet auch CPU-Berechnung. Nunchaku INT4 ist auf unterstützten NVIDIA-Systemen unter Windows verfügbar.
 
 Für ein Windows-Update RestoRenate schließen und das neue Paket in einen sauberen Ordner entpacken. Zum Übernehmen der bestehenden Einrichtung können `models`, `backend`, `downloads`, `settings` sowie die benötigten Laufzeit-Unterordner und Download-Prüfbelege übernommen werden. `_internal`, `assets` und `tools` gehören zum neuen Paket.
 
@@ -28,7 +29,7 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 
 - **Restaurierung und Bearbeitung:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, Qwen Image Edit 2509/2511 und FireRed Image Edit 1.1. Unterstützte Edit-Modelle können ein separat drehbares zweites Bild nutzen.
 - **Kolorierung:** DDColor ModelScope, Paper, Artistic und Tiny sowie DeOldify Stable und Artistic. Die Kolorierung läuft auf der CPU. DDColor Paper ist ein optionaler Download.
-- **Hochskalieren:** Lanczos und mehrere KI-Upscaler, darunter Nomos2 HQ MoSR, Real-ESRGAN und FaceUpDAT für Porträts.
+- **Hochskalieren:** UltraSharp V2 Lite ist die Vorgabe für Restaurierung und Hochskalierung. Zur Auswahl stehen auch Lanczos, Nomos2 HQ MoSR, Real-ESRGAN und FaceUpDAT für Porträts.
 - **Export:** PNG, JPEG mit Qualität 95 und 4:4:4 sowie TIFF mit LZW-Kompression. JPEG und TIFF übernehmen geeignete Metadaten. PNG speichert bei ComfyUI-Verarbeitung den Workflow.
 
 ## Quellcode und Builds

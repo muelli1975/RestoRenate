@@ -82,6 +82,7 @@ ENGLISH = {
     '1080 px Bildhöhe': '1080 px image height',
     '2160 px Bildhöhe': '2160 px image height',
     'AMD (ROCm) · experimentell': 'AMD (ROCm) · experimental',
+    'Apple Metal (MPS) ist nicht verfügbar. Prüfe die macOS-Version und die Hardware.': 'Apple Metal (MPS) is unavailable. Check the macOS version and hardware.',
     'AMD/ROCm konnte die Grafikkarte nicht verwenden. Prüfe, ob deine Radeon und der installierte Treiber vom ROCm-Paket unterstützt werden.': 'AMD/ROCm could not use the graphics card. Check whether the ROCm package supports your Radeon model and driver.',
     'Abbrechen': 'Cancel',
     'Abbruch läuft …': 'Cancelling …',

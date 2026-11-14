@@ -1,4 +1,4 @@
-"""Exercise packaged Linux setup, graphics controls and real CPU exports."""
+"""Exercise packaged Unix setup, graphics controls and real exports."""
 import json
 from pathlib import Path
 import subprocess
@@ -15,9 +15,9 @@ sys.path.insert(0, str(root / '_internal'))
 import app
 from imaging import exiftool_executable, save_result
 from local_backend import Backend
-from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, UPSCALING
+from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALING, resolve_upscaler
 from photo_colors import Colorizer
-from portable_setup import CPU, LINUX, Setup
+from portable_setup import CPU, MACOS, MPS, UNIX_RUNTIME, Setup
 from preload_models import PreloadDialog
 from restoration import Client, restore, select_models
 from sizes import DOUBLE_SIZE, NO_RESCALE
@@ -49,7 +49,7 @@ def test_gui(source):
         window.destroy()
 
 
-def test_cpu(source, folder):
+def test_colorization(source, folder):
     setup = Setup(root, method=DDCOLOR_TINY, compute=CPU)
     assert setup.color_runtime_path is None and setup.runtime is None
     assert setup.ensure() is None and setup.ready()
@@ -62,18 +62,23 @@ def test_cpu(source, folder):
     with Image.open(output) as result:
         assert result.size == (64, 40) and result.mode == 'RGB'
 
-    setup = Setup(root, method=UPSCALING, upscaler=NOMOS2_HQ, compute=CPU)
+
+def test_upscaling(source, folder):
+    compute = MPS if MACOS else CPU
+    setup = Setup(root, method=UPSCALING, compute=compute)
     paths = setup.ensure()
     assert setup.runtime_ready() and setup.ready()
     assert setup.ensure() == paths
-    backend = Backend(root, compute=CPU)
+    backend = Backend(root, compute=compute)
     try:
         client = Client(backend.start(paths, method=UPSCALING), root)
-        assert client.device() == 'CPU'
+        device = client.json('/system_stats')['devices'][0]
+        assert device['type'] == compute, device
         definitions = client.json('/object_info')
-        models = select_models(definitions, UPSCALING, NOMOS2_HQ)
+        models = select_models(definitions, UPSCALING)
+        assert models['upscale_lite'] == '4x-UltraSharpV2_Lite.safetensors', models
         output, warning = restore(client, models, source, folder, 'PNG', None, '', None, print, lambda: False,
-                                  record(UPSCALING, models), method=UPSCALING, upscaler=NOMOS2_HQ,
+                                  record(UPSCALING, models), method=UPSCALING,
                                   size_choice=(DOUBLE_SIZE, 0), definitions=definitions)
         assert not warning
         with Image.open(output) as result:
@@ -84,7 +89,7 @@ def test_cpu(source, folder):
 
 def test_metadata(source, folder):
     exiftool = exiftool_executable(root)
-    settings = {'method': 'linux-smoke-test', 'seed': 17}
+    settings = {'method': 'unix-smoke-test', 'seed': 17}
     with Image.open(source) as image:
         jpg, _ = save_result(image, source, folder, 'JPEG 95 · 4:4:4', None, exiftool, settings=settings)
         tif, _ = save_result(image, source, folder, 'TIFF', None, exiftool)
@@ -103,7 +108,10 @@ def test_metadata(source, folder):
 
 
 if __name__ == '__main__':
-    assert LINUX and app.ROOT == root
+    assert UNIX_RUNTIME and app.ROOT == root
+    assert resolve_upscaler(UPSCALING) == ULTRASHARP_LITE
+    assert resolve_upscaler(UPSCALING, NOMOS2_HQ) == NOMOS2_HQ
+    assert resolve_upscaler(DDCOLOR_TINY) == LANCZOS
     folder = root / 'work/smoke'
     folder.mkdir(parents=True, exist_ok=True)
     source = folder / 'portrait.jpg'
@@ -113,5 +121,6 @@ if __name__ == '__main__':
         image.save(source, exif=exif)
     test_gui(source)
     test_metadata(source, folder / 'output')
-    test_cpu(source, folder / 'output')
-    print('Linux GUI, real ExifTool JPEG/TIFF export, DDColor Tiny and Nomos2 CPU upscaling passed.')
+    test_colorization(source, folder / 'output')
+    test_upscaling(source, folder / 'output')
+    print(f'GUI, real ExifTool JPEG/TIFF export, DDColor Tiny and UltraSharp V2 Lite on {MPS if MACOS else CPU} passed.')

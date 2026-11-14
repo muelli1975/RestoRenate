@@ -2,7 +2,7 @@ name: Build and test Linux x64
 
 on:
   push:
-    branches: [linux-preview, main]
+    branches: [linux-preview, unix-gpu-preview, main]
     paths-ignore: ['.github/workflows/refresh-windows-v1.0.yml']
   workflow_dispatch:
 
@@ -29,9 +29,9 @@ jobs:
           set -euo pipefail
           root='package/RestoRenate'
           mkdir -p "$root/_internal" dist
-          cp Start.sh requirements-linux.txt README_DE_EN.txt LICENSE THIRD_PARTY.txt "$root/"
+          cp Start.sh requirements-unix.txt README.md README_DE.md README_DE_EN.txt LICENSE THIRD_PARTY.txt "$root/"
           cp -r assets vendor "$root/"
-          cp ./*.py constraints-comfy-linux.txt download_manifest.json method_downloads.json exiftool_restorenate.config "$root/_internal/"
+          cp ./*.py constraints-comfy-unix.txt download_manifest.json method_downloads.json exiftool_restorenate.config "$root/_internal/"
           chmod +x "$root/Start.sh"
           tar -C package -czf dist/RestoRenate_Linux_x64_Preview.tar.gz RestoRenate
           (cd dist && sha256sum RestoRenate_Linux_x64_Preview.tar.gz > SHA256SUMS.txt)
@@ -55,7 +55,7 @@ jobs:
             sleep 2
             kill -0 "$app"
           ' _ "$root"
-          xvfb-run -a "$root/runtime/linux-app/bin/python" tests/linux_smoke.py "$root"
+          xvfb-run -a "$root/runtime/linux-app/bin/python" tests/unix_smoke.py "$root"
       - uses: actions/upload-artifact@v4
         with:
           name: RestoRenate-Linux-x64-Preview
@@ -68,8 +68,32 @@ jobs:
           path: fresh/RestoRenate/logs/*.log
           if-no-files-found: ignore
 
-  publish:
+  rocm:
     needs: linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: RestoRenate-Linux-x64-Preview
+      - name: Verify the ROCm package and the GPU check
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y python3.12-venv
+          tar -xzf RestoRenate_Linux_x64_Preview.tar.gz
+          python3.12 tests/linux_rocm_smoke.py "$PWD/RestoRenate"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rocm-diagnostics
+          path: RestoRenate/logs/*.log
+          if-no-files-found: ignore
+
+  publish:
+    needs: [linux, rocm]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
@@ -92,7 +116,9 @@ jobs:
           else
             gh release create "$tag" "$file" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
               --prerelease --latest=false --title 'RestoRenate for Linux x64 · Preview' \
-              --notes 'Ubuntu 24.04 x86-64. See README_DE.md or README.md for requirements. The automated tests cover the CPU path. NVIDIA is experimental.'
+              --notes 'Ubuntu 24.04 x86-64. See README_DE.md or README.md for requirements.'
           fi
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --latest=false --notes \
+            'Ubuntu 24.04 x86-64. GitHub Actions checks CPU processing and ROCm setup. NVIDIA and AMD GPU inference are experimental. See README_DE.md or README.md for requirements.'
           actual=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$file\") | .digest")
           test "$actual" = "sha256:$(cut -d' ' -f1 SHA256SUMS.txt)"

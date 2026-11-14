@@ -1,6 +1,6 @@
 # RestoRenate 1.0
 
-[Windows download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux preview](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [Deutsch](README_DE.md) · [Detailed guide](README_DE_EN.txt)
+[Windows download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux preview](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [macOS preview](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-macos-preview) · [Deutsch](README_DE.md) · [Detailed guide](README_DE_EN.txt)
 
 RestoRenate is a local desktop tool for restoring, colorizing and upscaling photos. With text prompts and supported models, it can also edit an image or use a second photo as a reference. The interface is available in English and German.
 
@@ -12,8 +12,9 @@ The app asks before downloading missing models and the processing runtime. After
 | --- | --- |
 | Windows x64 | Extract the [portable ZIP](https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_Windows_x64.zip) to a short, writable path such as `D:\RestoRenate` and open `RestoRenate.exe`. Python and ExifTool are included. |
 | Ubuntu 24.04 x86-64 | The Linux preview is built and tested in [GitHub Actions](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml). Install `python3.12-venv`, `python3-tk`, `git` and `libimage-exiftool-perl`, extract the `.tar.gz` into a writable folder and run `./Start.sh`. The script creates a Python environment inside that folder. |
+| macOS 15 or newer, Apple Silicon | Install Python 3.12 with Tk and ExifTool (`brew install python-tk@3.12 exiftool`) and make sure `git` is available. Extract the ZIP into a writable folder and run `Start.command` or `./Start.sh` in Terminal. The preview is built and tested in [GitHub Actions](https://github.com/muelli1975/RestoRenate/actions/workflows/macos.yml). |
 
-Windows offers CPU and NVIDIA modes, plus experimental AMD ROCm. The Linux preview defaults to CPU and offers an experimental NVIDIA mode with a CUDA 13-compatible driver. Nunchaku INT4 is available on supported Windows NVIDIA systems. macOS packages are planned.
+Windows offers CPU and NVIDIA modes, plus experimental AMD ROCm. The Linux preview defaults to CPU and offers experimental modes for NVIDIA (CUDA 13-compatible driver) and AMD ([hardware and drivers compatible with ROCm 7.2](https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2/docs/compatibility/compatibilityrad/native_linux/native_linux_compatibility.html)). The macOS preview defaults to Apple Metal (MPS) and also offers CPU processing. Nunchaku INT4 is available on supported Windows NVIDIA systems.
 
 When updating Windows, close RestoRenate and extract the package into a clean folder. To keep an existing setup, copy `models`, `backend`, `downloads`, `settings` and the existing runtime subfolders and download receipts as needed. Extract the new package in full to keep its `_internal`, `assets` and `tools` together.
 
@@ -28,7 +29,7 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 
 - **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
 - **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.
-- **Upscaling:** Lanczos and several AI upscalers, including Nomos2 HQ MoSR, Real-ESRGAN and FaceUpDAT for portraits.
+- **Upscaling:** UltraSharp V2 Lite is the default for restoration and upscaling. The selection also includes Lanczos, Nomos2 HQ MoSR, Real-ESRGAN and FaceUpDAT for portraits.
 - **Export:** PNG, JPEG quality 95 with 4:4:4 chroma and TIFF with LZW compression. JPEG and TIFF copy compatible source metadata. PNG stores a ComfyUI workflow when applicable.
 
 ## Source and builds

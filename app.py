@@ -26,8 +26,8 @@ from crop_dialog import edit_crops
 from export_metadata import APP_NAME, APP_VERSION, MAX_SEED, parse_seed, seed_from_metadata
 from imaging import EXTENSIONS, FORMATS, collect, exiftool_executable, open_photo, photo_size
 from local_backend import Backend, BackendStartError
-from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINTS, LINUX, NVIDIA, ComputeUnavailable, Setup,
-                            SetupCancelled, compute_label)
+from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINTS, LINUX, NVIDIA,
+                            UNIX_RUNTIME, ComputeUnavailable, Setup, SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import choose_preloads, format_download_size, preload_label
 from methods import (COLORIZATION_METHODS, CPU_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES,
@@ -618,7 +618,7 @@ class Application:
         self.compute_button.configure(text=translate('Berechnung · {0}', label) + (' ↻' if pending else ''))
 
     def supports_nunchaku(self):
-        return not LINUX and self.active_compute == NVIDIA and nvidia_nunchaku_available()
+        return not UNIX_RUNTIME and self.active_compute == NVIDIA and nvidia_nunchaku_available()
 
     def available_method_ids(self):
         methods = available_methods(self.supports_nunchaku(), cpu=self.active_compute == CPU)
@@ -670,7 +670,7 @@ class Application:
         download_bytes = setup.remaining_download_bytes()
         transfer = (translate('Noch etwa {0} Download.', format_download_size(download_bytes)) if download_bytes
                     else translate('Vorhandene Dateien werden geprüft.'))
-        if LINUX and setup.comfy and not setup.runtime_ready():
+        if UNIX_RUNTIME and setup.comfy and not setup.runtime_ready():
             transfer = translate('ComfyUI und Python-Pakete werden eingerichtet.') + (' ' + transfer if download_bytes else '')
         upscaler_names = ''
         if upscaler in UPSCALE_LICENSES:
@@ -1497,7 +1497,8 @@ class Application:
             self.events.put(('done', str(exc)))
         except Exception as exc:
             TechnicalLog(ROOT / 'logs/application.log').write(traceback.format_exc() + '\n')
-            if (method != QWEN2509_NUNCHAKU and self.active_compute == NVIDIA
+            if (method != QWEN2509_NUNCHAKU and self.active_compute != CPU
+                    and (UNIX_RUNTIME or self.active_compute == NVIDIA)
                     and isinstance(exc, (ComputeUnavailable, BackendStartError))):
                 retry_on_cpu = (str(exc), job, upscaler)
             else:

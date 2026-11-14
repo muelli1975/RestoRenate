@@ -47,7 +47,7 @@ einem Prompt kennzeichnet das dafür empfohlene Verfahren.
 Unter „Presets“ lassen sich das Verfahren, der Prompt, die Varianten und
 die zugehörigen Ausgabe- und Modelleinstellungen speichern. Eingabe und Ausgabeordner
 bleiben beim Laden ausgewählt. Die Startvorgabe und „Standard“ verwenden
-Fibo 2.0 Edit Turbo, „Allround“ und Nomos2 HQ MoSR 4×.
+Fibo 2.0 Edit Turbo, "Allround" und UltraSharp V2 Lite.
 Gespeicherte Einstellungen haben beim Start Vorrang.
 
 Start berechnet und speichert das Ergebnis. Bei Verfahren mit Prompt unter
@@ -125,7 +125,7 @@ verwenden eine eingegebene Seitenlänge. Die App hält das Seitenverhältnis.
 arbeitet mit dem Eingabebild. KI-Upscaling wird beim Vergrößern verwendet.
 Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
 Zielgröße an. Für Restaurierung und „Nur hochskalieren“ sind 2160 px Bildhöhe
-und Nomos2 HQ MoSR 4× voreingestellt.
+und UltraSharp V2 Lite voreingestellt.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
 
 Die Vorschau zeigt die gespeicherte Datei. Zum Vergleichen die Trennlinie
@@ -222,7 +222,7 @@ prompt label indicates the recommended method for that prompt.
 Use “Presets” to save the method, prompt, variants and applicable output
 and model settings. Loading a preset keeps the selected input and output
 folder. The startup settings and “Default” use Fibo 2.0 Edit Turbo,
-“General-purpose restoration” and Nomos2 HQ MoSR 4×. Saved settings take
+"General-purpose restoration" and UltraSharp V2 Lite. Saved settings take
 precedence at startup.
 
 Start processes and saves the result. For prompt-based methods, type a number
@@ -291,7 +291,7 @@ edge” use the entered side length. RestoRenate preserves the aspect ratio.
 “No resizing” exports at the working size. “Upscale only” starts with the
 input image. AI upscaling applies when enlarging the image. Real-ESRGAN
 selects its 2× or 4× model. Lanczos resizes to the exact output dimensions.
-Restoration and “Upscale only” default to 2160 px height and Nomos2 HQ MoSR 4×.
+Restoration and "Upscale only" default to 2160 px height and UltraSharp V2 Lite.
 4× FaceUpDAT is designed for portraits with clean source images.
 
 The preview uses the saved file. Drag the divider to compare. Use the wheel

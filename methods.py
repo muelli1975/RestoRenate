@@ -203,7 +203,7 @@ def uses_comfy(method, upscaler):
 def resolve_upscaler(method, upscaler=None):
     if upscaler in UPSCALERS:
         return upscaler
-    return LANCZOS if method in COLORIZATION_METHODS else NOMOS2_HQ
+    return LANCZOS if method in COLORIZATION_METHODS else ULTRASHARP_LITE
 
 
 def model_files(method, upscaler=None):
