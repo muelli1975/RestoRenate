@@ -56,6 +56,9 @@ jobs:
             kill -0 "$app"
           ' _ "$root"
           xvfb-run -a "$root/runtime/linux-app/bin/python" tests/unix_smoke.py "$root"
+      - name: Print runtime diagnostics
+        if: failure()
+        run: tail -n 50 fresh/RestoRenate/logs/*.log || true
       - uses: actions/upload-artifact@v4
         with:
           name: RestoRenate-Linux-x64-Preview
@@ -85,6 +88,9 @@ jobs:
           sudo apt-get install -y python3.12-venv
           tar -xzf RestoRenate_Linux_x64_Preview.tar.gz
           python3.12 tests/linux_rocm_smoke.py "$PWD/RestoRenate"
+      - name: Print setup diagnostics
+        if: failure()
+        run: tail -n 50 RestoRenate/logs/*.log || true
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
