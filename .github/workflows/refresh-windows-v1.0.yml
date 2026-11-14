@@ -1,0 +1,81 @@
+name: Refresh RestoRenate 1.0 Windows archive
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/refresh-windows-v1.0.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restorenate-v1-windows-layout
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Repack the published Windows archive
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory original,dist | Out-Null
+          gh release download v1.0 --pattern 'RestoRenate_1.0_Windows_x64.zip' --dir original
+          python scripts/refresh_windows_layout.py original/RestoRenate_1.0_Windows_x64.zip dist/RestoRenate_1.0_Windows_x64.zip
+      - name: Test the EXE from a fresh extraction
+        shell: pwsh
+        run: |
+          $root = (Resolve-Path 'dist/smoke/RestoRenate').Path
+          $launcher = Start-Process (Join-Path $root 'RestoRenate.exe') -WorkingDirectory $env:RUNNER_TEMP -PassThru
+          if (!$launcher.WaitForExit(10000) -or $launcher.ExitCode -ne 0) { throw 'Launcher failed' }
+          $app = $null
+          for ($i=0; $i -lt 60 -and !$app; $i++) {
+            $app = Get-Process pythonw -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $root 'runtime/python/pythonw.exe') -and $_.MainWindowTitle -eq 'RestoRenate - 1.0' } | Select-Object -First 1
+            if (!$app) { Start-Sleep -Milliseconds 250 }
+          }
+          if (!$app -or !$app.Responding) {
+            Get-Content (Join-Path $root 'logs/application.log') -ErrorAction SilentlyContinue
+            throw 'RestoRenate window did not start'
+          }
+          [void]$app.CloseMainWindow()
+          & "$root/runtime/python/python.exe" -c "import sys; from pathlib import Path; sys.path.insert(0, 'dist/smoke/RestoRenate/_internal'); from portable_paths import ROOT; from portable_setup import Setup; assert (ROOT / 'assets/restorenate.ico').is_file(); assert Setup().root == ROOT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-v1.0-layout
+          path: |
+            original/RestoRenate_1.0_Windows_x64.zip
+            dist/RestoRenate_1.0_Windows_x64.zip
+          if-no-files-found: error
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-v1.0-layout
+      - name: Replace and verify the Windows download
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=RestoRenate_1.0_Windows_x64.zip
+          old=$(sha256sum "original/$file" | cut -d' ' -f1)
+          new=$(sha256sum "dist/$file" | cut -d' ' -f1)
+          digest() { gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.0" --jq ".assets[] | select(.name == \"$file\") | .digest"; }
+          test "$(digest)" = "sha256:$old"
+          if ! gh release upload v1.0 "dist/$file" --repo "$GITHUB_REPOSITORY" --clobber || [[ $(digest) != "sha256:$new" ]]; then
+            gh release upload v1.0 "original/$file" --repo "$GITHUB_REPOSITORY" --clobber
+            exit 1
+          fi

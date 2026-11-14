@@ -17,9 +17,7 @@ import traceback
 
 from PIL import Image, ImageTk
 
-ROOT = Path(__file__).resolve().parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+from portable_paths import ROOT
 
 from language import LANGUAGE_LABELS, configure_language, translate
 from comparison import Comparison
@@ -1714,7 +1712,7 @@ def create_window():
     window = tk.Tk()
     if sys.platform == 'win32':
         try:
-            icon_path = str(ROOT / 'restorenate.ico')
+            icon_path = str(ROOT / 'assets/restorenate.ico')
             window.iconbitmap(default=icon_path)
             window.iconbitmap(icon_path)
         except tk.TclError as exc:

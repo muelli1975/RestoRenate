@@ -7,10 +7,11 @@ import subprocess
 import sys
 import traceback
 
-ROOT = Path(__file__).resolve().parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+CODE = Path(__file__).resolve().parent
+if str(CODE) not in sys.path:
+    sys.path.insert(0, str(CODE))
 
+from portable_paths import ROOT
 from language import configure_language, translate
 from technical_logs import TechnicalLog
 
@@ -19,7 +20,7 @@ def run_application():
     with TechnicalLog(ROOT / 'logs/application.log') as log:
         with redirect_stdout(log), redirect_stderr(log):
             try:
-                runpy.run_path(str(ROOT / 'app.py'), run_name='__main__')
+                runpy.run_path(str(CODE / 'app.py'), run_name='__main__')
             except Exception:
                 log.write(traceback.format_exc())
                 return 1
@@ -32,7 +33,7 @@ def launch():
         env = dict(os.environ,
                    TCL_LIBRARY=str(ROOT / 'runtime/python/tcl/tcl8.6'),
                    TK_LIBRARY=str(ROOT / 'runtime/python/tcl/tk8.6'))
-        subprocess.Popen([str(pythonw), '-I', '-X', 'utf8', str(ROOT / 'bootstrap.py'), '--gui'],
+        subprocess.Popen([str(pythonw), '-I', '-X', 'utf8', str(CODE / 'bootstrap.py'), '--gui'],
                          cwd=ROOT, env=env, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
     except Exception:
         TechnicalLog(ROOT / 'logs/launcher_error.log').write(traceback.format_exc())

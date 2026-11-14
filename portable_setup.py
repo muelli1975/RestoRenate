@@ -24,9 +24,9 @@ from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, GGUF_METHODS, MICROSO
                      QWEN2509_NUNCHAKU, model_specs, resolve_upscaler, uses_comfy)
 from nunchaku_setup import (NUNCHAKU_GPU_REQUIRED, install_nunchaku, nunchaku_ready)
 from microsoft_setup import install_microsoft, microsoft_ready
+from portable_paths import CODE, ROOT
 from technical_logs import TechnicalLog, drain_process_log
 
-ROOT = Path(__file__).resolve().parent
 NVIDIA = 'nvidia'
 AMD = 'amd'
 CPU = 'cpu'
@@ -102,20 +102,21 @@ class Setup:
     def __init__(self, root=ROOT, notify=print, transfer=None, cancelled=lambda: False,
                  method=DEFAULT_METHOD, faces=False, upscaler=None, compute=NVIDIA):
         self.root = Path(root).resolve()
-        self.manifest_bytes = (self.root / 'download_manifest.json').read_bytes()
+        code = CODE if self.root == ROOT else self.root
+        self.manifest_bytes = (code / 'download_manifest.json').read_bytes()
         self.manifest = json.loads(self.manifest_bytes)
         self.signature = hashlib.sha256(self.manifest_bytes).hexdigest()
         self.compute = compute
         self.runtime = self.manifest['runtime']
         self.backend_root = self.root / 'backend'
         if compute == AMD:
-            self.runtime = json.loads((self.root / 'amd_runtime.json').read_bytes())
+            self.runtime = json.loads((code / 'amd_runtime.json').read_bytes())
             self.backend_root /= 'amd'
             self.signature += '/' + self.runtime['sha256']
         self.method = method
         self.faces = method == MICROSOFT and faces
         self.comfy = uses_comfy(method, resolve_upscaler(method, upscaler))
-        optional = json.loads((self.root / 'method_downloads.json').read_text(encoding='utf-8'))
+        optional = json.loads((code / 'method_downloads.json').read_text(encoding='utf-8'))
         if compute == AMD and method == MICROSOFT:
             optional[MICROSOFT] = [
                 spec for spec in optional[MICROSOFT] if not spec['path'].endswith('cp313-cp313-win_amd64.whl')

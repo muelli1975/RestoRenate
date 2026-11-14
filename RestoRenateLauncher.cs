@@ -18,7 +18,7 @@ internal static class RestoRenateLauncher
         string root = AppDomain.CurrentDomain.BaseDirectory;
         string runtime = Path.Combine(root, "runtime", "python");
         string python = Path.Combine(runtime, "pythonw.exe");
-        string bootstrap = Path.Combine(root, "bootstrap.py");
+        string bootstrap = Path.Combine(root, "_internal", "bootstrap.py");
         if (!File.Exists(python) || !File.Exists(bootstrap))
         {
             MessageBox(IntPtr.Zero, "Bitte die ZIP vollständig entpacken.\nExtract the entire ZIP.", "RestoRenate", 0x10);
