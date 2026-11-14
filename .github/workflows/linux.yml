@@ -54,9 +54,17 @@ jobs:
             kill -0 "$app"
           ' _ "$root"
           xvfb-run -a "$root/runtime/python/bin/python3.12" tests/unix_smoke.py "$root"
+      - name: Verify that an initialized package can be moved
+        shell: bash
+        run: |
+          set -euo pipefail
+          mv "fresh/RestoRenate portable" "fresh/RestoRenate moved"
+          root="$PWD/fresh/RestoRenate moved"
+          "$root/runtime/python/bin/python3.12" -I -c 'import tkinter, onnxruntime'
+          "$root/backend/linux-cpu/venv/bin/python" -I -c 'from pathlib import Path; import sys, torch; assert Path(sys.base_prefix) == Path(sys.argv[1]) / "runtime/python"' "$root"
       - name: Print runtime diagnostics
         if: failure()
-        run: tail -n 50 fresh/RestoRenate portable/logs/*.log || true
+        run: tail -n 50 fresh/RestoRenate*/logs/*.log || true
       - uses: actions/upload-artifact@v4
         with:
           name: RestoRenate-Linux-x64-Preview

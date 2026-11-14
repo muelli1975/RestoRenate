@@ -474,6 +474,12 @@ class Setup:
                 checkout.rename(comfy)
         environment = self.backend_root / 'venv'
         self.command([sys.executable, '-I', '-m', 'venv', environment])
+        config = environment / 'pyvenv.cfg'
+        # Resolve the base interpreter from the venv's relative executable links.
+        # Python consults the absolute 'home' entry before following those links.
+        entries = config.read_text(encoding='utf-8').splitlines(keepends=True)
+        config.write_text(''.join(line for line in entries if not line.startswith(('home = ', 'executable = ', 'command = '))),
+                          encoding='utf-8')
         python = environment / 'bin/python'
         if LINUX:
             index = LINUX_TORCH_INDEX[self.compute]
