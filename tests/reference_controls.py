@@ -1,46 +1,37 @@
-"""Check the reference controls before loading, after loading and after clearing."""
+"""Check the reference panel layout and the local remove icon."""
 from PIL import ImageTk
 
-from theme import DANGER_TEXT, DISABLED
+from theme import SECONDARY_BG
 
 
 def check_reference_controls(gui, image_path):
     window = gui.window
+    row = gui.second_row
     remove = gui.remove_second_button
 
-    def bounds():
-        window.update()
-        return remove.winfo_rootx(), remove.winfo_rooty(), remove.winfo_width(), remove.winfo_height()
+    def bounds(widget):
+        return widget.winfo_rootx(), widget.winfo_rooty(), widget.winfo_width(), widget.winfo_height()
 
-    initial_bounds = bounds()
-    assert remove.winfo_viewable() and remove.instate(['disabled']), (
-        gui.current_method, gui.second_row.winfo_ismapped(), remove.winfo_ismapped(), initial_bounds, remove.state(),
-    )
-    x, y, width, _ = initial_bounds
-    row = gui.second_row
-    assert row.winfo_rootx() + row.winfo_width() - x - width == 7
-    assert y - row.winfo_rooty() == 5
+    window.update()
+    initial = [bounds(widget) for widget in (row, gui.second_preview, gui.second_name)]
+    assert row.winfo_viewable() and not remove.winfo_ismapped()
     assert str(remove.cget('compound')) == 'image'
-
-    for icon, expected in zip(gui.reference_remove_icons, (DANGER_TEXT, DISABLED)):
-        with ImageTk.getimage(icon) as image:
-            width, height = image.size
-            assert (width, height) == (16, 16)
-            rgb = tuple(bytes.fromhex(expected[1:]))
-            opaque = {(x, y) for y in range(height) for x in range(width)
-                      if image.getpixel((x, y)) == (*rgb, 255)}
-            assert opaque, expected
-            center = {(x, y) for x in (width // 2 - 1, width // 2)
-                      for y in (height // 2 - 1, height // 2)}
-            assert center <= opaque, opaque
-            left, top = min(x for x, _ in opaque), min(y for _, y in opaque)
-            right, bottom = max(x for x, _ in opaque), max(y for _, y in opaque)
-            assert left + right == width - 1 and top + bottom == height - 1, opaque
+    with ImageTk.getimage(gui.reference_remove_icon) as icon:
+        assert icon.size == (22, 22)
+        dark = tuple(bytes.fromhex(SECONDARY_BG[1:]))
+        assert icon.getpixel((11, 11)) == (*dark, 255)
+        assert icon.getpixel((0, 0))[3] == 0
 
     for _ in range(2):
         gui.set_second_image(image_path)
-        assert bounds() == initial_bounds
+        window.update()
+        assert [bounds(widget) for widget in (row, gui.second_preview, gui.second_name)] == initial
+        x, y, width, _ = bounds(remove)
+        assert row.winfo_rootx() + row.winfo_width() - x - width == 7
+        assert y - row.winfo_rooty() == 5
         assert remove.winfo_viewable() and not remove.instate(['disabled'])
         remove.invoke()
+        window.update()
         assert gui.second_image is None and gui.second_rotation == 0
-        assert bounds() == initial_bounds and remove.instate(['disabled'])
+        assert not remove.winfo_ismapped()
+        assert [bounds(widget) for widget in (row, gui.second_preview, gui.second_name)] == initial

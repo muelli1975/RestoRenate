@@ -40,8 +40,8 @@ from photo_colors import Colorizer
 from progress_track import ProgressTrack
 from prompt_menu import PromptMenu
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
-                   TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, DANGER_TEXT, apply_theme, checkbox,
-                   remove_icon, set_control_state, style_method_scrollbar)
+                   TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, checkbox,
+                   set_control_state, style_method_scrollbar)
 from restoration import Client, restore, select_models
 from technical_logs import TechnicalLog, prepare_technical_logs
 from titlebar import install_tk_titlebars
@@ -512,16 +512,13 @@ class Application:
         self.labelled(tk.Label, details, 'Zweites Bild', bg=SECONDARY_BG, fg=INK, anchor='w').pack(
             fill='x', padx=(0, 27),
         )
-        with Image.open(ROOT / 'assets/dismiss-16-mask.png') as mask:
-            self.reference_remove_icons = tuple(
-                remove_icon(self.second_row, mask, color) for color in (DANGER_TEXT, DISABLED)
-            )
-        active_icon, disabled_icon = self.reference_remove_icons
+        self.reference_remove_icon = tk.PhotoImage(
+            master=self.second_row, file=ROOT / 'assets/dismiss-circle.png',
+        )
         self.remove_second_button = self.labelled(
-            ttk.Button, self.second_row, 'Entfernen', image=(active_icon, 'disabled', disabled_icon),
+            ttk.Button, self.second_row, 'Zweites Bild entfernen', image=self.reference_remove_icon,
             compound='image', command=self.clear_second_image, style='RemoveReference.TButton',
         )
-        self.remove_second_button.place(relx=1, x=-7, y=5, width=26, height=24, anchor='ne')
         self.second_name = tk.Label(details, bg=SECONDARY_BG, fg=MUTED, anchor='w', width=1)
         self.second_name.pack(fill='x', expand=True)
         actions = tk.Frame(details, bg=SECONDARY_BG)
@@ -902,7 +899,12 @@ class Application:
         self.second_name.configure(text=path.name if path else translate('Kein Bild ausgewählt'))
         self.second_preview.itemconfigure(self.second_preview_item, image=self.second_thumbnail or '')
         self.second_rotate_button.configure(state='normal' if path and not self.action else 'disabled')
-        self.remove_second_button.configure(state='normal' if path and not self.action else 'disabled')
+        if path:
+            if not self.remove_second_button.winfo_manager():
+                self.remove_second_button.place(relx=1, x=-7, y=5, width=28, height=26, anchor='ne')
+            self.remove_second_button.configure(state='disabled' if self.action else 'normal')
+        else:
+            self.remove_second_button.place_forget()
 
     def refresh_input_preview(self):
         self.index = -1

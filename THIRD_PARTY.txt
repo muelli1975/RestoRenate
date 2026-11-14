@@ -5,8 +5,9 @@ DDD-Test 0.2 under the MIT license. See LICENSE.
 
 Components included in the source and portable packages
 
-Dismiss icon mask (16 px, filled) derived from Microsoft Fluent UI System Icons.
-  https://github.com/microsoft/fluentui-system-icons/blob/67e6dec1ee956af3ab4c746a2b3bb6a2e5520a44/assets/Dismiss/SVG/ic_fluent_dismiss_16_filled.svg
+Dismiss Circle icon derived from Microsoft Fluent UI System Icons.
+  The PNG uses the app's colors and a slightly larger cross.
+  https://github.com/microsoft/fluentui-system-icons/blob/67e6dec1ee956af3ab4c746a2b3bb6a2e5520a44/assets/Dismiss%20Circle/SVG/ic_fluent_dismiss_circle_20_color.svg
 
 MIT License
 

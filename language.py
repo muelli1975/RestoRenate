@@ -51,6 +51,7 @@ ENGLISH = {
     'Drehung übernommen.': 'Rotation applied.',
     'Drehung zurückgesetzt.': 'Rotation reset.',
     'Zweites Bild auswählen': 'Choose a second image',
+    'Zweites Bild entfernen': 'Remove the second image',
     'Kein Bild ausgewählt': 'No image selected',
     'Einstellungen konnten nicht gespeichert werden: {0}': 'Settings could not be saved: {0}',
     'Zweites Bild': 'Second image',

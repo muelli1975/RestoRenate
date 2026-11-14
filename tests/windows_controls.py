@@ -12,7 +12,7 @@ sys.path.insert(0, str(root / '_internal'))
 
 import app
 from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALING, resolve_upscaler
-from theme import BORDER, DANGER_TEXT, GOLD_LIGHT
+from theme import BORDER, GOLD_LIGHT
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
 
@@ -42,9 +42,11 @@ try:
         remove = gui.remove_second_button
         x, y = remove.winfo_rootx() - left, remove.winfo_rooty() - top
         width, height = remove.winfo_width(), remove.winfo_height()
-        red = tuple(bytes.fromhex(DANGER_TEXT[1:]))
-        pixels = [(dx, dy) for dy in range(height) for dx in range(width)
-                  if screenshot.getpixel((x + dx, y + dy))[:3] == red]
+        def is_red(dx, dy):
+            red, green, blue = screenshot.getpixel((x + dx, y + dy))[:3]
+            return red >= 195 and red > max(green, blue) + 70
+
+        pixels = [(dx, dy) for dy in range(height) for dx in range(width) if is_red(dx, dy)]
         assert pixels, 'The rendered button has no red cross.'
         center_x = (min(dx for dx, _ in pixels) + max(dx for dx, _ in pixels)) / 2
         center_y = (min(dy for _, dy in pixels) + max(dy for _, dy in pixels)) / 2

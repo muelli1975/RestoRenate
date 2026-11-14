@@ -2,7 +2,6 @@
 from tkinter import ttk
 
 import customtkinter as ctk
-from PIL import Image, ImageTk
 
 APP_BG = '#111111'
 SECONDARY_BG = '#181818'
@@ -14,9 +13,6 @@ MUTED = '#b8b8b8'
 DISABLED = '#727272'
 GOLD = '#9c7c38'
 GOLD_LIGHT = '#c6a95e'
-DANGER = '#7f3939'
-DANGER_HOVER = '#944545'
-DANGER_TEXT = '#ed8585'
 PREVIEW_BG = '#000000'
 
 
@@ -25,12 +21,6 @@ def checkbox(parent, text, variable, command=None):
                            bg_color=PANEL_BG, fg_color=GOLD, hover_color=GOLD_LIGHT,
                            border_color=BORDER, checkmark_color=TEXT, text_color=TEXT,
                            text_color_disabled=DISABLED, corner_radius=4, font=('Segoe UI', 13))
-
-
-def remove_icon(master, mask, color):
-    with Image.new('RGBA', mask.size, color) as image:
-        image.putalpha(mask)
-        return ImageTk.PhotoImage(image, master=master)
 
 
 def set_control_state(widget, state):
@@ -98,7 +88,7 @@ def apply_theme(window):
     style.configure('RemoveReference.TButton', anchor='center', width=0, relief='flat',
                     background=SECONDARY_BG, bordercolor=SECONDARY_BG,
                     lightcolor=SECONDARY_BG, darkcolor=SECONDARY_BG)
-    icon_border = [('disabled', SECONDARY_BG), ('active', BORDER), ('!active', SECONDARY_BG)]
+    icon_border = [('active', BORDER), ('!active', SECONDARY_BG)]
     style.map('RemoveReference.TButton', bordercolor=icon_border, relief=[('!disabled', 'flat')],
               lightcolor=icon_border, darkcolor=icon_border)
     flat_menu_layout = [

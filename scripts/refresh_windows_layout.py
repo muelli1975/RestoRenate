@@ -51,7 +51,7 @@ def build(original, destination):
             else:
                 with source.open(item) as incoming, target.open(item.filename, 'w') as outgoing:
                     shutil.copyfileobj(incoming, outgoing)
-        target.write(REPO / 'assets/dismiss-16-mask.png', f'{APP}/assets/dismiss-16-mask.png')
+        target.write(REPO / 'assets/dismiss-circle.png', f'{APP}/assets/dismiss-circle.png')
         if f'{APP}/_internal/portable_paths.py' not in target.namelist():
             target.write(REPO / 'portable_paths.py', f'{APP}/_internal/portable_paths.py')
 
@@ -60,7 +60,7 @@ def build(original, destination):
         assert package.testzip() is None and len(names) == len(set(names))
         assert {name.split('/')[1] for name in names if name.count('/') == 1} == ROOT_FILES
         for name in ('_internal/bootstrap.py', '_internal/download_manifest.json', '_internal/app.py',
-                     'assets/restorenate.ico', 'assets/dismiss-16-mask.png', 'assets/ready.wav', 'runtime/python/pythonw.exe',
+                     'assets/restorenate.ico', 'assets/dismiss-circle.png', 'assets/ready.wav', 'runtime/python/pythonw.exe',
                      'tools/exiftool/exiftool.exe', 'vendor/ComfyUI-GGUF/ops.py'):
             assert f'{APP}/{name}' in names, name
         assert not any(name.endswith(('.onnx', '.safetensors', '.gguf')) for name in names)
