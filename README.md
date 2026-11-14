@@ -1,70 +1,40 @@
 # RestoRenate 1.0
 
-Local image restoration, colorization, and AI-powered editing for Windows.
+[Downloads](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Deutsch](README_DE.md) · [Detailed guide](README_DE_EN.txt)
 
-[Deutsch](#deutsch) · [Detailed guide / Ausführliche Anleitung](README_DE_EN.txt)
+RestoRenate is a local desktop tool for restoring, colorizing and upscaling photos. With text prompts and supported models, it can also edit an image or use a second photo as a reference. The interface is available in English and German.
 
-RestoRenate can restore damaged images, colorize black-and-white originals,
-and edit images using text prompts. It supports individual images and folders,
-rotation and cropping before processing, a before-and-after slider, and
-optional upscaling. Compatible edit models accept a second image. The seed
-can be entered or imported from a PNG containing a ComfyUI workflow.
-Processing runs locally and works offline after the selected models and
-runtime have been downloaded.
+The app asks before downloading missing models and the processing runtime. After setup, image processing runs locally and offline.
 
-## Windows
+## Requirements and installation
 
-Extract the portable Windows x64 package to a short, writable path and open
-`RestoRenate.exe`. Choose an image or folder, an output folder, and a method. The app
-asks before downloading missing files and shows the download size.
+| Platform | Package and requirements |
+| --- | --- |
+| Windows x64 | Extract the [portable ZIP](https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_Windows_x64.zip) to a short, writable path such as `D:\RestoRenate` and open `RestoRenate.exe`. Python and ExifTool are included. |
+| Ubuntu 24.04 x86-64 | The Linux preview is built and tested in [GitHub Actions](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml). Install `python3.12-venv`, `python3-tk`, `git` and `libimage-exiftool-perl`, extract the `.tar.gz` into a writable folder and run `./Start.sh`. The script creates a Python environment inside that folder. |
 
-Microsoft · Bringing Old Photos Back to Life, CPU colorization, and Lanczos
-are practical starting points for CPU processing. Large prompt-based models
-can take substantial time and RAM on the CPU. NVIDIA is the default GPU
-mode. AMD (ROCm) is experimental and depends on the Radeon model and driver.
-Qwen 2509 Nunchaku requires a compatible NVIDIA RTX 30 or RTX 40 GPU and driver.
-CPU mode offers Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B and the four-step Qwen 2509 and 2511 Lightning variants.
-The Qwen base variants and FireRed require a GPU.
+Windows offers CPU and NVIDIA modes, plus experimental AMD ROCm. The Linux preview defaults to CPU and offers an experimental NVIDIA mode with a CUDA 13-compatible driver. Nunchaku INT4 is available on supported Windows NVIDIA systems. macOS packages are planned.
 
-## Source and license
+When updating Windows, close RestoRenate and extract the package into a clean folder. To keep an existing setup, copy `models`, `backend`, `downloads`, `settings` and the existing runtime subfolders and download receipts as needed. Extract the new package in full to keep its `_internal`, `assets` and `tools` together.
 
-The source tree contains the application, download manifests, and the
-ComfyUI adapters. The portable package supplies Python, ExifTool, 7-Zip,
-and the bundled dependency wheels. To try changes on Windows, copy the
-source files over a separate copy of the matching portable package and
-run `Start.cmd` there.
+## Quick start
 
-RestoRenate's own code is under the [MIT License](LICENSE). See
-[THIRD_PARTY.txt](THIRD_PARTY.txt) for the separate licenses and sources
-of third-party components and model weights.
+1. Open a photo or folder. Crop or rotate the input if needed.
+2. Choose an output folder, file format and size, then select a method. Edit the prompt for models that accept text.
+3. Select **Start**. Use **Download models …** to prepare multiple methods in one pass. Optional Lightning LoRAs are listed beneath their base models.
+4. Compare the saved result with the before-and-after slider. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
 
-## Deutsch
+## Models and output
 
-RestoRenate restauriert beschädigte Bilder, koloriert Schwarzweißbilder
-und bearbeitet Bilder per Prompt. Es unterstützt Einzelbilder und Ordner,
-Drehen und Beschnitt vor der Bearbeitung, einen Vorher-Nachher-Regler und
-optionale Nachskalierung. Kompatible Edit-Modelle können ein zweites Bild
-einbeziehen. Der Seed lässt sich eingeben oder aus einer PNG-Datei mit
-ComfyUI-Workflow übernehmen. Nach der Einrichtung läuft die Verarbeitung
-lokal und offline.
+- **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
+- **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.
+- **Upscaling:** Lanczos and several AI upscalers, including Nomos2 HQ MoSR, Real-ESRGAN and FaceUpDAT for portraits.
+- **Export:** PNG, JPEG quality 95 with 4:4:4 chroma and TIFF with LZW compression. JPEG and TIFF copy compatible source metadata. PNG stores a ComfyUI workflow when applicable.
 
-Das portable Windows-x64-Paket in einen kurzen, beschreibbaren Pfad
-entpacken und `RestoRenate.exe` öffnen. Ein Bild oder einen Ordner, einen
-Ausgabeordner und ein Verfahren auswählen. Vor dem Download fehlender Dateien zeigt die App die
-benötigte Downloadmenge an.
+## Source and builds
 
-Für CPU-Bearbeitung eignen sich besonders Microsoft · Bringing Old Photos
-Back to Life, die Kolorierung und Lanczos. Große Modelle mit Texteingabe
-können auf der CPU viel Zeit und Arbeitsspeicher benötigen. NVIDIA ist
-voreingestellt. AMD (ROCm) ist experimentell und hängt von Grafikkarte und
-Treiber ab. Qwen 2509 Nunchaku braucht eine kompatible NVIDIA RTX 30 oder
-RTX 40 mit passendem Treiber.
-Im CPU-Modus stehen Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B sowie Qwen 2509
-und 2511 mit Lightning (vier Schritte) zur Wahl. Die Qwen-Basisvarianten
-und FireRed benötigen eine GPU.
+The source includes the desktop app, download manifests and ComfyUI adapters. [GitHub Actions](https://github.com/muelli1975/RestoRenate/actions) records builds and tests. The portable Windows release includes its launcher, Python environment and export tools.
 
-Zum Testen von Quellcodeänderungen die Quelldateien in eine separate Kopie
-des passenden portablen Pakets kopieren und dort `Start.cmd` öffnen.
-Der eigene RestoRenate-Code steht unter der [MIT-Lizenz](LICENSE). Quellen
-und Lizenzen der Fremdkomponenten und Modelle stehen in
-[THIRD_PARTY.txt](THIRD_PARTY.txt).
+## License
+
+RestoRenate's own code uses the [MIT License](LICENSE). See [THIRD_PARTY.txt](THIRD_PARTY.txt) for component and model licenses.

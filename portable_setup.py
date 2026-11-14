@@ -11,6 +11,7 @@ import re
 import shutil
 import stat
 import subprocess
+import sys
 import threading
 import time
 import urllib.parse
@@ -30,7 +31,13 @@ from technical_logs import TechnicalLog, drain_process_log
 NVIDIA = 'nvidia'
 AMD = 'amd'
 CPU = 'cpu'
-COMPUTE_DEVICES = {NVIDIA: 'NVIDIA', AMD: 'AMD (ROCm)', CPU: 'CPU'}
+LINUX = sys.platform.startswith('linux')
+COMPUTE_DEVICES = {NVIDIA: 'NVIDIA', **({} if LINUX else {AMD: 'AMD (ROCm)'}), CPU: 'CPU'}
+DEFAULT_COMPUTE = CPU if LINUX else NVIDIA
+COMFY_COMMIT = '2c75dc1b379a59e0880619d029607af5169a62ef'
+LINUX_TORCH_PACKAGES = ('torch==2.14.0', 'torchvision==0.29.0')
+LINUX_COMFY_REQUIREMENTS = 'constraints-comfy-linux.txt'
+LINUX_MICROSOFT_PACKAGES = ('opencv-python-headless==5.0.0.93', 'scikit-image==0.26.0')
 GPU_HINTS = {
     NVIDIA: 'NVIDIA/CUDA ist nicht verfügbar. Prüfe den NVIDIA-Treiber.',
     AMD: ('AMD/ROCm konnte die Grafikkarte nicht verwenden. Prüfe, ob deine Radeon '
@@ -100,7 +107,7 @@ def remove_readonly(function, path, error):
 
 class Setup:
     def __init__(self, root=ROOT, notify=print, transfer=None, cancelled=lambda: False,
-                 method=DEFAULT_METHOD, faces=False, upscaler=None, compute=NVIDIA):
+                 method=DEFAULT_METHOD, faces=False, upscaler=None, compute=DEFAULT_COMPUTE):
         self.root = Path(root).resolve()
         code = CODE if self.root == ROOT else self.root
         self.manifest_bytes = (code / 'download_manifest.json').read_bytes()
@@ -109,7 +116,12 @@ class Setup:
         self.compute = compute
         self.runtime = self.manifest['runtime']
         self.backend_root = self.root / 'backend'
-        if compute == AMD:
+        if LINUX:
+            self.backend_root /= f'linux-{compute}'
+            self.runtime = None
+            self.linux_constraints = code / LINUX_COMFY_REQUIREMENTS
+            self.signature += '/linux/' + COMFY_COMMIT + '/' + hashlib.sha256(self.linux_constraints.read_bytes()).hexdigest()
+        elif compute == AMD:
             self.runtime = json.loads((code / 'amd_runtime.json').read_bytes())
             self.backend_root /= 'amd'
             self.signature += '/' + self.runtime['sha256']
@@ -117,15 +129,17 @@ class Setup:
         self.faces = method == MICROSOFT and faces
         self.comfy = uses_comfy(method, resolve_upscaler(method, upscaler))
         optional = json.loads((code / 'method_downloads.json').read_text(encoding='utf-8'))
-        if compute == AMD and method == MICROSOFT:
+        if LINUX and method == MICROSOFT:
+            optional[MICROSOFT] = [spec for spec in optional[MICROSOFT] if not spec['path'].endswith('.whl')]
+        elif compute == AMD and method == MICROSOFT:
             optional[MICROSOFT] = [
                 spec for spec in optional[MICROSOFT] if not spec['path'].endswith('cp313-cp313-win_amd64.whl')
             ] + optional['microsoft-amd-wheels']
         self.models = model_specs(self.manifest, optional, method, self.faces, upscaler)
         self.nunchaku_runtime = optional['nunchaku-runtime'] if method == QWEN2509_NUNCHAKU else []
         self.colorizer_path = contained(self.root, optional[method][0]['path']) if method in COLORIZATION_METHODS else None
-        self.color_runtime = optional['color-runtime'] if self.colorizer_path else []
-        self.color_runtime_path = self.root / 'runtime/color-python'
+        self.color_runtime = optional['color-runtime'] if self.colorizer_path and not LINUX else []
+        self.color_runtime_path = None if LINUX else self.root / 'runtime/color-python'
         if self.color_runtime:
             self.models.extend(self.color_runtime)
         self.notify, self.transfer, self.cancelled = notify, transfer, cancelled
@@ -135,7 +149,10 @@ class Setup:
         except (OSError, ValueError):
             self.state = {'files': {}}
         self.state.setdefault('files', {})
-        self.backend_state = self.state.setdefault('amd_backend', {}) if compute == AMD else self.state
+        if LINUX:
+            self.backend_state = self.state.setdefault(f'linux_{compute}_backend', {})
+        else:
+            self.backend_state = self.state.setdefault('amd_backend', {}) if compute == AMD else self.state
         self.log = self.root / 'logs/setup.log'
         self.log.parent.mkdir(parents=True, exist_ok=True)
 
@@ -326,6 +343,9 @@ class Setup:
 
     def paths(self, backend=None):
         backend = self.backend_root if backend is None else backend
+        if LINUX:
+            python, comfy = backend / 'venv/bin/python', backend / 'ComfyUI'
+            return (python, comfy) if python.is_file() and (comfy / 'main.py').is_file() else None
         for base in (backend / 'ComfyUI_windows_portable', backend):
             python = base / 'python_embeded/python.exe'
             comfy = base / 'ComfyUI'
@@ -361,11 +381,13 @@ class Setup:
             reader.join(timeout=5)
 
     def runtime_ready(self):
+        if LINUX:
+            return self.paths() is not None and self.backend_state.get('dependencies_signature') == self.signature
         return self.paths() and self.backend_state.get('runtime_sha256') == self.runtime['sha256']
 
     def remaining_downloads(self):
         specs = self.models + self.nunchaku_runtime
-        if self.comfy and not self.runtime_ready():
+        if self.comfy and self.runtime is not None and not self.runtime_ready():
             specs.append(self.runtime)
         remaining = {}
         for spec in specs:
@@ -386,11 +408,13 @@ class Setup:
         if self.ready():
             return 'Verfahren bereit'
         remaining = self.remaining_downloads()
-        model_paths = [spec['path'] for spec in self.models if spec['path'].startswith('models/')]
+        model_paths = [spec['path'] for spec in self.models if not spec['path'].endswith('.whl')]
         if any(remaining.get(path, 0) for path in model_paths):
             return 'Modelldownload erforderlich'
         if any(remaining.values()):
             return 'Laufzeit-Download erforderlich'
+        if LINUX and self.comfy and not self.runtime_ready():
+            return 'Laufzeit-Installation erforderlich'
         return 'Prüfung erforderlich'
 
     def remaining_download_bytes(self):
@@ -404,23 +428,71 @@ class Setup:
                 (comfy / 'custom_nodes' / GGUF_NODE / '__init__.py').is_file())
 
     def ready(self):
-        if self.nunchaku_runtime and self.compute != NVIDIA:
+        if self.nunchaku_runtime and (LINUX or self.compute != NVIDIA):
             return False
         if not self.color_ready() or not all(self.valid(spec) for spec in self.models):
             return False
         if not self.comfy:
             return True
         paths = self.paths()
-        return (self.backend_state.get('setup_signature') == self.signature and paths is not None and
-                self.backend_state.get('runtime_sha256') == self.runtime['sha256'] and
+        return (self.backend_state.get('setup_signature') == self.signature and paths is not None and self.runtime_ready() and
                 (self.method not in GGUF_METHODS or self.gguf_ready(paths[1])) and
                 (not self.nunchaku_runtime or nunchaku_ready(self, paths[1])) and
-                (self.method != MICROSOFT or microsoft_ready(self, paths[1])))
+                (self.method != MICROSOFT or (self.microsoft_dependencies_ready() and microsoft_ready(self, paths[1]))))
 
     def install_packages(self, python, *packages):
+        if LINUX:
+            self.install_linux_packages(python, *packages)
+            return
         self.command([python, '-I', '-X', 'utf8', '-m', 'pip', '--isolated', 'install', '--no-cache-dir',
                       '--no-index', '--find-links', self.root / 'vendor/wheels',
                       '--no-warn-script-location', '--only-binary=:all:', *packages])
+
+    def install_linux_packages(self, python, *packages, index='https://pypi.org/simple'):
+        self.command([python, '-I', '-X', 'utf8', '-m', 'pip', '--isolated', '--disable-pip-version-check',
+                      'install', '--no-cache-dir', '--only-binary=:all:', '--index-url', index,
+                      '--constraint', self.linux_constraints, *packages])
+
+    def prepare_linux_runtime(self):
+        self.notify(translate('ComfyUI wird eingerichtet …'))
+        self.backend_root.mkdir(parents=True, exist_ok=True)
+        comfy = self.backend_root / 'ComfyUI'
+        if not (comfy / 'main.py').is_file():
+            with tempfile.TemporaryDirectory(dir=self.backend_root) as directory:
+                checkout = Path(directory) / 'ComfyUI'
+                self.command(['git', 'init', str(checkout)])
+                self.command(['git', '-C', checkout, 'fetch', '--depth=1',
+                              'https://github.com/Comfy-Org/ComfyUI.git', COMFY_COMMIT])
+                self.command(['git', '-C', checkout, 'checkout', '--detach', COMFY_COMMIT])
+                self.check()
+                checkout.rename(comfy)
+        environment = self.backend_root / 'venv'
+        self.command([sys.executable, '-I', '-m', 'venv', environment])
+        python = environment / 'bin/python'
+        index = 'cu130' if self.compute == NVIDIA else 'cpu'
+        self.install_linux_packages(python, *LINUX_TORCH_PACKAGES, index=f'https://download.pytorch.org/whl/{index}')
+        self.install_linux_packages(python, '-r', comfy / 'requirements.txt', *self.manifest['extra_packages'])
+        self.command([python, '-I', '-X', 'utf8', '-c', 'import torch, google.protobuf, sentencepiece, spandrel'])
+        self.backend_state['dependencies_signature'] = self.signature
+        self.persist()
+
+    def microsoft_dependencies_ready(self):
+        if not LINUX:
+            return True
+        receipts = self.backend_state.get('microsoft_packages', {})
+        return receipts.get('main') == self.signature and (not self.faces or receipts.get('faces') == self.signature)
+
+    def ensure_microsoft_dependencies(self, python):
+        if not LINUX or self.microsoft_dependencies_ready():
+            return
+        receipts = self.backend_state.setdefault('microsoft_packages', {})
+        if receipts.get('main') != self.signature:
+            self.install_linux_packages(python, *LINUX_MICROSOFT_PACKAGES)
+            receipts['main'] = self.signature
+        if self.faces and receipts.get('faces') != self.signature:
+            self.install_linux_packages(python, 'dlib-bin==20.0.1.post1')
+            receipts['faces'] = self.signature
+        self.persist()
 
     def verify_compute(self, python):
         if self.compute == CPU:
@@ -455,7 +527,7 @@ class Setup:
 
     def ensure(self):
         self.check()
-        if self.nunchaku_runtime and self.compute != NVIDIA:
+        if self.nunchaku_runtime and (LINUX or self.compute != NVIDIA):
             raise ComputeUnavailable(translate(NUNCHAKU_GPU_REQUIRED))
         if not self.comfy:
             if self.ready():
@@ -467,7 +539,7 @@ class Setup:
                 self.download(spec)
             self.ensure_color_runtime()
             return None
-        if len(str(self.root)) > 80:
+        if not LINUX and len(str(self.root)) > 80:
             raise RuntimeError(translate('Bitte das gesamte Programm in einen kürzeren Pfad entpacken, z. B. D:\\RestoRenate. Windows kann sonst lange Dateinamen der Laufzeit nicht öffnen.'))
         if self.ready():
             self.notify(translate('Verfahren ist bereit.'))
@@ -483,17 +555,19 @@ class Setup:
             self.notify(translate('Modelldateien geprüft. Verfahren ist bereit.'))
             return self.paths()
         runtime_missing = not self.runtime_ready()
-        if runtime_missing:
+        if runtime_missing and not LINUX:
             self.adopt_runtime_archive(self.runtime)
         required = self.remaining_download_bytes() + 2 * 1024**3
         if runtime_missing:
-            required += 8 * 1024**3
+            required += (3 if LINUX and self.compute == CPU else 8) * 1024**3
         if shutil.disk_usage(self.root).free < required:
             raise RuntimeError(translate(
                                    'Für die Einrichtung werden derzeit mindestens {0:.1f} GB freier Speicher im Programm-Laufwerk benötigt.',
                                    required / 1000000000.0,
                                ))
-        if runtime_missing:
+        if runtime_missing and LINUX:
+            self.prepare_linux_runtime()
+        elif runtime_missing:
             archive = self.download(self.runtime)
             extractor = contained(self.root, 'tools/7zr.exe')
             if hashlib.sha256(extractor.read_bytes()).hexdigest() != self.manifest['extractor_sha256']:
@@ -551,8 +625,10 @@ class Setup:
             self.notify(translate('Modelldatei {0}/{1} wird geprüft …', number, len(self.models)))
             self.download(spec)
         self.ensure_color_runtime()
-        if self.method == MICROSOFT and not microsoft_ready(self, comfy):
-            install_microsoft(self, python, comfy)
+        if self.method == MICROSOFT:
+            self.ensure_microsoft_dependencies(python)
+            if not microsoft_ready(self, comfy):
+                install_microsoft(self, python, comfy)
         self.backend_state['setup_signature'] = self.signature
         self.persist()
         importlib.invalidate_caches()

@@ -26,7 +26,7 @@ from crop_dialog import edit_crops
 from export_metadata import APP_NAME, APP_VERSION, MAX_SEED, parse_seed, seed_from_metadata
 from imaging import EXTENSIONS, FORMATS, collect, exiftool_executable, open_photo, photo_size
 from local_backend import Backend, BackendStartError
-from portable_setup import (AMD, COMPUTE_DEVICES, CPU, GPU_HINTS, NVIDIA, ComputeUnavailable, Setup,
+from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINTS, LINUX, NVIDIA, ComputeUnavailable, Setup,
                             SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import choose_preloads, format_download_size, preload_label
@@ -109,7 +109,7 @@ def read_settings():
 
 def nvidia_driver_available():
     try:
-        driver = ctypes.WinDLL('nvcuda.dll', winmode=0x00000800)  # Search System32.
+        driver = ctypes.CDLL('libcuda.so.1') if LINUX else ctypes.WinDLL('nvcuda.dll', winmode=0x00000800)
         count = ctypes.c_int()
         return (driver.cuInit(0) == 0 and
                 driver.cuDeviceGetCount(ctypes.byref(count)) == 0 and count.value > 0)
@@ -175,7 +175,7 @@ class Application:
         self.window.protocol('WM_DELETE_WINDOW', self.close)
         install_tk_titlebars(window)
         saved_compute = self.config.get('compute')
-        selected_compute = saved_compute if isinstance(saved_compute, str) and saved_compute in COMPUTE_DEVICES else NVIDIA
+        selected_compute = saved_compute if isinstance(saved_compute, str) and saved_compute in COMPUTE_DEVICES else DEFAULT_COMPUTE
         self.startup_compute = self.active_compute = selected_compute
         self.verified_compute = None
         self.compute = tk.StringVar(value=selected_compute)
@@ -618,7 +618,7 @@ class Application:
         self.compute_button.configure(text=translate('Berechnung · {0}', label) + (' ↻' if pending else ''))
 
     def supports_nunchaku(self):
-        return self.active_compute == NVIDIA and nvidia_nunchaku_available()
+        return not LINUX and self.active_compute == NVIDIA and nvidia_nunchaku_available()
 
     def available_method_ids(self):
         methods = available_methods(self.supports_nunchaku(), cpu=self.active_compute == CPU)
@@ -653,7 +653,7 @@ class Application:
     def setup_for_job(self, upscaler):
         options = dict(method=self.current_method, faces=self.faces.get(), upscaler=upscaler)
         setup = Setup(ROOT, **options, compute=self.active_compute)
-        missing_nvidia = (setup.comfy and self.active_compute == NVIDIA and os.name == 'nt'
+        missing_nvidia = (setup.comfy and self.active_compute == NVIDIA and (os.name == 'nt' or LINUX)
                           and not nvidia_driver_available())
         if self.current_method == QWEN2509_NUNCHAKU:
             if self.active_compute != NVIDIA or missing_nvidia:
@@ -670,6 +670,8 @@ class Application:
         download_bytes = setup.remaining_download_bytes()
         transfer = (translate('Noch etwa {0} Download.', format_download_size(download_bytes)) if download_bytes
                     else translate('Vorhandene Dateien werden geprüft.'))
+        if LINUX and setup.comfy and not setup.runtime_ready():
+            transfer = translate('ComfyUI und Python-Pakete werden eingerichtet.') + (' ' + transfer if download_bytes else '')
         upscaler_names = ''
         if upscaler in UPSCALE_LICENSES:
             upscaler_names = f'{upscaler}: {UPSCALE_LICENSES[upscaler]}.\n'
@@ -1419,7 +1421,7 @@ class Application:
                 models = select_models(definitions, method, upscaler)
             if method in COLORIZATION_METHODS:
                 status(translate('Modell wird geladen …'))
-                if str(setup.color_runtime_path) not in sys.path:
+                if setup.color_runtime_path is not None and str(setup.color_runtime_path) not in sys.path:
                     sys.path.insert(0, str(setup.color_runtime_path))
                 colorizer = Colorizer(setup.colorizer_path, method=method)
                 models['colorizer'] = colorizer.model_name
@@ -1729,17 +1731,20 @@ def run_gui():
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f'{APP_NAME}.Desktop')
     (ROOT / 'logs').mkdir(exist_ok=True)
     with (ROOT / 'logs/application.lock').open('a+b') as lock:
-        if os.name == 'nt':
-            import msvcrt
-            try:
+        try:
+            if os.name == 'nt':
+                import msvcrt
                 msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
-            except OSError:
-                configure_language(read_settings().get('language'))
-                window = create_window()
-                window.withdraw()
-                messagebox.showinfo(APP_NAME, translate('Dieses portable Programmfenster läuft bereits.'), parent=window)
-                window.destroy()
-                return
+            else:
+                import fcntl
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            configure_language(read_settings().get('language'))
+            window = create_window()
+            window.withdraw()
+            messagebox.showinfo(APP_NAME, translate('Dieses portable Programmfenster läuft bereits.'), parent=window)
+            window.destroy()
+            return
         prepare_technical_logs(ROOT / 'logs')
         window = create_window()
         Application(window)

@@ -169,7 +169,7 @@ class PreloadDialog(tk.Toplevel):
                 method, faces, upscaler = request
                 setup = Setup(self.root, method=method, faces=faces, upscaler=upscaler, compute=self.compute)
                 pending = setup.remaining_downloads()
-                info = (setup.runtime['path'], bool(setup.runtime_ready())) if setup.comfy else None
+                info = (setup.runtime['path'] if setup.runtime else None, bool(setup.runtime_ready())) if setup.comfy else None
                 self.downloads[request] = pending, info
             pending, info = self.downloads[request]
             remaining.update(pending)
@@ -180,6 +180,8 @@ class PreloadDialog(tk.Toplevel):
             path, ready = runtime
             if ready:
                 runtime_status = 'ComfyUI · bereits eingerichtet'
+            elif path is None:
+                runtime_status = 'ComfyUI · Python-Pakete werden eingerichtet'
             elif remaining.get(path, 0):
                 runtime_status = 'ComfyUI · wird mitgeladen'
             else:
@@ -188,6 +190,8 @@ class PreloadDialog(tk.Toplevel):
         remaining_bytes = sum(remaining.values())
         transfer = (translate('Noch etwa {0} Download', format_download_size(remaining_bytes)) if remaining_bytes
                     else translate('Keine Downloads erforderlich'))
+        if runtime is not None and runtime[0] is None and not runtime[1]:
+            transfer = translate('Noch etwa {0} Modelldownload', format_download_size(remaining_bytes)) if remaining_bytes else translate('Keine Modelle herunterzuladen')
         self.total.set(translate('Berechnung: {0}', compute_label(self.compute)) + ' · ' + transfer)
         self.submit.configure(state='normal' if requests else 'disabled')
 

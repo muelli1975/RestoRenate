@@ -1,0 +1,10 @@
+torch==2.14.0
+torchvision==0.29.0
+numpy==2.4.1
+Pillow==12.1.0
+gguf==0.19.0
+protobuf==7.36.2
+spandrel==0.4.2
+opencv-python-headless==5.0.0.93
+scikit-image==0.26.0
+dlib-bin==20.0.1.post1
