@@ -6,6 +6,12 @@ RestoRenate is a local desktop tool for restoring, colorizing and upscaling phot
 
 The app asks before downloading missing models and the processing runtime. After setup, image processing runs locally and offline.
 
+## Before and after
+
+![RestoRenate comparing the original black-and-white portrait of Harry Houdini with the restored and colorized result](./docs/screenshots/restorenate-houdini.png)
+
+Restored and colorized with Fibo 2.0 Edit Turbo. Original photograph from the Library of Congress, McManus-Young Collection, credited to Famous Players–Lasky Corporation. [Image source and rights information](https://commons.wikimedia.org/wiki/File:Harry_Houdini.jpg)
+
 ## Requirements and installation
 
 | Platform | Package and requirements |

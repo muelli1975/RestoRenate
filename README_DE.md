@@ -6,6 +6,12 @@ RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner.
 
 Die App fragt vor dem Download fehlender Modelle und Laufzeitdateien nach. Nach der Einrichtung funktioniert die Bildbearbeitung offline.
 
+## Vorher und nachher
+
+![RestoRenate vergleicht das Schwarz-Weiß-Originalfoto von Harry Houdini mit dem restaurierten und kolorierten Ergebnis](./docs/screenshots/restorenate-houdini.png)
+
+Restauriert und koloriert mit Fibo 2.0 Edit Turbo. Originalfoto aus der McManus-Young-Sammlung der Library of Congress, zugeschrieben der Famous Players–Lasky Corporation. [Bildquelle und Rechtehinweis](https://commons.wikimedia.org/wiki/File:Harry_Houdini.jpg)
+
 ## Voraussetzungen und Start
 
 | Plattform | Paket und Voraussetzungen |
