@@ -109,5 +109,3 @@ def install_tk_titlebars(root):
 
         root.bind_all("<Map>", mapped, add="+")
         restyle_tk_titlebar(root)
-
-
