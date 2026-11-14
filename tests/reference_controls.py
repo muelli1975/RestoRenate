@@ -9,11 +9,17 @@ def check_reference_controls(gui, image_path):
     remove = gui.remove_second_button
 
     def bounds():
-        window.update_idletasks()
+        window.update()
         return remove.winfo_rootx(), remove.winfo_rooty(), remove.winfo_width(), remove.winfo_height()
 
     initial_bounds = bounds()
-    assert remove.winfo_viewable() and remove.instate(['disabled'])
+    assert remove.winfo_viewable() and remove.instate(['disabled']), (
+        gui.current_method, gui.second_row.winfo_ismapped(), remove.winfo_ismapped(), initial_bounds, remove.state(),
+    )
+    x, y, width, _ = initial_bounds
+    row = gui.second_row
+    assert row.winfo_rootx() + row.winfo_width() - x - width == 7
+    assert y - row.winfo_rooty() == 5
     assert remove.cget('compound') == 'image'
 
     for icon, expected in zip(gui.reference_remove_icons, (DANGER_TEXT, DISABLED)):

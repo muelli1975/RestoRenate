@@ -509,18 +509,18 @@ class Application:
         self.second_preview_item = self.second_preview.create_image(width / 2 + 1, height / 2 + 1)
         details = tk.Frame(self.second_row, bg=SECONDARY_BG)
         details.pack(side='left', fill='both', expand=True, pady=4, padx=(0, 6))
-        heading = tk.Frame(details, bg=SECONDARY_BG)
-        heading.pack(fill='x')
-        self.reference_remove_icons = (remove_icon(heading, DANGER_TEXT), remove_icon(heading, DISABLED))
+        self.labelled(tk.Label, details, 'Zweites Bild', bg=SECONDARY_BG, fg=INK, anchor='w').pack(
+            fill='x', padx=(0, 27),
+        )
+        self.reference_remove_icons = (
+            remove_icon(self.second_row, DANGER_TEXT), remove_icon(self.second_row, DISABLED),
+        )
         active_icon, disabled_icon = self.reference_remove_icons
         self.remove_second_button = self.labelled(
-            ttk.Button, heading, 'Entfernen', image=(active_icon, 'disabled', disabled_icon),
+            ttk.Button, self.second_row, 'Entfernen', image=(active_icon, 'disabled', disabled_icon),
             compound='image', command=self.clear_second_image, style='RemoveReference.TButton',
         )
-        self.remove_second_button.pack(side='right')
-        self.labelled(tk.Label, heading, 'Zweites Bild', bg=SECONDARY_BG, fg=INK, anchor='w').pack(
-            side='left', fill='x', expand=True,
-        )
+        self.remove_second_button.place(relx=1, x=-7, y=5, width=25, height=23, anchor='ne')
         self.second_name = tk.Label(details, bg=SECONDARY_BG, fg=MUTED, anchor='w', width=1)
         self.second_name.pack(fill='x', expand=True)
         actions = tk.Frame(details, bg=SECONDARY_BG)
