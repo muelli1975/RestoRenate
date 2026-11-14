@@ -21,5 +21,10 @@ def check_field_focus(gui, native_maps):
     for field in ('TEntry', 'Path.TEntry', 'TSpinbox', 'TCombobox', 'Prompt.TMenubutton'):
         assert all(style.lookup(field, option, ('focus',)) != GOLD_LIGHT for option in BORDER_OPTIONS), field
 
+    seed_style = gui.seed_entry.cget('style')
+    for option in BORDER_OPTIONS:
+        assert style.lookup(seed_style, option, ('focus',)) == GOLD_LIGHT
+        assert style.lookup(seed_style, option, ('focus', 'disabled')) == BORDER
+        assert style.lookup(seed_style, option) == BORDER
     assert gui.prompt.cget('highlightcolor') == GOLD_LIGHT
     assert gui.prompt.cget('highlightbackground') == BORDER

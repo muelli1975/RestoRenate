@@ -435,7 +435,7 @@ class Application:
         self.seed_row = tk.Frame(left, bg=PANEL)
         self.seed_row.grid(row=14, column=0, sticky='ew', pady=(4, 0))
         self.labelled(tk.Label, self.seed_row, 'Seed (leer = Zufall)', bg=PANEL, fg=INK).pack(side='left')
-        self.seed_entry = ttk.Entry(self.seed_row, textvariable=self.seed_value, width=21)
+        self.seed_entry = ttk.Entry(self.seed_row, textvariable=self.seed_value, width=21, style='Seed.TEntry')
         self.seed_entry.pack(side='left', fill='x', expand=True, padx=(8, 0))
         self.seed_actions = tk.Frame(left, bg=PANEL)
         self.seed_actions.grid(row=15, column=0, sticky='ew', pady=(4, 0))

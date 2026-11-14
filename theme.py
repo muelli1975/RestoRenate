@@ -108,6 +108,8 @@ def apply_theme(window):
     style.configure('TEntry', fieldbackground=SECONDARY_BG, foreground=TEXT, insertcolor=TEXT)
     style.map('TEntry', fieldbackground=[('disabled', SECONDARY_BG), ('readonly', SECONDARY_BG)],
               foreground=[('disabled', DISABLED), ('readonly', TEXT)])
+    seed_border = [('disabled', BORDER), ('focus', GOLD_LIGHT), ('!focus', BORDER)]
+    style.map('Seed.TEntry', bordercolor=seed_border, lightcolor=seed_border, darkcolor=seed_border)
     # Clam leaves the four corner pixels open and uses the widget background there.
     style.configure('Path.TEntry', background=PANEL_BG)
     style.map('Path.TEntry', background=[('readonly', PANEL_BG), ('disabled', PANEL_BG)])
