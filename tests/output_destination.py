@@ -60,7 +60,7 @@ def check_output_destination():
                 assert app.read_settings()['output_in_source'] is False
                 assert app.read_settings()['custom_output'] == str(custom)
 
-                gui.output_mode.invoke()
+                gui.output_mode.toggle()
                 assert gui.output_entry.get() == str(first / 'output')
                 gui.save_settings()
                 assert app.read_settings()['output_in_source'] is True
@@ -74,7 +74,7 @@ def check_output_destination():
                 assert gui.output_in_source.get()
                 gui.pick_sources(second)
                 assert gui.output_entry.get() == str(second / 'output')
-                gui.output_mode.invoke()
+                gui.output_mode.toggle()
                 assert gui.output_entry.get() == str(custom)
                 gui.output_entry.delete(0, 'end')
                 gui.output_entry.insert(0, str(folder / 'typed'))
