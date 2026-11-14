@@ -512,15 +512,16 @@ class Application:
         self.labelled(tk.Label, details, 'Zweites Bild', bg=SECONDARY_BG, fg=INK, anchor='w').pack(
             fill='x', padx=(0, 27),
         )
-        self.reference_remove_icons = (
-            remove_icon(self.second_row, DANGER_TEXT), remove_icon(self.second_row, DISABLED),
-        )
+        with Image.open(ROOT / 'assets/dismiss-16-mask.png') as mask:
+            self.reference_remove_icons = tuple(
+                remove_icon(self.second_row, mask, color) for color in (DANGER_TEXT, DISABLED)
+            )
         active_icon, disabled_icon = self.reference_remove_icons
         self.remove_second_button = self.labelled(
             ttk.Button, self.second_row, 'Entfernen', image=(active_icon, 'disabled', disabled_icon),
             compound='image', command=self.clear_second_image, style='RemoveReference.TButton',
         )
-        self.remove_second_button.place(relx=1, x=-7, y=5, width=25, height=23, anchor='ne')
+        self.remove_second_button.place(relx=1, x=-7, y=5, width=26, height=24, anchor='ne')
         self.second_name = tk.Label(details, bg=SECONDARY_BG, fg=MUTED, anchor='w', width=1)
         self.second_name.pack(fill='x', expand=True)
         actions = tk.Frame(details, bg=SECONDARY_BG)

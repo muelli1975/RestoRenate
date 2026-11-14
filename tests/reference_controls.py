@@ -20,17 +20,19 @@ def check_reference_controls(gui, image_path):
     row = gui.second_row
     assert row.winfo_rootx() + row.winfo_width() - x - width == 7
     assert y - row.winfo_rooty() == 5
-    assert remove.cget('compound') == 'image'
+    assert str(remove.cget('compound')) == 'image'
 
     for icon, expected in zip(gui.reference_remove_icons, (DANGER_TEXT, DISABLED)):
         with ImageTk.getimage(icon) as image:
             width, height = image.size
+            assert (width, height) == (16, 16)
             rgb = tuple(bytes.fromhex(expected[1:]))
             opaque = {(x, y) for y in range(height) for x in range(width)
                       if image.getpixel((x, y)) == (*rgb, 255)}
             assert opaque, expected
-            assert (width // 2, height // 2) in opaque, opaque
-            assert sum(y == height // 2 for _, y in opaque) >= 3, opaque
+            center = {(x, y) for x in (width // 2 - 1, width // 2)
+                      for y in (height // 2 - 1, height // 2)}
+            assert center <= opaque, opaque
             left, top = min(x for x, _ in opaque), min(y for _, y in opaque)
             right, bottom = max(x for x, _ in opaque), max(y for _, y in opaque)
             assert left + right == width - 1 and top + bottom == height - 1, opaque

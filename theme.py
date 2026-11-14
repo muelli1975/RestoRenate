@@ -2,7 +2,7 @@
 from tkinter import ttk
 
 import customtkinter as ctk
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageTk
 
 APP_BG = '#111111'
 SECONDARY_BG = '#181818'
@@ -27,22 +27,10 @@ def checkbox(parent, text, variable, command=None):
                            text_color_disabled=DISABLED, corner_radius=4, font=('Segoe UI', 13))
 
 
-def remove_icon(master, color):
-    """Draw a centered cross with the same stroke on every platform."""
-    scale = 4
-    size = 13
-    with Image.new('RGBA', (size * scale, size * scale)) as canvas:
-        mark = ImageDraw.Draw(canvas)
-        near = 3 * scale
-        far = (size - 3) * scale - 1
-        for start, end in (((near, near), (far, far)), ((near, far), (far, near))):
-            mark.line((start, end), fill=color, width=11)
-        # Round the stroke ends symmetrically, then antialias at display size.
-        radius = 5
-        for x in (near, far):
-            for y in (near, far):
-                mark.ellipse((x - radius, y - radius, x + radius, y + radius), fill=color)
-        return ImageTk.PhotoImage(canvas.resize((size, size), Image.Resampling.LANCZOS), master=master)
+def remove_icon(master, mask, color):
+    with Image.new('RGBA', mask.size, color) as image:
+        image.putalpha(mask)
+        return ImageTk.PhotoImage(image, master=master)
 
 
 def set_control_state(widget, state):

@@ -5,6 +5,31 @@ DDD-Test 0.2 under the MIT license. See LICENSE.
 
 Components included in the source and portable packages
 
+Dismiss icon mask (16 px, filled) derived from Microsoft Fluent UI System Icons.
+  https://github.com/microsoft/fluentui-system-icons/blob/67e6dec1ee956af3ab4c746a2b3bb6a2e5520a44/assets/Dismiss/SVG/ic_fluent_dismiss_16_filled.svg
+
+MIT License
+
+Copyright (c) 2020 Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 Completion sound assets/ready.wav, shared with DepthTricia, StereoFine,
 TransCora and Wigglinde.
   https://github.com/muelli1975/DepthTricia/blob/063d5bf48a759fd8fa189465601b9a19340952b0/assets/ready.wav
