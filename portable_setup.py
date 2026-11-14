@@ -474,12 +474,16 @@ class Setup:
                 checkout.rename(comfy)
         environment = self.backend_root / 'venv'
         self.command([sys.executable, '-I', '-m', 'venv', environment])
+        # Standard venvs record an absolute interpreter link and base path.
+        # Use a relative link so the bundled interpreter can move with the app.
+        executable = Path(sys.executable)
+        link = environment / 'bin' / executable.name
+        link.unlink()
+        link.symlink_to(os.path.relpath(executable, link.parent))
         config = environment / 'pyvenv.cfg'
-        # Resolve the base interpreter from the venv's relative executable links.
-        # Python consults the absolute 'home' entry before following those links.
         entries = config.read_text(encoding='utf-8').splitlines(keepends=True)
-        config.write_text(''.join(line for line in entries if not line.startswith(('home = ', 'executable = ', 'command = '))),
-                          encoding='utf-8')
+        relocatable = [line for line in entries if not line.startswith(('home = ', 'executable = ', 'command = '))]
+        config.write_text(''.join(relocatable), encoding='utf-8')
         python = environment / 'bin/python'
         if LINUX:
             index = LINUX_TORCH_INDEX[self.compute]
