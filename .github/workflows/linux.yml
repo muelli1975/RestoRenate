@@ -70,7 +70,7 @@ jobs:
 
   publish:
     needs: linux
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -85,7 +85,7 @@ jobs:
         run: |
           set -euo pipefail
           sha256sum -c SHA256SUMS.txt
-          tag=linux-preview
+          tag=v1.0-linux-preview
           file=RestoRenate_Linux_x64_Preview.tar.gz
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$tag" "$file" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber

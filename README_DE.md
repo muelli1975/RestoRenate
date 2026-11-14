@@ -1,6 +1,6 @@
 # RestoRenate 1.0
 
-[Downloads](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [English](README.md) · [Ausführliche Anleitung](README_DE_EN.txt)
+[Windows-Download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux-Vorschau](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [English](README.md) · [Ausführliche Anleitung](README_DE_EN.txt)
 
 RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner. Mit unterstützten Modellen lassen sich Bilder auch per Prompt bearbeiten oder anhand eines zweiten Fotos verändern. Die Oberfläche ist auf Deutsch und Englisch verfügbar.
 
