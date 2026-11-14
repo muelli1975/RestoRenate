@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tkinter as tk
+from tkinter import ttk
 from xml.etree import ElementTree
 
 from PIL import Image
@@ -21,6 +22,7 @@ from portable_setup import CPU, MACOS, MPS, UNIX_RUNTIME, Setup
 from preload_models import PreloadDialog
 from restoration import Client, restore, select_models
 from sizes import DOUBLE_SIZE, NO_RESCALE
+from theme import BORDER, GOLD_LIGHT
 
 
 def record(method, models):
@@ -32,6 +34,11 @@ def test_gui(source):
     try:
         gui = app.Application(window)
         window.geometry('950x720')
+        style = ttk.Style(window)
+        for field in ('TEntry', 'Path.TEntry', 'TSpinbox', 'TCombobox'):
+            assert style.lookup(field, 'bordercolor', ('focus',)) == GOLD_LIGHT, field
+            assert style.lookup(field, 'bordercolor', ('focus', 'disabled')) == BORDER, field
+            assert style.lookup(field, 'bordercolor') == BORDER, field
         gui.pick_sources(source)
         gui.set_second_image(source)
         gui.second_rotation_menu.invoke(1)
