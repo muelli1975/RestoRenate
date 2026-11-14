@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 from statistics import median
 import subprocess
-import sys
 import time
 
 

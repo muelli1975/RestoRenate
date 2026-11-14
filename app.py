@@ -28,10 +28,11 @@ from crop_dialog import edit_crops
 from export_metadata import APP_NAME, APP_VERSION, MAX_SEED, parse_seed, seed_from_metadata
 from imaging import EXTENSIONS, FORMATS, collect, exiftool_executable, open_photo, photo_size
 from local_backend import Backend, BackendStartError
-from portable_setup import AMD, COMPUTE_DEVICES, CPU, GPU_HINTS, NVIDIA, ComputeUnavailable, Setup, SetupCancelled
+from portable_setup import (AMD, COMPUTE_DEVICES, CPU, GPU_HINTS, NVIDIA, ComputeUnavailable, Setup,
+                            SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import choose_preloads, format_download_size, preload_label
-from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES,
+from methods import (COLORIZATION_METHODS, CPU_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES,
                      METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
                      TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
                      available_methods, resolve_upscaler, uses_comfy)
@@ -47,30 +48,24 @@ from restoration import Client, restore, select_models
 from technical_logs import TechnicalLog, prepare_technical_logs
 from titlebar import install_tk_titlebars
 
-DEFAULT_PROMPT_NAME = 'Restaurieren und kolorieren 1'
+DEFAULT_PROMPT_NAME = 'Allround'
 # The two original workflows share this wording.
 COLORIZE_START = 'restore and colorize this photo, remove the stains, dust spots, noise, scratches and stripes from the image, '
 REPAIR_SECTIONS = 'ripped or torn sections, turning it into a high quality photograph'
 EXAMPLE_PROMPTS = {
-    DEFAULT_PROMPT_NAME: (
+    'Restaurieren und kolorieren 1': (
         f'{COLORIZE_START}fill in any gaps, {REPAIR_SECTIONS}, reversal film photography, '
         'remove stains and crease marks, repair gaps and fold or bends'
     ),
     'Restaurieren und kolorieren 2': f'{COLORIZE_START}fill in any {REPAIR_SECTIONS}',
 }
 PRESETS = {
-    'Allround': (
+    DEFAULT_PROMPT_NAME: (
         'Restore this photo. Improve clarity and bring back natural colors where needed. '
         'Preserve faces and natural texture.'
     ),
-    'Starke Schäden reparieren': (
-        'Repair tears, crease lines, scratches and stains in this photograph. Reconstruct visibly damaged '
-        'areas using adjacent intact details as a guide. Preserve the existing people, facial features, '
-        'expressions, colours, grain and framing.'
-    ),
     **EXAMPLE_PROMPTS,
     'Restaurieren und kolorieren · Kurz': 'Colorize and restore this image.',
-    'Rauschen reduzieren': 'Reduce unwanted noise while preserving natural grain and fine detail.',
     'FLUX.2 [klein] 4B · Reparieren und kolorieren': (
         'repair and colorize the image. fix the cracks and fill in the missing areas.'
     ),
@@ -140,10 +135,6 @@ def nvidia_nunchaku_available():
         return False
 
 
-def compute_label(compute):
-    return translate('AMD (ROCm) · experimentell') if compute == AMD else COMPUTE_DEVICES[compute]
-
-
 def read_processing_presets(saved):
     if not isinstance(saved, dict):
         return {}
@@ -179,7 +170,7 @@ class Application:
         self.window = window
         self.config = read_settings()
         self.language = configure_language(self.config.get('language'))
-        self.window.title(translate('{0} – Bildrestaurierung und -bearbeitung', APP_NAME))
+        self.window.title(f'{APP_NAME} - {APP_VERSION}')
         self.window.geometry('1130x750')
         self.window.minsize(950, 720)
         self.window.configure(bg=BG)
@@ -188,13 +179,11 @@ class Application:
         saved_compute = self.config.get('compute')
         selected_compute = saved_compute if isinstance(saved_compute, str) and saved_compute in COMPUTE_DEVICES else NVIDIA
         self.startup_compute = self.active_compute = selected_compute
+        self.verified_compute = None
         self.compute = tk.StringVar(value=selected_compute)
         previous_method = self.config.get('method')
         self.method_ids = self.available_method_ids()
-        self.current_method = (
-            previous_method if isinstance(previous_method, str) and previous_method in self.method_ids.values()
-            else DEFAULT_METHOD
-        )
+        self.current_method = previous_method if previous_method in self.method_ids.values() else DEFAULT_METHOD
         self.method = tk.StringVar(value=translate(METHODS[self.current_method]))
         self.scratches = tk.BooleanVar(value=bool(self.config.get('scratches', True)))
         self.faces = tk.BooleanVar(value=bool(self.config.get('faces', False)))
@@ -205,8 +194,7 @@ class Application:
         self.draft = draft if isinstance(draft, dict) and isinstance(draft.get('prompt'), str) else {}
         self.processing_presets = read_processing_presets(self.config.get('processing_presets'))
         self.seed = parse_seed(self.config.get('seed'))
-        fixed_seed = parse_seed(self.config.get('fixed_seed'))
-        self.seed_value = tk.StringVar(value='' if fixed_seed is None else str(fixed_seed))
+        self.seed_value = tk.StringVar(value='')
         self.events = Queue()
         self.cancelled, self.stop_after = Event(), Event()
         self.backend = Backend(ROOT, compute=self.active_compute)
@@ -216,6 +204,7 @@ class Application:
         self.crops = {}
         self.rotations = {}
         self.second_image = None
+        self.second_rotation = 0
         self.second_thumbnail = None
         self.results = []
         self.index = -1
@@ -258,6 +247,11 @@ class Application:
         self.load_method_prompt()
         self.prompt.bind('<<Modified>>', self.prompt_changed)
         self.window.bind('<Button-1>', self.leave_editor_on_click, add='+')
+        self.window.bind('<Escape>', self.compare.leave_zoom)
+        self.window.bind('<Control-Key-0>', self.compare.fit)
+        self.window.bind('<Control-Key-1>', lambda event: self.compare.full_size())
+        self.window.bind('<Prior>', lambda event: self.browse_results(event, -1))
+        self.window.bind('<Next>', lambda event: self.browse_results(event, 1))
         self.check_ready()
         self.window.after(75, self.poll)
 
@@ -271,7 +265,9 @@ class Application:
         header = tk.Frame(self.window, bg=BG, padx=18, pady=10)
         header.pack(fill='x')
         tk.Label(header, text=APP_NAME, bg=BG, fg=GOLD_LIGHT, font=('Segoe UI', 18, 'bold')).pack(side='left')
-        tk.Label(header, text=APP_VERSION, bg=BG, fg=MUTED, padx=12).pack(side='left', pady=(6, 0))
+        self.labelled(tk.Label, header, 'Bildrestaurierung und -bearbeitung', bg=BG, fg=MUTED, padx=12).pack(
+            side='left', pady=(6, 0),
+        )
         menu_colors = dict(tearoff=False, background=SECONDARY_BG, foreground=INK,
                            activebackground=HOVER_BG, activeforeground=INK, disabledforeground=DISABLED)
         self.language_button = ttk.Menubutton(header, text=LANGUAGE_LABELS[self.language])
@@ -291,8 +287,6 @@ class Application:
         for compute in COMPUTE_DEVICES:
             compute_menu.add_radiobutton(label=compute_label(compute), variable=self.compute, value=compute,
                                          command=self.choose_compute)
-        compute_menu.add_separator()
-        compute_menu.add_command(label=translate('Modelle vorab laden …'), command=self.preload_clicked)
         self.compute_button.configure(menu=compute_menu)
         self.compute_button.pack(side='right', padx=(0, 4))
         tk.Label(header, textvariable=self.setup_status, bg=BG, fg=MUTED, padx=10).pack(side='right')
@@ -311,7 +305,7 @@ class Application:
 
         def label(text, row, pad=(6, 2)):
             self.labelled(tk.Label, left, text, bg=PANEL, fg=INK, anchor='w', font=('Segoe UI', 10, 'bold')).grid(
-                row=row, column=0, sticky='ew', pady=pad,
+                row=row, column=0, sticky='w', pady=pad,
             )
 
         def button(parent, title, command, **options):
@@ -321,17 +315,15 @@ class Application:
             return control
 
         label('Eingabe', 0, (0, 2))
-        entry = ttk.Entry(left, textvariable=self.input_value, state='readonly')
+        entry = ttk.Entry(left, textvariable=self.input_value, state='readonly', style='Path.TEntry')
         entry.grid(row=1, column=0, sticky='ew')
         input_actions = tk.Frame(left, bg=PANEL)
         input_actions.grid(row=2, column=0, sticky='ew', pady=(4, 0))
         paths = tk.Frame(input_actions, bg=PANEL)
         paths.pack(fill='x')
-        button(paths, 'Bild …', self.choose_photo, width=-1, style='Input.TButton').pack(side='left')
-        button(paths, 'Ordner …', self.choose_folder, width=-1,
-               style='Input.TButton').pack(side='left', padx=4)
-        self.crop_button = button(paths, 'Beschnitt …', self.edit_crop, state='disabled',
-                                  width=-1, style='Input.TButton')
+        button(paths, 'Bild …', self.choose_photo, width=-1).pack(side='left')
+        button(paths, 'Ordner …', self.choose_folder, width=-1).pack(side='left', padx=4)
+        self.crop_button = button(paths, 'Beschnitt …', self.edit_crop, state='disabled', width=-1)
         self.crop_button.pack(side='left')
         self.rotate_button = self.labelled(ttk.Menubutton, paths, 'Drehen', width=-1, style='Input.TMenubutton')
         self.rotate_button.pack(side='left', padx=(4, 0))
@@ -339,12 +331,12 @@ class Application:
         for caption, turn in ROTATION_CHOICES:
             rotations.add_command(label=translate(caption), command=lambda turn=turn: self.rotate_source(turn))
         self.rotate_button.configure(menu=rotations)
-        self.build_second_image(input_actions)
+        self.build_second_image(input_actions, menu_colors)
 
         label('Ausgabeordner', 3)
         destination = tk.Frame(left, bg=PANEL)
         destination.grid(row=4, column=0, sticky='ew')
-        out_entry = ttk.Entry(destination, textvariable=self.output)
+        out_entry = ttk.Entry(destination, textvariable=self.output, style='Path.TEntry')
         out_entry.pack(side='left', fill='x', expand=True, padx=(0, 4))
         self.controls.append(out_entry)
         button(destination, 'Auswählen …', self.choose_output).pack(side='right')
@@ -374,6 +366,7 @@ class Application:
         tk.Label(left, textvariable=self.dimensions, bg=PANEL, fg=MUTED, anchor='w',
                  justify='left', wraplength=336).grid(row=7, column=0, sticky='ew', pady=(2, 0))
         label('Verfahren', 8)
+        button(left, 'Modelle vorab laden …', self.preload_clicked).grid(row=8, column=0, sticky='e', pady=(6, 2))
         self.method_widget = ttk.Combobox(left, textvariable=self.method, values=list(self.method_ids), state='readonly')
         self.method_widget.grid(row=9, column=0, sticky='ew')
         style_method_scrollbar(self.method_widget)
@@ -462,14 +455,18 @@ class Application:
         self.compare.pack(fill='both', expand=True)
         navigation = tk.Frame(right, bg=PANEL)
         navigation.pack(fill='x', pady=(6, 0))
+        self.labelled(ttk.Button, navigation, 'Ansicht einpassen', command=self.compare.fit).pack(side='right')
+        self.labelled(ttk.Button, navigation, '100 %', command=self.compare.full_size,
+                      width=-1, style='Input.TButton').pack(side='right', padx=(0, 4))
         self.labelled(tk.Label, navigation, 'Ergebnisse', fg=INK, bg=PANEL).pack(side='left', padx=(0, 7))
-        self.prev_button = self.labelled(ttk.Button, navigation, 'Zurück', command=lambda: self.move(-1), state='disabled')
+        self.prev_button = self.labelled(ttk.Button, navigation, 'Zurück', command=lambda: self.move(-1),
+                                        state='disabled', width=-1, style='Input.TButton')
         self.prev_button.pack(side='left')
-        self.next_button = self.labelled(ttk.Button, navigation, 'Weiter', command=lambda: self.move(1), state='disabled')
+        self.next_button = self.labelled(ttk.Button, navigation, 'Weiter', command=lambda: self.move(1),
+                                        state='disabled', width=-1, style='Input.TButton')
         self.next_button.pack(side='left', padx=(4, 8))
         tk.Label(navigation, textvariable=self.result_position, fg=MUTED, bg=PANEL).pack(side='left')
-        self.labelled(ttk.Button, navigation, 'Ansicht einpassen', command=self.compare.fit).pack(side='right')
-        self.labelled(tk.Label, navigation, 'Mausrad zum Zoomen', fg=MUTED, bg=PANEL).pack(side='right', padx=(0, 9))
+        self.labelled(tk.Label, navigation, 'Mausrad zum Zoomen', fg=MUTED, bg=PANEL).pack(side='right', padx=(0, 5))
         result_info = tk.Frame(right, bg=PANEL)
         result_info.pack(fill='x', pady=(5, 0))
         self.clear_history_button = self.labelled(
@@ -493,7 +490,7 @@ class Application:
         self.progress_bar = ProgressTrack(footer, PANEL, GOLD, BORDER)
         self.progress_bar.pack(fill='x', pady=(4, 0))
 
-    def build_second_image(self, parent):
+    def build_second_image(self, parent, menu_colors):
         width, height = REFERENCE_PREVIEW_SIZE
         self.second_row = tk.Frame(parent, bg=SECONDARY_BG, height=height + 8)
         self.second_row.pack_propagate(False)
@@ -510,6 +507,14 @@ class Application:
         actions.pack(fill='x')
         self.second_button = ttk.Button(actions, command=self.choose_second_image, width=-1, style='Input.TButton')
         self.second_button.pack(side='left')
+        self.second_rotate_button = self.labelled(ttk.Menubutton, actions, 'Drehen', width=-1,
+                                                  style='Input.TMenubutton')
+        self.second_rotate_button.pack(side='left', padx=(4, 0))
+        self.second_rotation_menu = tk.Menu(self.second_rotate_button, **menu_colors)
+        for label, turns in ROTATION_CHOICES:
+            self.second_rotation_menu.add_command(label=translate(label),
+                                                  command=lambda turns=turns: self.rotate_second_image(turns))
+        self.second_rotate_button.configure(menu=self.second_rotation_menu)
         self.remove_second_button = self.labelled(
             ttk.Button, actions, 'Entfernen', command=self.clear_second_image, width=-1, style='Input.TButton',
         )
@@ -616,10 +621,17 @@ class Application:
         return self.active_compute == NVIDIA and nvidia_nunchaku_available()
 
     def available_method_ids(self):
-        return {translate(METHODS[method]): method for method in available_methods(self.supports_nunchaku())}
+        methods = available_methods(self.supports_nunchaku(), cpu=self.active_compute == CPU)
+        return {translate(METHODS[method]): method for method in methods}
 
     def offer_cpu_fallback(self, reason):
         self.status.set(reason.splitlines()[0])
+        if self.current_method not in CPU_METHODS:
+            messagebox.showerror(translate('Berechnung'), reason + '\n\n' +
+                                 translate('Dieses Verfahren benötigt eine GPU. '
+                                           'Im CPU-Modus stehen Edit-Modelle mit vier Schritten zur Wahl.'),
+                                 parent=self.window)
+            return False
         if not messagebox.askyesno(
                 translate('Berechnung'),
                 translate(
@@ -824,23 +836,36 @@ class Application:
         except (OSError, ValueError, SyntaxError) as exc:
             messagebox.showerror(title, str(exc), parent=self.window)
 
-    def set_second_image(self, path):
+    def set_second_image(self, path, *, rotation=0):
         if not path.is_file() or path.suffix.lower() not in EXTENSIONS:
             raise ValueError(translate('Bitte ein unterstütztes Bild auswählen.'))
-        image, _ = open_photo(path)
+        image, _ = open_photo(path, rotation=rotation)
         with image:
             scale = min(width / edge for width, edge in zip(REFERENCE_PREVIEW_SIZE, image.size))
             size = tuple(max(1, round(edge * scale)) for edge in image.size)
             with image.resize(size, Image.Resampling.LANCZOS) as preview:
                 thumbnail = ImageTk.PhotoImage(preview, master=self.window)
         self.second_image = path
+        self.second_rotation = rotation
         self.second_thumbnail = thumbnail
         self.update_second_image()
 
     def clear_second_image(self):
         self.second_image = None
+        self.second_rotation = 0
         self.second_thumbnail = None
         self.update_second_image()
+
+    def rotate_second_image(self, turns):
+        if self.action or self.second_image is None:
+            return
+        rotation = 0 if turns is None else (self.second_rotation + turns) % 4
+        if rotation == self.second_rotation:
+            return
+        try:
+            self.set_second_image(self.second_image, rotation=rotation)
+        except (OSError, ValueError, SyntaxError) as exc:
+            messagebox.showerror(translate('Drehen'), str(exc), parent=self.window)
 
     def update_second_image(self):
         if self.current_method not in TWO_IMAGE_METHODS:
@@ -852,6 +877,7 @@ class Application:
                                      state='normal' if self.sources and not self.action else 'disabled')
         self.second_name.configure(text=path.name if path else translate('Kein Bild ausgewählt'))
         self.second_preview.itemconfigure(self.second_preview_item, image=self.second_thumbnail or '')
+        self.second_rotate_button.configure(state='normal' if path and not self.action else 'disabled')
         self.remove_second_button.configure(state='normal' if path and not self.action else 'disabled')
 
     def refresh_input_preview(self):
@@ -1143,7 +1169,8 @@ class Application:
         available = set(self.method_ids.values())
         for name, preset in {**BUILTIN_PROCESSING_PRESETS, **self.processing_presets}.items():
             self.processing_menu.add_command(
-                label=name, command=lambda key=name: self.load_processing_preset(key),
+                label=translate(name) if name in BUILTIN_PROCESSING_PRESETS else name,
+                command=lambda key=name: self.load_processing_preset(key),
                 state='normal' if preset['method'] in available else 'disabled',
             )
         self.processing_menu.add_separator()
@@ -1178,7 +1205,7 @@ class Application:
                 raise ValueError
         except ValueError:
             messagebox.showinfo('Preset', translate(
-                                                          'Bitte eine Seitenlänge von 1 bis {0} px eingeben.',
+                                                          'Bitte eine Seitenlänge zwischen 1 und {0} px eingeben.',
                                                           MAX_SIDE,
                                                       ),
                                 parent=self.window)
@@ -1248,7 +1275,6 @@ class Application:
         self.remember_prompt()
         self.remember_scaling()
         data = dict(output=self.output.get(), format=self.output_format.get(), seed=self.seed, compute=self.compute.get(),
-                    fixed_seed=parse_seed(self.seed_value.get().strip()),
                     method=self.current_method, prompt_draft=self.draft, presets=self.custom,
                     language=self.language,
                     processing_presets=self.processing_presets,
@@ -1304,8 +1330,9 @@ class Application:
             return
         variants = 1 if no_prompt else self.variant_count
         second_image = self.second_image if self.current_method in TWO_IMAGE_METHODS else None
+        second_rotation = self.second_rotation if second_image is not None else 0
         job = (tuple(self.sources), folder, self.output_format.get(), prompt, seed, variants,
-               self.scratches.get(), size_choice, self.crops.copy(), self.rotations.copy(), second_image)
+               self.scratches.get(), size_choice, self.crops.copy(), self.rotations.copy(), second_image, second_rotation)
         self.save_settings()
         self.launch('run' if ready else 'run_setup', job, upscaler=upscaler)
 
@@ -1370,11 +1397,15 @@ class Application:
             paths = setup.ensure()
             if self.cancelled.is_set():
                 raise SetupCancelled(translate('Bearbeitung abgebrochen.'))
+            if paths is not None and self.verified_compute != setup.compute:
+                setup.verify_compute(paths[0])
+                self.verified_compute = setup.compute
             self.events.put(('begin', None))
             if self.stop_after.is_set() or self.cancelled.is_set():
                 self.events.put(('done', (('Vor dem ersten Bild beendet.',),)))
                 return
-            sources, folder, output_format, prompt, fixed_seed, variants, scratches, size_choice, crops, rotations, second_image = job
+            (sources, folder, output_format, prompt, fixed_seed, variants, scratches, size_choice,
+             crops, rotations, second_image, second_rotation) = job
             exiftool = None if output_format == 'PNG' else exiftool_executable(ROOT)
             client, definitions, models, device, colorizer = None, {}, {}, 'CPU', None
             if uses_comfy(method, upscaler):
@@ -1430,6 +1461,7 @@ class Application:
                             staged_id=staged_id,
                             size_choice=size_choice, upscaler=upscaler, definitions=definitions, colorizer=colorizer,
                             source_crop=crop, source_rotation=rotation, second_image=second_image,
+                            second_rotation=second_rotation,
                         )
                         record.update(status='ok', output=str(output), metadata_warnings=warning or '')
                         completed += 1
@@ -1568,6 +1600,12 @@ class Application:
             minutes, seconds = divmod(int(time.monotonic() - self.image_started), 60)
             self.elapsed.set_message('Laufzeit {0:02d}:{1:02d}', minutes, seconds)
 
+    def browse_results(self, event, step):
+        if isinstance(event.widget, (tk.Text, tk.Entry, ttk.Entry, ttk.Combobox, tk.Spinbox, ttk.Spinbox)):
+            return
+        self.move(step)
+        return 'break'
+
     def move(self, step):
         next_index = self.index + step
         if 0 <= next_index < len(self.results):
@@ -1590,7 +1628,8 @@ class Application:
             self.status.set_message('Vorschau: {0}', exc)
         else:
             self.caption.set(f'{output.name} · {after.width} × {after.height} px')
-        self.compare.show(before, after, reset_divider=reset_divider)
+        view_key = (source, crop, rotation) if before is not None and after is not None else None
+        self.compare.show(before, after, reset_divider=reset_divider, view_key=view_key)
         self.navigation()
 
     def navigation(self):
@@ -1612,15 +1651,14 @@ class Application:
             return
         preset, size = self.preset_key(), self.size_choice()
         self.language = configure_language(language)
-        self.window.title(translate('{0} – Bildrestaurierung und -bearbeitung', APP_NAME))
         self.language_button.configure(text=LANGUAGE_LABELS[self.language])
         for widget, label in self.labels.items():
             widget.configure(text=translate(label))
         for index, compute in enumerate(COMPUTE_DEVICES):
             self.compute_menu.entryconfigure(index, label=compute_label(compute))
-        self.compute_menu.entryconfigure('end', label=translate('Modelle vorab laden …'))
         for index, (label, _) in enumerate(ROTATION_CHOICES):
             self.rotation_menu.entryconfigure(index, label=translate(label))
+            self.second_rotation_menu.entryconfigure(index, label=translate(label))
         self.prompt_menu.set_language(self.language)
         self.update_compute_label()
         self.update_setup_status()

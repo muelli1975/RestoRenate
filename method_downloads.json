@@ -208,6 +208,15 @@
       "source_path": "4xNomos2_hq_mosr.safetensors"
     },
     {
+      "path": "models/upscale_models/4xFaceUpDAT.safetensors",
+      "size": 154152604,
+      "sha256": "1b2b269509ca58b99c282a4158fb05e58dfa87bb3453f00c0ad178c762c04c5a",
+      "url": "https://huggingface.co/Phips/4xFaceUpDAT/resolve/21e1b10f8edf91425b66c7ad953f35226fed4b26/4xFaceUpDAT.safetensors?download=true",
+      "repo": "Phips/4xFaceUpDAT",
+      "revision": "21e1b10f8edf91425b66c7ad953f35226fed4b26",
+      "source_path": "4xFaceUpDAT.safetensors"
+    },
+    {
       "path": "models/upscale_models/002_lightweightSR_DIV2K_s64w8_SwinIR-S_x4.pth",
       "size": 17225941,
       "sha256": "09fad24e32ae62722e1a055efde9921328f4137981bab0a42a4a3a806306c58e",
@@ -219,13 +228,21 @@
   ],
   "ddcolor": [
     {
-      "path": "models/colorization/ddcolor.onnx",
-      "size": 980103562,
-      "sha256": "dd6156f056d0690891ef35f9ee87176d4d976ab19bbd36e57d18e841e064d797",
-      "url": "https://huggingface.co/facefusion/models-3.0.0/resolve/728b9659bd9691bf32cbf7f61af478d94b7ba81e/ddcolor.onnx?download=true",
-      "repo": "facefusion/models-3.0.0",
-      "revision": "728b9659bd9691bf32cbf7f61af478d94b7ba81e",
-      "source_path": "ddcolor.onnx"
+      "path": "models/colorization/ddcolor_modelscope.onnx",
+      "size": 911801965,
+      "sha256": "cda896f3e61c0e489f2e11a657c6dfb711d0958364286335e3cd48fadbd621be",
+      "url": "https://huggingface.co/T8RIN/imagetoolbox-models/resolve/5c33e250dd4a611a6dc549c71282f56c3f0075a8/ddcolor_modelscope.onnx?download=true",
+      "repo": "T8RIN/imagetoolbox-models",
+      "revision": "5c33e250dd4a611a6dc549c71282f56c3f0075a8",
+      "source_path": "ddcolor_modelscope.onnx"
+    }
+  ],
+  "ddcolor-paper": [
+    {
+      "path": "models/colorization/ddcolor_paper.onnx",
+      "size": 979599967,
+      "sha256": "d637c9c5b68cf8d9801cbe4a1c504a492dd766736ad8bd2472a92ddaa026967d",
+      "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.0/ddcolor_paper.onnx"
     }
   ],
   "ddcolor-artistic": [
@@ -237,6 +254,17 @@
       "repo": "facefusion/models-3.0.0",
       "revision": "728b9659bd9691bf32cbf7f61af478d94b7ba81e",
       "source_path": "ddcolor_artistic.onnx"
+    }
+  ],
+  "ddcolor-tiny": [
+    {
+      "path": "models/colorization/ddcolor_tiny_512_int8.onnx",
+      "size": 112723138,
+      "sha256": "e983347272b8e218edc974a0af2bd66f53b73212abb800e103c64806e4c14a14",
+      "url": "https://huggingface.co/toolsmonk/ddcolor-tiny/resolve/c7d348dcd18f2e3eca1dcab0cb13a9923aeb1009/ddcolor_tiny_512_int8.onnx?download=true",
+      "repo": "toolsmonk/ddcolor-tiny",
+      "revision": "c7d348dcd18f2e3eca1dcab0cb13a9923aeb1009",
+      "source_path": "ddcolor_tiny_512_int8.onnx"
     }
   ],
   "deoldify-stable": [

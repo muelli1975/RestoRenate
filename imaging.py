@@ -124,15 +124,15 @@ def copy_metadata(exiftool, source, destination, size, settings=None):
             ))
         args.extend(('-IPTC:all', '-XMP:all', '-Comment'))
         if settings:
-            config = ['-config', str(Path(__file__).with_name('exiftool_fotorestaurierung.config'))]
-            args.append('--XMP-fr:Settings')
+            config = ['-config', str(Path(__file__).with_name('exiftool_restorenate.config'))]
+            args.append('--XMP-restorenate:Settings')
     args.extend((
         *('--' + tag for tag in INVALIDATED_TAGS),
         '-IFD0:Orientation#=1', '-ExifIFD:ColorSpace#=1',
         f'-ExifIFD:ExifImageWidth={width}', f'-ExifIFD:ExifImageHeight={height}',
     ))
     if config:
-        args.append('-XMP-fr:Settings=' + compact(settings))
+        args.append('-XMP-restorenate:Settings=' + compact(settings))
     args.append(str(destination.resolve()))
     if any('\n' in arg or '\r' in arg for arg in args):
         raise ValueError(translate('Dateipfade mit Zeilenumbrüchen werden von ExifTool nicht unterstützt.'))

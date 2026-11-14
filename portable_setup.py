@@ -11,7 +11,6 @@ import re
 import shutil
 import stat
 import subprocess
-import sys
 import threading
 import time
 import urllib.parse
@@ -59,6 +58,10 @@ class SetupCancelled(InterruptedError):
 
 class ComputeUnavailable(RuntimeError):
     pass
+
+
+def compute_label(compute):
+    return translate('AMD (ROCm) · experimentell') if compute == AMD else COMPUTE_DEVICES[compute]
 
 
 def contained(root, relative):
@@ -410,8 +413,8 @@ class Setup:
     def verify_compute(self, python):
         if self.compute == CPU:
             return
-        label = COMPUTE_DEVICES[self.compute]
-        self.notify(translate('{0} wird geprüft …', label))
+        label = compute_label(self.compute)
+        self.notify(translate('GPU-Berechnung wird geprüft · {0} …', label))
         torch_backend = 'torch.version.hip' if self.compute == AMD else 'torch.version.cuda'
         probe = (f'import torch; assert {torch_backend} and torch.cuda.is_available(); '
                  'assert (torch.ones(1, device="cuda") + 1).item() == 2; '
@@ -521,7 +524,6 @@ class Setup:
             self.command([python,'-I','-X','utf8','-c',probe])
             self.backend_state['dependencies_signature'] = self.signature
             self.persist()
-        self.verify_compute(python)
         if self.method in GGUF_METHODS and not self.gguf_ready(comfy):
             self.notify(translate('GGUF-Modelllader wird eingerichtet …'))
             self.install_packages(python, GGUF_PACKAGE)

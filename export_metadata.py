@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 APP_NAME = 'RestoRenate'
-APP_VERSION = '0.2.83'
+APP_VERSION = '1.0'
 MAX_SEED = 2**64 - 1
 PRIMITIVES = {'INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO', 'COMFY_DYNAMICCOMBO_V3'}
 
@@ -138,7 +138,8 @@ def editor_graph(graph, settings):
     working_crop = settings.get('working_crop')
     rotation = settings.get('source_rotation', 0)
     second_size = settings.get('second_size')
-    if not (source_crop or working_crop or rotation or second_size):
+    second_rotation = settings.get('second_rotation', 0)
+    if not (source_crop or working_crop or rotation or second_size or second_rotation):
         return graph
     prepared = {}
     result = ['4', 0]
@@ -169,18 +170,27 @@ def editor_graph(graph, settings):
                 'image': result, 'left': left, 'top': top, 'right': right, 'bottom': bottom, 'feathering': 0,
             }}
             result = ['92', 0]
-    if second_size and '30' in graph:
-        prepared['94'] = {'class_type': 'ImageScale', 'inputs': {
-            'image': ['30', 0], 'upscale_method': 'lanczos',
-            'width': second_size[0], 'height': second_size[1], 'crop': 'disabled',
-        }}
+    replacements = {'4': result}
+    if '30' in graph:
+        reference = ['30', 0]
+        if second_rotation:
+            prepared['95'] = {'class_type': 'ImageRotate', 'inputs': {
+                'image': reference, 'rotation': f'{second_rotation * 90} degrees',
+            }}
+            reference = ['95', 0]
+        if second_size:
+            prepared['94'] = {'class_type': 'ImageScale', 'inputs': {
+                'image': reference, 'upscale_method': 'lanczos',
+                'width': second_size[0], 'height': second_size[1], 'crop': 'disabled',
+            }}
+            reference = ['94', 0]
+        replacements['30'] = reference
     if not prepared:
         return graph
     out = {'4': graph['4']}
     if '30' in graph:
         out['30'] = graph['30']
     out.update(prepared)
-    replacements = {'4': result, '30': ['94', 0]} if '94' in prepared else {'4': result}
     for node_id, node in graph.items():
         if node_id not in out:
             inputs = {name: replacements.get(value[0], value) if connected(value, graph) and value[1] == 0 else value

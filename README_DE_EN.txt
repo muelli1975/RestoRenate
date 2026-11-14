@@ -1,4 +1,4 @@
-RestoRenate 0.2.83
+RestoRenate 1.0
 Windows x64 · Portable
 
 DEUTSCH
@@ -6,9 +6,9 @@ DEUTSCH
 Start und Update
 
 Die gesamte ZIP in einen kurzen, beschreibbaren Pfad entpacken, etwa
-D:\RestoRenate, und Start.cmd öffnen. Für ein Update RestoRenate beenden
+D:\RestoRenate, und RestoRenate.exe öffnen. Für ein Update RestoRenate beenden
 und den Inhalt des Ordners RestoRenate aus der ZIP in den bestehenden
-Programmordner neben Start.cmd kopieren. Die Programmdateien ersetzen.
+Programmordner kopieren und die Programmdateien ersetzen.
 Modelle, Einstellungen und eigene Presets lassen sich weiterverwenden.
 
 Ein Bild oder einen Ordner, den Ausgabeordner und ein Verfahren auswählen.
@@ -27,7 +27,7 @@ mit Zoom und Reglerposition geöffnet.
 „Zweites Bild“ unter der Eingabe steht für Fibo 2.0 Edit Turbo, FLUX.2 [klein]
 4B, Qwen Image Edit 2509 und 2511 einschließlich Nunchaku sowie FireRed Image
 Edit 1.1 zur Verfügung. „Hinzufügen …“ lädt das zweite Bild in die Vorschau.
-Es lässt sich ersetzen oder entfernen.
+Es lässt sich separat drehen, ersetzen oder entfernen.
 Bei einem Ordner gilt es für alle Eingabebilder. Im Prompt lässt sich etwa
 beschreiben, welche Inhalte aus Bild 2 in Bild 1 übernommen werden sollen.
 Für Fibo die Platzhalter `<image_1>` und `<image_2>` verwenden.
@@ -38,6 +38,7 @@ Prompts und Presets
 vorhandenen Kategorien. Ein Baustein hängt einen englischen Satz an den
 Prompt an. Rechtsklick im Textfeld öffnet das Textmenü. „Prompt speichern …“
 legt den eigenen Text in der gemeinsamen Promptliste ab.
+„Allround“ ist der Standard für neue Einstellungen.
 Die Modelle mit Texteingabe übernehmen beim Wechsel den aktuellen Prompt.
 „Restaurieren und kolorieren 1“ und „Restaurieren und kolorieren 2“ stammen
 aus den Beispielworkflows von Weird Wonderful AI Art. Der Modellname bei
@@ -46,13 +47,14 @@ einem Prompt kennzeichnet das dafür empfohlene Verfahren.
 Unter „Presets“ lassen sich das Verfahren, der Prompt, die Varianten und
 die zugehörigen Ausgabe- und Modelleinstellungen speichern. Eingabe und Ausgabeordner
 bleiben beim Laden ausgewählt. Die Startvorgabe und „Standard“ verwenden
-Fibo 2.0 Edit Turbo, „Restaurieren und kolorieren 1“ und Nomos2 HQ MoSR 4×.
+Fibo 2.0 Edit Turbo, „Allround“ und Nomos2 HQ MoSR 4×.
 Gespeicherte Einstellungen haben beim Start Vorrang.
 
 Start berechnet und speichert das Ergebnis. Bei Verfahren mit Prompt unter
 „Varianten pro Bild“ eine Zahl von 1 bis 100 eintippen oder mit den Pfeilen
 einstellen. Bei einer Ordnerauswahl gilt die Anzahl für jedes Bild.
-Bei leerem Seed-Feld wählt die App Zufallswerte. Einen festen Seed eintippen,
+Beim Programmstart ist das Seed-Feld leer und die App wählt Zufallswerte.
+Einen festen Seed für die laufende Sitzung eintippen,
 mit „Letzten übernehmen“ aus dem zuletzt berechneten Ergebnis übernehmen
 oder mit „Aus PNG übernehmen …“ aus den ComfyUI-Metadaten einer PNG-Datei
 lesen. Bei mehreren Varianten zählt die App vom festen Seed aus pro Bild
@@ -75,12 +77,12 @@ Verfahren und Hardware
   CPU-Offload. Es braucht eine NVIDIA RTX 30 oder 40 mit einem Treiber für
   CUDA 13. Das Verfahren steht nur bei passender NVIDIA-Hardware zur Wahl.
 - Qwen Image Edit 2509 und 2511 sind als Basisvariante und mit Lightning
-  (vier Schritte) in den Modi NVIDIA, CPU und AMD (ROCm) verfügbar.
+  (vier Schritte) verfügbar. Im CPU-Modus stehen die Lightning-Varianten zur Wahl.
   In der Basisvariante verwendet 2509 20 Schritte, 2511 40 Schritte, jeweils
   mit CFG 4. Pro Modell teilen sich beide Varianten dieselbe Q4_K_M-Datei.
   Je Lightning-LoRA kommen rund 850 MB hinzu.
 - FireRed Image Edit 1.1 bietet eine Basisvariante mit 40 Schritten bei
-  CFG 4 und Lightning mit acht Schritten. Beide Varianten nutzen
+  CFG 4 und Lightning mit acht Schritten. Beide Varianten benötigen eine GPU und nutzen
   dieselbe Q4_K_M-Datei. Für Lightning kommen rund 850 MB für die LoRA hinzu.
   FireRed und die Qwen-Verfahren teilen sich Textencoder und VAE. Die GGUF-Verfahren
   wählen eine Arbeitsfläche um 1 MP. Ergänzte Ränder entfernt die App
@@ -90,15 +92,18 @@ Verfahren und Hardware
   separate Optionen für Kratzer und Gesichter. Die Gesichtsverbesserung
   lädt zusätzliche Dateien und nutzt Gesichtspunkte aus iBUG 300-W
   (nicht kommerziell).
-- DDColor, DDColor Artistic, DeOldify Stable und DeOldify Artistic
+- DDColor ModelScope, Paper, Artistic und Tiny sowie DeOldify Stable und Artistic
   kolorieren auf der CPU. Sie kombinieren die geschätzten Farben mit der
-  Helligkeitsstruktur des Originals. „Ohne Nachskalierung“ ist voreingestellt.
+  Helligkeitsstruktur des Originals. ONNX Runtime wählt die CPU-Threadzahl.
+  „Ohne Nachskalierung“ ist voreingestellt.
 
 Unter „Berechnung“ NVIDIA, CPU oder AMD (ROCm) wählen. Ein Wechsel gilt
 nach einem Neustart. Bei einem NVIDIA-Startfehler bietet die App für geeignete
 Verfahren einen CPU-Wechsel für diese Sitzung an. Für CPU-Bearbeitung eignen
 sich besonders Microsoft · Bringing Old Photos Back to Life, die Kolorierung
-und Lanczos. Die großen Edit-Modelle können auf der CPU sehr lange laufen
+und Lanczos. Bei den Edit-Modellen stehen Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B
+und die beiden Qwen-Lightning-Varianten mit je vier Schritten zur Wahl.
+Auch diese Modelle können auf der CPU sehr lange laufen
 und viel Arbeitsspeicher beanspruchen. Auch KI-Upscaling benötigt Rechenzeit.
 Bei GPU-Verfahren hängt die Eignung für 8 GB VRAM von Modell, Bild sowie
 verfügbarem Grafik- und Arbeitsspeicher ab.
@@ -121,12 +126,16 @@ arbeitet mit dem Eingabebild. KI-Upscaling wird beim Vergrößern verwendet.
 Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
 Zielgröße an. Für Restaurierung und „Nur hochskalieren“ sind 2160 px Bildhöhe
 und Nomos2 HQ MoSR 4× voreingestellt.
+4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
 
 Die Vorschau zeigt die gespeicherte Datei. Zum Vergleichen die Trennlinie
 ziehen. Das Mausrad zoomt, die rechte Maustaste verschiebt die Ansicht.
-„Ansicht einpassen“ setzt den Zoom zurück. Unter „Ergebnisse“ mit „Zurück“
-und „Weiter“ durch fertige Bilder und Varianten blättern. „Ergebnis
-weiterbearbeiten“ übernimmt das angezeigte Ergebnis als Eingabebild.
+„100 %“ oder Strg+1 zeigt das Ergebnis in Pixelgröße, vor dem ersten Ergebnis
+die Eingabe. Esc und Strg+0 passen die Ansicht ein. Unter „Ergebnisse“ mit
+„Zurück“, „Weiter“ oder Bild↑ und Bild↓ durch fertige Bilder und Varianten
+blättern. Bei Varianten derselben Eingabe mit gleichem Beschnitt und gleicher Drehung bleiben
+Zoom und Bildausschnitt erhalten. "Ergebnis weiterbearbeiten" übernimmt
+das angezeigte Ergebnis als Eingabebild.
 Der Status zeigt den Verarbeitungsschritt, das verwendete Gerät und die
 verstrichene Zeit pro Ergebnis.
 
@@ -134,7 +143,7 @@ PNG ist voreingestellt. JPEG verwendet Qualität 95 und 4:4:4. TIFF wird als
 RGB mit 8 Bit je Kanal und LZW gespeichert. TIFF übernimmt geeignete EXIF-
 und GPS-Daten. JPEG übernimmt auch passende IPTC- und XMP-Daten. TIFF und
 JPEG enthalten ein sRGB-Profil und aktualisierte Angaben zu Ausrichtung und
-Größe. JPEG speichert die Bearbeitungseinstellungen in XMP-fr:Settings.
+Größe. JPEG speichert die Bearbeitungseinstellungen in XMP-restorenate:Settings.
 PNG enthält bei ComfyUI-Bearbeitung Prompt und Workflow. Beim erneuten
 Ausführen in ComfyUI können Eingabeaufbereitung und Randbehandlung abweichen.
 Bei Kolorierung mit KI-Upscaling beschreibt der Workflow das Upscaling mit
@@ -150,8 +159,9 @@ Die Basisvarianten heißen im Dateinamen `Qwen-2509`, `Qwen-2511` und
 Downloads und Verlauf
 
 Beim ersten Einsatz fragt die App vor dem Download fehlender Komponenten.
-„Berechnung → Modelle vorab laden …“ richtet mehrere Verfahren und Upscaler
-in einem Durchgang ein. Gemeinsame Dateien werden einmal geladen. Ein
+„Modelle vorab laden …“ neben „Verfahren“ richtet mehrere Verfahren und Upscaler
+in einem Durchgang ein. Lightning-LoRAs stehen unter ihrem Basismodell.
+Gemeinsame Dateien werden einmal geladen. Ein
 Abbruch lässt fortsetzbare Downloads erhalten. Nach der Einrichtung läuft
 die Verarbeitung lokal und offline.
 
@@ -175,9 +185,9 @@ ENGLISH
 Start and update
 
 Extract the entire ZIP to a short, writable path such as D:\RestoRenate and
-open Start.cmd. To update, close RestoRenate and copy the contents of the
-RestoRenate folder in the ZIP into the existing program folder alongside
-Start.cmd. Replace the program files. Models, settings and custom presets
+open RestoRenate.exe. To update, close RestoRenate and copy the contents of the
+RestoRenate folder in the ZIP into the existing program folder. Replace the
+program files. Models, settings and custom presets
 can be reused.
 
 Choose an image or folder, an output folder and a method. Input formats
@@ -193,8 +203,8 @@ be switched in place while keeping the comparison view, zoom and slider position
 
 “Second image” below the input is available for Fibo 2.0 Edit Turbo, FLUX.2
 [klein] 4B, Qwen Image Edit 2509 and 2511 including Nunchaku, and FireRed Image
-Edit 1.1. “Add …” loads the second image into the preview. It can be replaced
-or removed. For a folder, it applies to all
+Edit 1.1. “Add …” loads the second image into the preview. It can be rotated
+independently, replaced or removed. For a folder, it applies to all
 inputs. The prompt can describe which content to transfer from image 2 into
 image 1. In Fibo prompts, use the placeholders `<image_1>` and `<image_2>`.
 
@@ -203,21 +213,22 @@ Prompts and presets
 “Prompt snippets” beside “Save prompt …” opens the existing categories
 above the button. Choosing a snippet appends an English sentence. Right-click
 the field for text editing commands. “Save prompt …” adds the current text
-to the shared prompt list. The current prompt carries over when switching
+to the shared prompt list. “General-purpose restoration” is the default for
+new settings. The current prompt carries over when switching
 between methods with text input. “Restore and colorize 1” and “Restore and colorize
 2” come from the Weird Wonderful AI Art example workflows. A model name in a
 prompt label indicates the recommended method for that prompt.
 
 Use “Presets” to save the method, prompt, variants and applicable output
 and model settings. Loading a preset keeps the selected input and output
-folder. The startup defaults and “Standard” use Fibo 2.0 Edit Turbo,
-“Restore and colorize 1” and Nomos2 HQ MoSR 4×. Saved settings take
+folder. The startup settings and “Default” use Fibo 2.0 Edit Turbo,
+“General-purpose restoration” and Nomos2 HQ MoSR 4×. Saved settings take
 precedence at startup.
 
 Start processes and saves the result. For prompt-based methods, type a number
 from 1 to 100 in “Variants per image” or use the arrows. The count applies to
-each image in a folder. Leaving the seed field blank uses random seeds. A
-fixed seed can be entered, copied from the last result with “Use last seed,”
+each image in a folder. The seed field starts blank and the app uses random
+seeds. A fixed seed for the current session can be entered, copied from the last result with “Use last seed,”
 or read from a PNG's ComfyUI metadata with “Import from PNG …”. For multiple
 variants, the fixed seed is incremented by one per variant for each image.
 The prompt for the next job can be edited while
@@ -237,12 +248,12 @@ Methods and hardware
   offloading. It requires a NVIDIA RTX 30 or 40 series GPU with a CUDA 13
   compatible driver. The method is shown on compatible NVIDIA hardware.
 - Qwen Image Edit 2509 and 2511 offer base and four-step Lightning
-  variants in NVIDIA, CPU and AMD (ROCm) modes. The base variants use
+  variants. CPU mode offers the Lightning variants. The base variants use
   20 steps for 2509 and 40 steps for 2511, both at CFG 4.
   These variants share one Q4_K_M file per model. Each Lightning LoRA
   adds about 850 MB.
 - FireRed Image Edit 1.1 offers a base variant with 40 steps at CFG 4
-  and eight-step Lightning. Both variants share the same Q4_K_M file.
+  and eight-step Lightning. Both require a GPU and share the same Q4_K_M file.
   The Lightning LoRA adds about 850 MB. FireRed and the Qwen methods share
   the text encoder and VAE. The GGUF methods use a working canvas around
   one megapixel. RestoRenate removes any added padding after processing.
@@ -251,16 +262,18 @@ Methods and hardware
   2048 px on the long edge and produces one result per image. Scratch repair
   and face enhancement are separate options. Face enhancement downloads
   additional files and uses iBUG 300-W facial landmarks (non-commercial).
-- DDColor, DDColor Artistic, DeOldify Stable and DeOldify Artistic colorize
-  on the CPU. They combine estimated colors with the original luminance.
+- DDColor ModelScope, Paper, Artistic and Tiny, along with DeOldify Stable and Artistic,
+  colorize on the CPU. They combine estimated colors with the original luminance.
+  ONNX Runtime selects the number of CPU threads.
   “No resizing” is the default.
 
 Use “Compute” to choose NVIDIA, CPU or AMD (ROCm). The change takes effect
 after restarting. If NVIDIA fails to start, the app offers a switch to CPU
 for the current session when the method allows it. Microsoft · Bringing Old
 Photos Back to Life, colorization and Lanczos are the practical CPU starting
-points. Large edit models can take a long time and use substantial RAM on
-the CPU. AI upscaling also takes processing time. Suitability for 8 GB of
+points. Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B and the two Qwen Lightning
+variants are the four-step edit models available in CPU mode. They can take
+a long time and use substantial RAM. AI upscaling also takes processing time. Suitability for 8 GB of
 VRAM depends on the model, the image and available GPU and system memory.
 
 AMD (ROCm) is experimental. RestoRenate uses the official ComfyUI v0.45.0
@@ -279,11 +292,16 @@ edge” use the entered side length. RestoRenate preserves the aspect ratio.
 input image. AI upscaling applies when enlarging the image. Real-ESRGAN
 selects its 2× or 4× model. Lanczos resizes to the exact output dimensions.
 Restoration and “Upscale only” default to 2160 px height and Nomos2 HQ MoSR 4×.
+4× FaceUpDAT is designed for portraits with clean source images.
 
 The preview uses the saved file. Drag the divider to compare. Use the wheel
-to zoom and drag with the right mouse button to pan. “Fit view” resets the
-zoom. Under “Results,” use “Previous” and “Next” to browse saved images and
-variants. “Use result as input” opens the displayed result as a new input.
+to zoom and drag with the right mouse button to pan. “100 %” or Ctrl+1 shows
+the result at actual pixel size, or the input before a result is available.
+Esc and Ctrl+0 fit the view. Under “Results,” use “Previous”, “Next”, Page Up
+or Page Down to browse saved images and variants. Results from the same input
+with the same crop and rotation keep the current zoom and visible area.
+"Use result as input" opens the displayed
+result as a new input.
 The status shows the processing stage, the device used and the elapsed time
 for each result.
 
@@ -291,7 +309,7 @@ PNG is the default. JPEG uses quality 95 and 4:4:4. TIFF uses 8-bit RGB and
 LZW compression. TIFF retains compatible EXIF and GPS data. JPEG also
 retains compatible IPTC and XMP data. TIFF and JPEG include an sRGB profile
 and updated orientation and size. JPEG writes processing settings to
-XMP-fr:Settings. PNG stores the ComfyUI prompt and workflow when applicable.
+XMP-restorenate:Settings. PNG stores the ComfyUI prompt and workflow when applicable.
 Input preparation and padding may differ when rerunning the workflow in
 ComfyUI. When colorization is followed by AI upscaling, the workflow starts
 with the already colorized image.
@@ -306,8 +324,9 @@ with Nunchaku uses `Qwen-2509-Nunchaku`.
 Downloads and history
 
 On first use, the app asks before downloading missing components.
-“Compute → Download models in advance …” sets up several methods and
-upscalers in one pass. Shared files are downloaded once. Cancelling keeps
+“Download models …” next to “Method” sets up several methods and
+upscalers in one pass. Lightning LoRAs appear under their base models.
+Shared files are downloaded once. Cancelling keeps
 resumable downloads. After setup, processing runs locally and offline.
 
 NVIDIA and CPU share ComfyUI portable v0.44.0. AMD uses the separate

@@ -20,14 +20,17 @@ GGUF_METHODS = (*QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS, *FIRERED_METHODS
 NUNCHAKU_LOADER = 'NunchakuQwenImageDiTLoader'
 MICROSOFT = 'microsoft'
 DDCOLOR = 'ddcolor'
+DDCOLOR_PAPER = 'ddcolor-paper'
 DDCOLOR_ARTISTIC = 'ddcolor-artistic'
+DDCOLOR_TINY = 'ddcolor-tiny'
 DEOLDIFY_STABLE = 'deoldify-stable'
 DEOLDIFY_ARTISTIC = 'deoldify-artistic'
 DEOLDIFY_METHODS = (DEOLDIFY_STABLE, DEOLDIFY_ARTISTIC)
-COLORIZATION_METHODS = (DDCOLOR, DDCOLOR_ARTISTIC, *DEOLDIFY_METHODS)
+COLORIZATION_METHODS = (DDCOLOR, DDCOLOR_PAPER, DDCOLOR_ARTISTIC, DDCOLOR_TINY, *DEOLDIFY_METHODS)
 UPSCALING = 'upscaling'
 NATIVE_METHODS = (*COLORIZATION_METHODS, UPSCALING)
 NO_PROMPT = (MICROSOFT, *NATIVE_METHODS)
+CPU_METHODS = (FIBO2_TURBO, FLUX2, QWEN2509_LIGHTNING_4, QWEN2511_LIGHTNING_4, *NO_PROMPT)
 ULTRASHARP_ORIGINAL = 'UltraSharp 4×'
 ULTRASHARP = 'UltraSharp V2'
 ULTRASHARP_LITE = 'UltraSharp V2 Lite'
@@ -36,10 +39,11 @@ REMACRI = 'Remacri 4×'
 REALWEBPHOTO = 'RealWebPhoto v4'
 SIAX = 'NMKD Siax 4×'
 NOMOS2_HQ = 'Nomos2 HQ MoSR 4×'
+FACEUP_DAT = '4× FaceUpDAT'
 SWINIR_S = 'SwinIR-S 4×'
 LANCZOS = 'Lanczos'
 UPSCALERS = (ULTRASHARP_ORIGINAL, ULTRASHARP, ULTRASHARP_LITE, REALESRGAN,
-             REMACRI, REALWEBPHOTO, SIAX, NOMOS2_HQ, SWINIR_S, LANCZOS)
+             REMACRI, REALWEBPHOTO, SIAX, NOMOS2_HQ, FACEUP_DAT, SWINIR_S, LANCZOS)
 UPSCALE_LICENSES = {
     ULTRASHARP_ORIGINAL: 'CC BY-NC-SA 4.0',
     ULTRASHARP: 'CC BY-NC-SA 4.0',
@@ -49,6 +53,7 @@ UPSCALE_LICENSES = {
     REALWEBPHOTO: 'CC BY 4.0',
     SIAX: 'WTFPL',
     NOMOS2_HQ: 'CC BY 4.0',
+    FACEUP_DAT: 'CC BY 4.0',
     SWINIR_S: 'Apache 2.0',
 }
 METHODS = {
@@ -62,8 +67,10 @@ METHODS = {
     FIRERED_LIGHTNING: 'FireRed Image Edit 1.1 · Lightning (8 Schritte)',
     FIRERED_BASE: 'FireRed Image Edit 1.1',
     MICROSOFT: 'Microsoft · Bringing Old Photos Back to Life',
-    DDCOLOR: 'Kolorieren · DDColor',
+    DDCOLOR: 'Kolorieren · DDColor ModelScope',
+    DDCOLOR_PAPER: 'Kolorieren · DDColor Paper',
     DDCOLOR_ARTISTIC: 'Kolorieren · DDColor Artistic',
+    DDCOLOR_TINY: 'Kolorieren · DDColor Tiny',
     DEOLDIFY_STABLE: 'Kolorieren · DeOldify Stable',
     DEOLDIFY_ARTISTIC: 'Kolorieren · DeOldify Artistic',
     UPSCALING: 'Nur hochskalieren',
@@ -79,8 +86,10 @@ METHOD_FILENAME_LABELS = {
     FIRERED_LIGHTNING: 'FireRed-1.1-8step',
     FIRERED_BASE: 'FireRed-1.1',
     MICROSOFT: 'Microsoft',
-    DDCOLOR: 'DDColor',
+    DDCOLOR: 'DDColor-ModelScope',
+    DDCOLOR_PAPER: 'DDColor-Paper',
     DDCOLOR_ARTISTIC: 'DDColor-Artistic',
+    DDCOLOR_TINY: 'DDColor-Tiny',
     DEOLDIFY_STABLE: 'DeOldify-Stable',
     DEOLDIFY_ARTISTIC: 'DeOldify-Artistic',
 }
@@ -92,6 +101,7 @@ UPSCALE_FILENAME_LABELS = {
     REALWEBPHOTO: 'RealWebPhoto-v4',
     SIAX: 'Siax',
     NOMOS2_HQ: 'Nomos2-MoSR',
+    FACEUP_DAT: 'FaceUpDAT-4x',
     SWINIR_S: 'SwinIR-S-4x',
 }
 LICENSES = {
@@ -101,7 +111,9 @@ LICENSES = {
     MICROSOFT: 'MIT-Code',
     UPSCALING: 'siehe gewähltes Modell',
     DDCOLOR: 'Apache 2.0',
+    DDCOLOR_PAPER: 'Apache 2.0',
     DDCOLOR_ARTISTIC: 'Apache 2.0',
+    DDCOLOR_TINY: 'Apache 2.0',
     DEOLDIFY_STABLE: 'MIT',
     DEOLDIFY_ARTISTIC: 'MIT',
 }
@@ -118,6 +130,7 @@ UPSCALE_FILES = {
     REALWEBPHOTO: {'upscale': ('UpscaleModelLoader', 'model_name', '4xRealWebPhoto_v4_dat2.safetensors')},
     SIAX: {'upscale': ('UpscaleModelLoader', 'model_name', '4x_NMKD-Siax_200k.pth')},
     NOMOS2_HQ: {'upscale': ('UpscaleModelLoader', 'model_name', '4xNomos2_hq_mosr.safetensors')},
+    FACEUP_DAT: {'upscale': ('UpscaleModelLoader', 'model_name', '4xFaceUpDAT.safetensors')},
     SWINIR_S: {'upscale': ('UpscaleModelLoader', 'model_name', '002_lightweightSR_DIV2K_s64w8_SwinIR-S_x4.pth')},
     LANCZOS: {},
 }
@@ -177,7 +190,9 @@ MODEL_FILES = {
 }
 
 
-def available_methods(supports_nunchaku):
+def available_methods(supports_nunchaku, *, cpu=False):
+    if cpu:
+        return CPU_METHODS
     return tuple(method for method in METHODS if supports_nunchaku or method != QWEN2509_NUNCHAKU)
 
 

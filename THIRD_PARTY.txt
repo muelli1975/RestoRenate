@@ -64,7 +64,7 @@ Restoration and colorization prompt examples by Weird Wonderful AI Art.
   https://weirdwonderfulai.art/resources/ai-powered-photo-restoration-using-qwen-image-edit/
   https://weirdwonderfulai.art/resources/ai-powered-photo-restoration-using-flux-kontext-dev/
 
-Short colorization prompt and inspiration for the noise reduction preset.
+Short colorization prompt.
   https://modl.run/guides/restore-old-photos/#prompt-cookbook
 
 FLUX.2 [klein] 4B repair and colorization prompt from the ComfyUI community.
@@ -149,22 +149,37 @@ Remacri 4× by foolhardy · CC BY-NC-SA 4.0.
   https://openmodeldb.info/models/4x-Remacri
   https://huggingface.co/FacehugmanIII/4x_foolhardy_Remacri
 
-RealWebPhoto v4 DAT2 and Nomos2 HQ MoSR 4× by Philip Hofmann
+RealWebPhoto v4 DAT2, Nomos2 HQ MoSR 4× and 4× FaceUpDAT by Philip Hofmann
 (Helaman / Phips) · CC BY 4.0.
   https://huggingface.co/Phips/4xRealWebPhoto_v4_dat2
   https://huggingface.co/Phips/4xNomos2_hq_mosr
+  https://huggingface.co/Phips/4xFaceUpDAT
+  https://creativecommons.org/licenses/by/4.0/
 
 NMKD Siax 4× by Nmkd · WTFPL.
   https://openmodeldb.info/models/4x-NMKD-Siax-CX
   https://huggingface.co/f5aiteam/ComfyUI/blob/main/ESRGAN/4x_NMKD-Siax_200k.pth
 
-DDColor and DDColor Artistic · Apache 2.0, CPU ONNX models.
+DDColor by Xiaoyang Kang, Tao Yang, Wenqi Ouyang, Peiran Ren, Lingzhi Li,
+and Xie Xuansong (DAMO Academy, Alibaba Group) · Apache 2.0, CPU ONNX models.
   https://github.com/piddnad/DDColor
+  https://github.com/piddnad/DDColor/blob/master/LICENSE
+
+DDColor Paper · ONNX conversion by RestoRenate from the original
+ddcolor_paper.pth weights at revision e9e7b527709c8aeb2f5e1bf701e72fd468a13baa.
+  https://huggingface.co/piddnad/DDColor-models
+
+DDColor Tiny · Apache 2.0, 512 × 512 INT8 ONNX export by ToolsMonk.
+  https://huggingface.co/piddnad/ddcolor_paper_tiny
+  https://huggingface.co/toolsmonk/ddcolor-tiny
 
 DeOldify Stable and DeOldify Artistic by Jason Antic · MIT, CPU ONNX models.
   https://github.com/jantic/DeOldify
 
-The colorization models use the ONNX exports listed by FaceFusion.
+DDColor ModelScope uses the ONNX export published by T8RIN.
+  https://huggingface.co/T8RIN/imagetoolbox-models
+
+DDColor Artistic and both DeOldify models use the ONNX exports listed by FaceFusion.
   https://huggingface.co/facefusion/models-3.0.0
   https://docs.facefusion.io/introduction/licenses
 The optional ONNX Runtime, FlatBuffers and Packaging wheels retain the

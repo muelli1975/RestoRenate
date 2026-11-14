@@ -57,6 +57,7 @@ PHASES = {
     'ImageUpscaleWithModel': 'Bild wird hochskaliert',
     'PreviewImage': 'Vorschau wird erstellt',
 }
+SAMPLER_NODES = ('KSampler', 'SamplerCustomAdvanced')
 STEP_UNITS = {
     'KSampler': 'Schritt', 'SamplerCustomAdvanced': 'Schritt', 'ImageUpscaleWithModel': 'Kachel',
     'FotoRestaurierungMicrosoft': 'Phase', 'FotoRestaurierungGesichter': 'Phase',
@@ -154,11 +155,16 @@ def report_progress(event, graph, prompt_id, status, progress):
         if node_type == 'FotoRestaurierungMicrosoft' and node['inputs']['scratches']:
             phase = translate('Kratzer werden gesucht')
         progress(None)
-        status(phase + ' …')
+        if node_type in SAMPLER_NODES:
+            status(translate('Sampling · Erster Rechenschritt läuft …'))
+        else:
+            status(phase + ' …')
     elif kind == 'progress':
         unit = STEP_UNITS.get(node_type)
         value, total = data.get('value'), data.get('max')
         if unit and isinstance(value, int) and isinstance(total, int) and 0 <= value <= total and total > 0:
+            if value == 0 and node_type in SAMPLER_NODES:
+                return
             progress(100 * value / total)
             status(f'{phase} · {translate(unit)} {value}/{total}')
 
@@ -181,7 +187,7 @@ def generate(client, graph, status, cancelled, progress=lambda value: None, node
             raise RuntimeError(translate('ComfyUI hat den Workflow abgelehnt: ') + json.dumps(reply, ensure_ascii=False))
         prompt_id = reply['prompt_id']
         unavailable = translate('Bild wird bearbeitet · Fortschritt nicht verfügbar')
-        status(translate('Bearbeitung wird vorbereitet …') if connection else unavailable)
+        status(translate('Bearbeitung wird vorbereitet') + ' …' if connection else unavailable)
         deadline = time.monotonic() + 4 * 3600
         next_history = 0.0
         while time.monotonic() < deadline:
@@ -234,7 +240,7 @@ def generate(client, graph, status, cancelled, progress=lambda value: None, node
                                 finish_node(now)
                                 active_node, node_started = node_id, now
                             elif (kind == 'progress' and node_id == active_node and node_id in graph
-                                  and graph[node_id]['class_type'] in ('KSampler', 'SamplerCustomAdvanced')
+                                  and graph[node_id]['class_type'] in SAMPLER_NODES
                                   and data.get('value') == 1):
                                 node_seconds.setdefault('first_sampling_step', round(time.monotonic() - node_started, 2))
                     report_progress(event, graph, prompt_id, status, progress)
@@ -271,7 +277,7 @@ def processing_settings(record, model_name, graph):
             'prompt': record['prompt'], 'seed': record['seed'], 'sampling': sampling,
             'original_size': record['original_size'], 'working_size': record['working_size'],
             'working_crop': record.get('active_crop'), 'output_size': record['output_size'], 'upscaler': model_name,
-            **{key: record[key] for key in ('source_crop', 'source_rotation', 'second_image', 'second_size')
+            **{key: record[key] for key in ('source_crop', 'source_rotation', 'second_image', 'second_rotation', 'second_size')
                if key in record},
             **{key: record[key] for key in ('scratches', 'faces') if key in record}}
 
@@ -279,7 +285,7 @@ def processing_settings(record, model_name, graph):
 def restore(client, models, source, folder, output_format, exiftool, prompt, seed, status, cancelled, record,
             progress=lambda value: None, method=DEFAULT_METHOD, scratches=True, faces=False,
             staged_id=None, size_choice=(None, 2160), upscaler=None, definitions=None, colorizer=None,
-            source_crop=None, source_rotation=0, second_image=None):
+            source_crop=None, source_rotation=0, second_image=None, second_rotation=0):
     started = time.monotonic()
     timing = record['seconds_by_stage'] = {}
     status(translate('Bild wird vorbereitet …'))
@@ -299,6 +305,8 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         record['source_rotation'] = source_rotation
     if second_image is not None:
         record['second_image'] = str(second_image)
+        if second_rotation:
+            record['second_rotation'] = second_rotation
     if method == MICROSOFT:
         record.update(scratches=scratches, faces=faces)
 
@@ -354,7 +362,7 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         with prepared:
             prepared.save(staged, 'PNG')
         if reference is not None:
-            second, _ = open_photo(second_image)
+            second, _ = open_photo(second_image, rotation=second_rotation)
             with second:
                 if method == FLUX2:
                     second_size = restoration_size(second.size, method)

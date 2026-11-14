@@ -44,7 +44,9 @@ class Comparison(tk.Canvas):
         self.handle = ImageTk.PhotoImage(slider_handle(), master=self)
         self.fraction = 0.5
         self.zoom = 1.0
+        self.pixel_size = False
         self.pan = (0.0, 0.0)
+        self.view_key = None
         self.drag = None
         self.pending = False
         self.fit_notice_job = None
@@ -64,18 +66,47 @@ class Comparison(tk.Canvas):
         self.bind('<Left>', lambda event: self.nudge(-0.025))
         self.bind('<Right>', lambda event: self.nudge(0.025))
 
-    def show(self, before=None, after=None, *, reset_divider=False):
+    def show(self, before=None, after=None, *, reset_divider=False, view_key=None):
+        keep_view = view_key is not None and view_key == self.view_key and not reset_divider
+        if keep_view:
+            left, top, width, height = self.geometry()
+        self.view_key = view_key
         self.before_image, self.after_image = before, after
         if reset_divider:
             self.fraction = 0.5
         self.configure(cursor='')
-        self.fit(notice_ms=0)
+        self.drag = None
+        if not keep_view:
+            self.fit(notice_ms=0)
+            return
+        canvas_width, canvas_height = self.winfo_width(), self.winfo_height()
+        _, _, new_width, new_height = self.geometry()
+        self.pan = (
+            (left - (canvas_width - width) / 2) * new_width / width,
+            (top - (canvas_height - height) / 2) * new_height / height,
+        )
+        self.cancel_fit_notice()
+        self.schedule()
 
     def fit(self, event=None, *, notice_ms=2000):
+        self.pixel_size = False
         self.zoom, self.pan = 1.0, (0.0, 0.0)
         self.cancel_fit_notice()
         if notice_ms and self.before_image is not None:
             self.fit_notice_job = self.after(notice_ms, self.hide_fit_notice)
+        self.schedule()
+
+    def leave_zoom(self, event):
+        if self.before_image is not None and (self.pixel_size or self.zoom != 1.0):
+            self.fit()
+            return 'break'
+
+    def full_size(self):
+        if self.before_image is None:
+            return
+        self.cancel_fit_notice()
+        self.pixel_size = True
+        self.pan = (0.0, 0.0)
         self.schedule()
 
     def hide_fit_notice(self):
@@ -92,9 +123,11 @@ class Comparison(tk.Canvas):
             self.pending = True
             self.after_idle(self.draw)
 
+    def fit_scale(self, image):
+        return min(self.winfo_width() / image.width, self.winfo_height() / image.height)
+
     def display_scale(self, image):
-        fit = min(self.winfo_width() / image.width, self.winfo_height() / image.height)
-        return fit * self.zoom
+        return 1.0 if self.pixel_size else self.fit_scale(image) * self.zoom
 
     def geometry(self):
         image = self.after_image or self.before_image
@@ -141,7 +174,7 @@ class Comparison(tk.Canvas):
         self.drag = (event.x, event.y, *self.pan)
 
     def pan_move(self, event):
-        if self.drag and self.zoom > 1:
+        if self.drag and (self.pixel_size or self.zoom > 1):
             x, y, px, py = self.drag
             self.pan = (px + event.x - x, py + event.y - y)
             left, top, width, height = self.geometry()
@@ -151,17 +184,23 @@ class Comparison(tk.Canvas):
     def wheel(self, event):
         if self.before_image is None:
             return
+        image = self.after_image or self.before_image
+        current_scale = self.display_scale(image)
+        fit_scale = self.fit_scale(image)
         up = getattr(event, 'num', None) == 4 or getattr(event, 'delta', 0) > 0
-        new_zoom = max(1.0, min(8.0, self.zoom * (1.25 if up else 0.8)))
-        if new_zoom == self.zoom:
+        minimum = min(fit_scale, current_scale)
+        maximum = max(8.0 * fit_scale, current_scale)
+        new_scale = max(minimum, min(maximum, current_scale * (1.25 if up else 0.8)))
+        if new_scale == current_scale:
             return
-        if new_zoom == 1.0:
+        if (current_scale > fit_scale >= new_scale) or (current_scale < fit_scale <= new_scale):
             self.fit(notice_ms=1000)
             return
         self.cancel_fit_notice()
         x, y, width, height = self.geometry()
-        factor = new_zoom / self.zoom
-        self.zoom = new_zoom
+        factor = new_scale / current_scale
+        self.pixel_size = False
+        self.zoom = new_scale / fit_scale
         self.pan = (
             event.x - (event.x - x) * factor - (self.winfo_width() - width * factor) / 2,
             event.y - (event.y - y) * factor - (self.winfo_height() - height * factor) / 2,
@@ -199,7 +238,7 @@ class Comparison(tk.Canvas):
         if divider is not None:
             handle_x, handle_y = handle_position(divider, left, top, right, bottom)
             self.create_image(handle_x, handle_y, image=self.handle)
-        if self.zoom > 1.0:
+        if self.pixel_size or self.zoom != 1.0:
             scale = self.display_scale(self.after_image or self.before_image)
             self.draw_zoom_notice(left, bottom, translate('Ansicht: {0:.0f} %', scale * 100))
         elif self.fit_notice_job is not None:
