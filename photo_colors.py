@@ -19,7 +19,6 @@ class Colorizer:
         self.model_name = Path(model_path).name
         self.deoldify = method in DEOLDIFY_METHODS
         options = ort.SessionOptions()
-        options.intra_op_num_threads = 6
         options.enable_cpu_mem_arena = False
         self.session = ort.InferenceSession(str(model_path), sess_options=options, providers=['CPUExecutionProvider'])
         self.input = self.session.get_inputs()[0]
