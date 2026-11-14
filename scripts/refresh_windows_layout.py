@@ -34,7 +34,7 @@ def build(original, destination):
             if relative.is_absolute() or '..' in relative.parts:
                 raise ValueError(f'Unsafe archive member: {item.filename}')
             name = relative.as_posix()
-            if item.is_dir() or name == 'Start.cmd':
+            if item.is_dir() or name in {'Start.cmd', 'assets/dismiss-circle.png'}:
                 continue
             if name == 'RestoRenate.exe':
                 target.write(launcher, f'{APP}/{name}')

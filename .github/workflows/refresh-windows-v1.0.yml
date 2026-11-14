@@ -5,6 +5,7 @@ on:
     branches: [main, windows-focus-preview, output-folder-preview, reference-button-preview]
     paths:
       - '.github/workflows/refresh-windows-v1.0.yml'
+      - 'scripts/refresh_windows_layout.py'
       - 'tests/output_destination.py'
       - 'tests/reference_controls.py'
       - 'tests/windows_controls.py'
