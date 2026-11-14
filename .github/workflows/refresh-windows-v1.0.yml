@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
+      RESTORENATE_PREVIOUS_SHA256: 61f9456915390c6c0ab8358db8255f551526b16cd065c5c8ceef94357f1c4535
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

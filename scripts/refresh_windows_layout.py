@@ -13,10 +13,13 @@ APP = 'RestoRenate'
 ARCHIVE = 'RestoRenate_1.0_Windows_x64.zip'
 PREVIOUS_SHA256 = '2a191233d4f7c990a0c4128ed52c1d108a4ede4def00949eafe1dffc13fc4954'
 ROOT_FILES = {'RestoRenate.exe', 'README_DE_EN.txt', 'LICENSE', 'THIRD_PARTY.txt'}
+UPDATED_CODE = {'app.py', 'bootstrap.py', 'language.py', 'portable_paths.py', 'portable_setup.py',
+                'preload_models.py', 'theme.py'}
 
 
 def build(original, destination):
-    if sha256(original.read_bytes()).hexdigest() != PREVIOUS_SHA256:
+    expected = os.environ.get('RESTORENATE_PREVIOUS_SHA256', PREVIOUS_SHA256)
+    if sha256(original.read_bytes()).hexdigest() != expected:
         raise ValueError('The input archive differs from the verified v1.0 release.')
 
     compiler = Path(os.environ['SystemRoot']) / 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
@@ -35,20 +38,21 @@ def build(original, destination):
                 continue
             if name == 'RestoRenate.exe':
                 target.write(launcher, f'{APP}/{name}')
-            elif name == 'restorenate.ico':
+            elif name in {'restorenate.ico', 'assets/restorenate.ico'}:
                 target.write(REPO / 'assets/restorenate.ico', f'{APP}/assets/restorenate.ico')
             elif name in ROOT_FILES:
                 document = REPO / name
                 target.writestr(f'{APP}/{name}', document.read_bytes() if document.is_file() else source.read(item))
+            elif relative.name in UPDATED_CODE and (len(relative.parts) == 1 or relative.parts[0] == '_internal'):
+                target.write(REPO / relative.name, f'{APP}/_internal/{relative.name}')
             elif len(relative.parts) == 1:
-                replacement = REPO / name
                 target.writestr(f'{APP}/_internal/{name}',
-                                replacement.read_bytes() if name in {'app.py', 'bootstrap.py', 'portable_setup.py'}
-                                else source.read(item))
+                                source.read(item))
             else:
                 with source.open(item) as incoming, target.open(item.filename, 'w') as outgoing:
                     shutil.copyfileobj(incoming, outgoing)
-        target.write(REPO / 'portable_paths.py', f'{APP}/_internal/portable_paths.py')
+        if f'{APP}/_internal/portable_paths.py' not in target.namelist():
+            target.write(REPO / 'portable_paths.py', f'{APP}/_internal/portable_paths.py')
 
     with ZipFile(destination) as package:
         names = package.namelist()

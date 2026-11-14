@@ -44,6 +44,7 @@ ENGLISH = {
     'Der Auftragsverlauf konnte nicht gelöscht werden.\n\n{0}': 'Could not clear the job history.\n\n{0}',
     'Auftragsverlauf gelöscht.': 'Job history cleared.',
     'Drehen': 'Rotate',
+    'Drehen ▾': 'Rotate ▾',
     '90° links': '90° left',
     '90° rechts': '90° right',
     'Drehung zurücksetzen': 'Reset rotation',

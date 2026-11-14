@@ -72,13 +72,16 @@ def apply_theme(window):
               arrowcolor=[('disabled', DISABLED)])
     for input_style in ('Input.TButton', 'Input.Primary.TButton', 'Input.TMenubutton'):
         style.configure(input_style, padding=(5, 2))
-    style.layout('Prompt.TMenubutton', [
+    flat_menu_layout = [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [
             ('Menubutton.padding', {'sticky': 'nswe', 'children': [
                 ('Menubutton.label', {'sticky': 'nswe'}),
             ]}),
         ]}),
-    ])
+    ]
+    style.layout('Prompt.TMenubutton', flat_menu_layout)
+    style.layout('Reference.TMenubutton', flat_menu_layout)
+    style.configure('Reference.TMenubutton', borderwidth=1, relief='raised', padding=(5, 2))
     style.configure('Prompt.TMenubutton', borderwidth=1, relief='raised', padding=(9, 2))
     style.map('Prompt.TMenubutton', bordercolor=[('active', GOLD), ('focus', GOLD_LIGHT)],
               darkcolor=[('active', GOLD), ('focus', GOLD_LIGHT)],

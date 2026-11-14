@@ -503,20 +503,20 @@ class Application:
         self.second_name.pack(fill='x', expand=True)
         actions = tk.Frame(details, bg=SECONDARY_BG)
         actions.pack(fill='x')
+        actions.columnconfigure(2, weight=1)
         self.second_button = ttk.Button(actions, command=self.choose_second_image, width=-1, style='Input.TButton')
-        self.second_button.pack(side='left')
-        self.second_rotate_button = self.labelled(ttk.Menubutton, actions, 'Drehen', width=-1,
-                                                  style='Input.TMenubutton')
-        self.second_rotate_button.pack(side='left', padx=(4, 0))
+        self.second_button.grid(row=0, column=0, sticky='w')
+        self.second_rotate_button = self.labelled(ttk.Menubutton, actions, 'Drehen ▾', width=-1,
+                                                  style='Reference.TMenubutton')
+        self.second_rotate_button.grid(row=0, column=1, padx=(4, 0), sticky='w')
         self.second_rotation_menu = tk.Menu(self.second_rotate_button, **menu_colors)
         for label, turns in ROTATION_CHOICES:
             self.second_rotation_menu.add_command(label=translate(label),
                                                   command=lambda turns=turns: self.rotate_second_image(turns))
         self.second_rotate_button.configure(menu=self.second_rotation_menu)
-        self.remove_second_button = self.labelled(
-            ttk.Button, actions, 'Entfernen', command=self.clear_second_image, width=-1, style='Input.TButton',
-        )
-        self.remove_second_button.pack(side='right')
+        self.remove_second_button = ttk.Button(actions, text='×', command=self.clear_second_image,
+                                               width=-1, style='Input.TButton')
+        self.remove_second_button.grid(row=0, column=3, padx=(4, 0), sticky='e')
 
     def variant_changed(self, *_):
         self.variant_count = VARIANT_COUNTS.get(self.variants.get(), self.variant_count)

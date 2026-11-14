@@ -16,6 +16,8 @@ LIGHTNING_MODELS = {
     QWEN2511_LIGHTNING_4: (QWEN2511_BASE, 'Lightning-LoRA · 4 Schritte'),
     FIRERED_LIGHTNING: (FIRERED_BASE, 'Lightning-LoRA · 8 Schritte'),
 }
+OPTION_SPACING = (0, 5)
+OPTION_INDENT = 18
 
 
 def preload_requests(methods, upscalers, *, faces=False):
@@ -73,7 +75,7 @@ class PreloadDialog(tk.Toplevel):
                                           current_method in (base, method),
                                           command=lambda method=method: self.update_lightning(method, base_changed=True),
                                           enabled=base in methods)
-                lora_option = self.option(left, translate(label), '', current_method == method, indent=14,
+                lora_option = self.option(left, translate(label), '', current_method == method, indent=OPTION_INDENT,
                                           command=lambda method=method: self.update_lightning(method))
                 self.lightning[method] = base_option, lora_option
                 if base in methods:
@@ -88,7 +90,7 @@ class PreloadDialog(tk.Toplevel):
             self.methods[method] = self.option(left, label, license_label, method == current_method)
             if method == MICROSOFT:
                 faces_row = tk.Frame(left, bg=PANEL_BG)
-                faces_row.pack(fill='x', padx=(14, 0), pady=(0, 4))
+                faces_row.pack(fill='x', padx=(OPTION_INDENT, 0), pady=OPTION_SPACING)
                 self.face_option = checkbox(faces_row, translate('Gesichter verbessern'), self.faces, self.update_total)
                 self.face_option.pack(side='left')
                 tk.Label(faces_row, text=translate('iBUG · nicht kommerziell'), bg=PANEL_BG, fg=MUTED,
@@ -119,7 +121,7 @@ class PreloadDialog(tk.Toplevel):
 
     def option(self, parent, label, license_label, selected, *, indent=0, command=None, enabled=True):
         row = tk.Frame(parent, bg=PANEL_BG)
-        row.pack(fill='x', padx=(indent, 0))
+        row.pack(fill='x', padx=(indent, 0), pady=OPTION_SPACING)
         value = tk.BooleanVar(self, selected)
         control = checkbox(row, label, value, command or self.update_total)
         control.pack(side='left')
