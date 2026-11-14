@@ -168,6 +168,7 @@ ENGLISH = {
     'Bild wird kodiert': 'Encoding image',
     'Bild wird koloriert …': 'Colorizing image …',
     'Bild wird bearbeitet': 'Processing image',
+    'Sampling · Erster Rechenschritt läuft …': 'Sampling · First step in progress …',
     'Bild wird restauriert': 'Restoring image',
     'Bild wird bearbeitet · Fortschritt nicht verfügbar': 'Processing image · progress unavailable',
     'Bild wird vorbereitet …': 'Preparing image …',
