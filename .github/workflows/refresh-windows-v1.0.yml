@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/refresh-windows-v1.0.yml'
       - 'scripts/refresh_windows_layout.py'
+      - 'tests/field_focus.py'
       - 'tests/output_destination.py'
       - 'tests/reference_controls.py'
       - 'tests/windows_controls.py'
