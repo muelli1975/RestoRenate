@@ -19,20 +19,17 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - name: Install system dependencies
+      - name: Install the virtual display used by CI
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3.12-venv python3-tk libimage-exiftool-perl xvfb xauth
+          sudo apt-get install -y xvfb xauth
       - name: Build a clean package
         shell: bash
         run: |
           set -euo pipefail
           root='package/RestoRenate'
-          mkdir -p "$root/_internal" dist
-          cp Start.sh requirements-unix.txt README.md README_DE.md README_DE_EN.txt LICENSE THIRD_PARTY.txt "$root/"
-          cp -r assets vendor "$root/"
-          cp ./*.py constraints-comfy-unix.txt download_manifest.json method_downloads.json exiftool_restorenate.config "$root/_internal/"
-          chmod +x "$root/Start.sh"
+          mkdir dist
+          bash scripts/package_unix.sh "$root"
           tar -C package -czf dist/RestoRenate_Linux_x64_Preview.tar.gz RestoRenate
           (cd dist && sha256sum RestoRenate_Linux_x64_Preview.tar.gz > SHA256SUMS.txt)
       - name: Run the extracted package on Ubuntu
@@ -41,7 +38,8 @@ jobs:
           set -euo pipefail
           mkdir fresh
           tar -C fresh -xzf dist/RestoRenate_Linux_x64_Preview.tar.gz
-          root="$PWD/fresh/RestoRenate"
+          mv fresh/RestoRenate "fresh/RestoRenate portable"
+          root="$PWD/fresh/RestoRenate portable"
           xvfb-run -a bash -e -c '
             "$1/Start.sh" &
             app=$!
@@ -55,10 +53,10 @@ jobs:
             sleep 2
             kill -0 "$app"
           ' _ "$root"
-          xvfb-run -a "$root/runtime/linux-app/bin/python" tests/unix_smoke.py "$root"
+          xvfb-run -a "$root/runtime/python/bin/python3.12" tests/unix_smoke.py "$root"
       - name: Print runtime diagnostics
         if: failure()
-        run: tail -n 50 fresh/RestoRenate/logs/*.log || true
+        run: tail -n 50 fresh/RestoRenate portable/logs/*.log || true
       - uses: actions/upload-artifact@v4
         with:
           name: RestoRenate-Linux-x64-Preview
@@ -84,10 +82,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y python3.12-venv
           tar -xzf RestoRenate_Linux_x64_Preview.tar.gz
-          python3.12 tests/linux_rocm_smoke.py "$PWD/RestoRenate"
+          "RestoRenate/runtime/python/bin/python3.12" tests/linux_rocm_smoke.py "$PWD/RestoRenate"
       - name: Print setup diagnostics
         if: failure()
         run: tail -n 50 RestoRenate/logs/*.log || true
@@ -125,6 +121,6 @@ jobs:
               --notes 'Ubuntu 24.04 x86-64. See README_DE.md or README.md for requirements.'
           fi
           gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --latest=false --notes \
-            'Ubuntu 24.04 x86-64. GitHub Actions checks CPU processing and ROCm setup. NVIDIA and AMD GPU inference are experimental. See README_DE.md or README.md for requirements.'
+            'Portable preview for Ubuntu 24.04 x86-64. Extract the archive and run Start.sh. Python, Tk and ExifTool are included. GitHub Actions checks CPU processing and ROCm setup. NVIDIA and AMD GPU inference are experimental.'
           actual=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$file\") | .digest")
           test "$actual" = "sha256:$(cut -d' ' -f1 SHA256SUMS.txt)"

@@ -469,10 +469,7 @@ class Setup:
         if not (comfy / 'main.py').is_file():
             with tempfile.TemporaryDirectory(dir=self.backend_root) as directory:
                 checkout = Path(directory) / 'ComfyUI'
-                self.command(['git', 'init', str(checkout)])
-                self.command(['git', '-C', checkout, 'fetch', '--depth=1',
-                              'https://github.com/Comfy-Org/ComfyUI.git', COMFY_COMMIT])
-                self.command(['git', '-C', checkout, 'checkout', '--detach', COMFY_COMMIT])
+                shutil.copytree(contained(self.root, 'vendor/ComfyUI'), checkout)
                 self.check()
                 checkout.rename(comfy)
         environment = self.backend_root / 'venv'

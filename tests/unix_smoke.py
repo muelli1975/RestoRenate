@@ -97,6 +97,7 @@ def test_upscaling(source, folder):
 
 def test_metadata(source, folder):
     exiftool = exiftool_executable(root)
+    assert exiftool == root / 'tools/exiftool/exiftool'
     settings = {'method': 'unix-smoke-test', 'seed': 17}
     with Image.open(source) as image:
         jpg, _ = save_result(image, source, folder, 'JPEG 95 · 4:4:4', None, exiftool, settings=settings)
@@ -117,6 +118,8 @@ def test_metadata(source, folder):
 
 if __name__ == '__main__':
     assert UNIX_RUNTIME and app.ROOT == root
+    assert Path(sys.executable).is_relative_to(root / 'runtime/python')
+    assert (root / 'vendor/ComfyUI/main.py').is_file()
     assert resolve_upscaler(UPSCALING) == ULTRASHARP_LITE
     assert resolve_upscaler(UPSCALING, NOMOS2_HQ) == NOMOS2_HQ
     assert resolve_upscaler(DDCOLOR_TINY) == LANCZOS

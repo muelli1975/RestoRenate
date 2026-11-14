@@ -7,7 +7,6 @@ import math
 import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import tempfile
 
@@ -97,14 +96,10 @@ def prepare(image, size, *, alignment=16, canvas=None):
 
 
 def exiftool_executable(root):
-    if os.name == 'nt':
-        path = root / 'tools/exiftool/exiftool.exe'
-        if path.is_file():
-            return path
-    else:
-        path = shutil.which('exiftool')
-        if path:
-            return Path(path)
+    executable = 'exiftool.exe' if os.name == 'nt' else 'exiftool'
+    path = root / 'tools/exiftool' / executable
+    if path.is_file():
+        return path
     raise FileNotFoundError(translate('ExifTool fehlt. Bitte die portable ZIP vollständig entpacken.'))
 
 

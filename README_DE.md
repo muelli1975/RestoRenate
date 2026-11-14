@@ -11,8 +11,10 @@ Die App fragt vor dem Download fehlender Modelle und Laufzeitdateien nach. Nach 
 | Plattform | Paket und Voraussetzungen |
 | --- | --- |
 | Windows x64 | Die [portable ZIP](https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_Windows_x64.zip) in einen kurzen, beschreibbaren Pfad wie `D:\RestoRenate` entpacken und `RestoRenate.exe` öffnen. Python und ExifTool sind enthalten. |
-| Ubuntu 24.04 x86-64 | Die Linux-Vorschau wird mit [GitHub Actions](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml) gebaut und geprüft. `python3.12-venv`, `python3-tk`, `git` und `libimage-exiftool-perl` installieren, das `.tar.gz` in einen beschreibbaren Ordner entpacken und `./Start.sh` aufrufen. Das Skript legt die Python-Umgebung im Programmordner an. |
-| macOS 15 oder neuer, Apple Silicon | Python 3.12 mit Tk und ExifTool installieren (`brew install python-tk@3.12 exiftool`). `git` muss verfügbar sein. Die ZIP in einen beschreibbaren Ordner entpacken und `Start.command` öffnen oder `./Start.sh` im Terminal aufrufen. Die Vorschau wird mit [GitHub Actions](https://github.com/muelli1975/RestoRenate/actions/workflows/macos.yml) gebaut und geprüft. |
+| Ubuntu 24.04 x86-64 | Portable Vorschau. Das `.tar.gz` in einen beschreibbaren Ordner entpacken und `./Start.sh` in einer grafischen Sitzung starten. |
+| macOS 15 oder neuer, Apple Silicon | Portable Vorschau. Die ZIP in einen beschreibbaren Ordner entpacken und `RestoRenate.app` aus diesem Ordner öffnen. |
+
+Beide Vorschauen enthalten Python, Tk und ExifTool. ExifTool verwendet das Perl des Systems. RestoRenate lädt ausgewählte Modelle und Rechenbibliotheken bei Bedarf in den Programmordner. [Linux-Builds](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml) · [macOS-Builds](https://github.com/muelli1975/RestoRenate/actions/workflows/macos.yml)
 
 Unter Windows stehen CPU und NVIDIA sowie AMD ROCm als experimentelle Option zur Wahl. Die Linux-Vorschau startet standardmäßig auf der CPU und bietet experimentelle Modi für NVIDIA (CUDA-13-tauglicher Treiber) und AMD ([mit ROCm 7.2 kompatible Hardware und Treiber](https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2/docs/compatibility/compatibilityrad/native_linux/native_linux_compatibility.html)). Die macOS-Vorschau verwendet standardmäßig Apple Metal (MPS) und bietet auch CPU-Berechnung. Nunchaku INT4 ist auf unterstützten NVIDIA-Systemen unter Windows verfügbar.
 

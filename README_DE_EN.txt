@@ -11,6 +11,10 @@ und den Inhalt des Ordners RestoRenate aus der ZIP in den bestehenden
 Programmordner kopieren und die Programmdateien ersetzen.
 Modelle, Einstellungen und eigene Presets lassen sich weiterverwenden.
 
+Linux: Das Archiv entpacken und ./Start.sh in einer grafischen Sitzung starten.
+macOS 15+: Die ZIP entpacken und RestoRenate.app aus dem Ordner öffnen.
+Python, Tk und ExifTool sind enthalten. ExifTool verwendet das Perl des Systems.
+
 Ein Bild oder einen Ordner öffnen und ein Verfahren auswählen.
 Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …“
 öffnet einen Rahmen mit Drittelraster. Zum Verschieben innerhalb des Rahmens
@@ -195,6 +199,10 @@ open RestoRenate.exe. To update, close RestoRenate and copy the contents of the
 RestoRenate folder in the ZIP into the existing program folder. Replace the
 program files. Models, settings and custom presets
 can be reused.
+
+Linux: Extract the archive and run ./Start.sh in a graphical desktop session.
+macOS 15+: Extract the ZIP and open RestoRenate.app from its folder.
+Python, Tk and ExifTool are included. ExifTool uses the system Perl.
 
 Open an image or folder and choose a method. Input formats
 include JPEG, PNG, TIFF, WebP, BMP and AVIF. “Crop …” opens a frame with a

@@ -3,7 +3,7 @@ RestoRenate · Third-party components
 Portable setup and backend process code adapted from Christoph Müller's
 DDD-Test 0.2 under the MIT license. See LICENSE.
 
-Components included in the source or portable Windows package
+Components included in the source and portable packages
 
 Completion sound assets/ready.wav, shared with DepthTricia, StereoFine,
 TransCora and Wigglinde.
@@ -12,6 +12,14 @@ TransCora and Wigglinde.
 Python and Tcl/Tk: Python Software Foundation and Tcl/Tk contributors.
   https://www.python.org/
   See runtime/python/LICENSE.txt and the included notices.
+
+Linux and macOS bundle CPython 3.12 and Tcl/Tk from Python Build Standalone.
+  https://github.com/astral-sh/python-build-standalone/releases/tag/20261110
+  See the notices in runtime/python and its lib/python3.12/site-packages.
+  ExifTool 13.59 and its upstream notices are in tools/exiftool.
+  https://exiftool.org/
+  The ComfyUI source and its license are in vendor/ComfyUI.
+  https://github.com/Comfy-Org/ComfyUI
 
 NumPy and Pillow:
   https://numpy.org/ · https://python-pillow.org/
