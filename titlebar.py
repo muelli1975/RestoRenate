@@ -7,6 +7,7 @@ import sys
 
 CAPTION_RGB = (0x20, 0x20, 0x20)
 CAPTION_TEXT_RGB = (0xF2, 0xF2, 0xF2)
+DWMWA_TRANSITIONS_FORCEDISABLED = 3
 
 
 @lru_cache(maxsize=1)
@@ -54,6 +55,21 @@ def _apply_windows_titlebar(window_id):
             # Repaint the frame in place, without hiding or activating it.
             redraw(hwnd, None, None, 0x0001 | 0x0400 | 0x0100)
         return applied
+    except (AttributeError, OSError):
+        return False
+
+
+def set_window_transitions_disabled(window, disabled):
+    """Set the Windows compositor's transitions flag on this window."""
+    from ctypes import wintypes
+
+    try:
+        ancestor, set_attribute, _ = _windows_functions()
+        hwnd = ancestor(window.winfo_id(), 2)
+        value = wintypes.BOOL(disabled)
+        return bool(hwnd) and set_attribute(
+            hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, ctypes.byref(value), ctypes.sizeof(value),
+        ) == 0
     except (AttributeError, OSError):
         return False
 

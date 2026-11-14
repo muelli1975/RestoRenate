@@ -2,13 +2,14 @@ name: Refresh RestoRenate 1.0 Windows archive
 
 on:
   push:
-    branches: [main, windows-focus-preview, output-folder-preview, reference-button-preview]
+    branches: [main, windows-focus-preview, output-folder-preview, reference-button-preview, windows-startup-preview]
     paths:
       - '.github/workflows/refresh-windows-v1.0.yml'
       - 'scripts/refresh_windows_layout.py'
       - 'tests/output_destination.py'
       - 'tests/reference_controls.py'
       - 'tests/windows_controls.py'
+      - 'tests/windows_startup.py'
   workflow_dispatch:
 
 permissions:
@@ -24,7 +25,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
-      RESTORENATE_PREVIOUS_SHA256: 88e91ff20102e0feaaf29f224d13461577a59f322d3150f899deb109df51b5ba
+      RESTORENATE_PREVIOUS_SHA256: 569abf225916453b261bdfc5e04fb7341fedc84daf2f82bb80186673965dc6df
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -52,10 +53,13 @@ jobs:
             throw 'RestoRenate window did not start'
           }
           [void]$app.CloseMainWindow()
+          if (!$app.WaitForExit(10000)) { throw 'Launcher smoke-test window did not close' }
           & "$root/runtime/python/python.exe" -c "import sys; from pathlib import Path; sys.path.insert(0, 'dist/smoke/RestoRenate/_internal'); from portable_paths import ROOT; from portable_setup import Setup; assert (ROOT / 'assets/restorenate.ico').is_file(); assert Setup().root == ROOT"
           if ($LASTEXITCODE -ne 0) { throw 'Portable layout check failed' }
           & "$root/runtime/python/python.exe" tests/windows_controls.py $root
           if ($LASTEXITCODE -ne 0) { throw 'Windows control check failed' }
+          & "$root/runtime/python/python.exe" tests/windows_startup.py $root
+          if ($LASTEXITCODE -ne 0) { throw 'Windows startup check failed' }
       - uses: actions/upload-artifact@v4
         if: success() || failure()
         with:

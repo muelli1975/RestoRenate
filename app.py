@@ -44,7 +44,7 @@ from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORD
                    set_control_state, style_method_scrollbar)
 from restoration import Client, restore, select_models
 from technical_logs import TechnicalLog, prepare_technical_logs
-from titlebar import install_tk_titlebars
+from titlebar import install_tk_titlebars, set_window_transitions_disabled
 
 DEFAULT_PROMPT_NAME = 'Allround'
 # The two original workflows share this wording.
@@ -1752,6 +1752,8 @@ class Application:
 def create_window():
     window = tk.Tk()
     if sys.platform == 'win32':
+        # Setting the icon can create the native frame immediately.
+        window.withdraw()
         try:
             icon_path = str(ROOT / 'assets/restorenate.ico')
             window.iconbitmap(default=icon_path)
@@ -1783,6 +1785,12 @@ def run_gui():
         prepare_technical_logs(ROOT / 'logs')
         window = create_window()
         Application(window)
+        if sys.platform == 'win32':
+            window.update_idletasks()
+            suppress_transition = set_window_transitions_disabled(window, True)
+            window.deiconify()
+            if suppress_transition:
+                window.after(150, set_window_transitions_disabled, window, False)
         window.mainloop()
 
 
