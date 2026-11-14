@@ -382,6 +382,17 @@ class Setup:
             remaining[spec['path']] = spec['size'] - existing
         return remaining
 
+    def setup_status(self):
+        if self.ready():
+            return 'Verfahren bereit'
+        remaining = self.remaining_downloads()
+        model_paths = [spec['path'] for spec in self.models if spec['path'].startswith('models/')]
+        if any(remaining.get(path, 0) for path in model_paths):
+            return 'Modelldownload erforderlich'
+        if any(remaining.values()):
+            return 'Laufzeit-Download erforderlich'
+        return 'Prüfung erforderlich'
+
     def remaining_download_bytes(self):
         return sum(self.remaining_downloads().values())
 

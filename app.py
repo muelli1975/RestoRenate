@@ -515,7 +515,7 @@ class Application:
                                                   command=lambda turns=turns: self.rotate_second_image(turns))
         self.second_rotate_button.configure(menu=self.second_rotation_menu)
         self.remove_second_button = ttk.Button(actions, text='×', command=self.clear_second_image,
-                                               width=-1, style='Input.TButton')
+                                               width=-1, style='RemoveReference.TButton')
         self.remove_second_button.grid(row=0, column=3, padx=(4, 0), sticky='e')
 
     def variant_changed(self, *_):
@@ -588,12 +588,14 @@ class Application:
 
     def check_ready(self):
         upscaler = self.effective_upscaler()
-        self.ready = Setup(ROOT, method=self.current_method, faces=self.faces.get(),
-                           upscaler=upscaler, compute=self.active_compute).ready()
+        setup = Setup(ROOT, method=self.current_method, faces=self.faces.get(),
+                      upscaler=upscaler, compute=self.active_compute)
+        self.setup_status_key = setup.setup_status()
+        self.ready = self.setup_status_key == 'Verfahren bereit'
         self.update_setup_status()
 
     def update_setup_status(self):
-        status = translate('Verfahren bereit') if self.ready else translate('Einrichtung erforderlich')
+        status = translate(self.setup_status_key)
         if self.active_compute == CPU and self.current_method not in NO_PROMPT:
             status += ' · ' + translate('Hoher CPU-Aufwand')
         self.setup_status.set(status)
@@ -665,7 +667,9 @@ class Application:
 
     def approve_setup(self, setup, upscaler):
         method = self.current_method
-        size = format_download_size(setup.remaining_download_bytes())
+        download_bytes = setup.remaining_download_bytes()
+        transfer = (translate('Noch etwa {0} Download.', format_download_size(download_bytes)) if download_bytes
+                    else translate('Vorhandene Dateien werden geprüft.'))
         upscaler_names = ''
         if upscaler in UPSCALE_LICENSES:
             upscaler_names = f'{upscaler}: {UPSCALE_LICENSES[upscaler]}.\n'
@@ -680,8 +684,8 @@ class Application:
         return messagebox.askyesno(
             translate('Modelle einrichten'),
             translate(
-                '{0}\n\n{1}Noch etwa {2} Download. Lizenz für das Verfahren: {3}.\n{4}{5}{6}\nJetzt einrichten?',
-                translate(METHODS[method]), backend_device, size, translate(LICENSES[method]),
+                '{0}\n\n{1}{2} Lizenz für das Verfahren: {3}.\n{4}{5}{6}\nJetzt einrichten?',
+                translate(METHODS[method]), backend_device, transfer, translate(LICENSES[method]),
                 face_license, upscaler_names, backend_license,
             ),
             parent=self.window,

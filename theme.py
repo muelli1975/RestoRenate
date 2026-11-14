@@ -13,6 +13,9 @@ MUTED = '#b8b8b8'
 DISABLED = '#727272'
 GOLD = '#9c7c38'
 GOLD_LIGHT = '#c6a95e'
+DANGER = '#7f3939'
+DANGER_HOVER = '#944545'
+DANGER_TEXT = '#ed8585'
 PREVIEW_BG = '#000000'
 
 
@@ -72,6 +75,12 @@ def apply_theme(window):
               arrowcolor=[('disabled', DISABLED)])
     for input_style in ('Input.TButton', 'Input.Primary.TButton', 'Input.TMenubutton'):
         style.configure(input_style, padding=(5, 2))
+    style.configure('RemoveReference.TButton', foreground=DANGER_TEXT, padding=(5, 0),
+                    font=('Segoe UI', 12, 'bold'))
+    style.map('RemoveReference.TButton', foreground=[('disabled', DISABLED)],
+              bordercolor=[('active', DANGER_HOVER), ('!disabled', DANGER)],
+              lightcolor=[('active', DANGER_HOVER), ('!disabled', DANGER)],
+              darkcolor=[('active', DANGER_HOVER), ('!disabled', DANGER)])
     flat_menu_layout = [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [
             ('Menubutton.padding', {'sticky': 'nswe', 'children': [

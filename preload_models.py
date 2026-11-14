@@ -185,8 +185,10 @@ class PreloadDialog(tk.Toplevel):
             else:
                 runtime_status = 'ComfyUI · wird eingerichtet'
         self.runtime_status.set(translate(runtime_status))
-        self.total.set(translate('Berechnung: {0} · Noch etwa {1} Download',
-                                 compute_label(self.compute), format_download_size(sum(remaining.values()))))
+        remaining_bytes = sum(remaining.values())
+        transfer = (translate('Noch etwa {0} Download', format_download_size(remaining_bytes)) if remaining_bytes
+                    else translate('Keine Downloads erforderlich'))
+        self.total.set(translate('Berechnung: {0}', compute_label(self.compute)) + ' · ' + transfer)
         self.submit.configure(state='normal' if requests else 'disabled')
 
     def apply(self):
