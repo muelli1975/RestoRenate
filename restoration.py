@@ -57,6 +57,7 @@ PHASES = {
     'ImageUpscaleWithModel': 'Bild wird hochskaliert',
     'PreviewImage': 'Vorschau wird erstellt',
 }
+SAMPLER_NODES = ('KSampler', 'SamplerCustomAdvanced')
 STEP_UNITS = {
     'KSampler': 'Schritt', 'SamplerCustomAdvanced': 'Schritt', 'ImageUpscaleWithModel': 'Kachel',
     'FotoRestaurierungMicrosoft': 'Phase', 'FotoRestaurierungGesichter': 'Phase',
@@ -154,11 +155,16 @@ def report_progress(event, graph, prompt_id, status, progress):
         if node_type == 'FotoRestaurierungMicrosoft' and node['inputs']['scratches']:
             phase = translate('Kratzer werden gesucht')
         progress(None)
-        status(phase + ' …')
+        if node_type in SAMPLER_NODES:
+            status(translate('Sampling · Erster Rechenschritt läuft …'))
+        else:
+            status(phase + ' …')
     elif kind == 'progress':
         unit = STEP_UNITS.get(node_type)
         value, total = data.get('value'), data.get('max')
         if unit and isinstance(value, int) and isinstance(total, int) and 0 <= value <= total and total > 0:
+            if value == 0 and node_type in SAMPLER_NODES:
+                return
             progress(100 * value / total)
             status(f'{phase} · {translate(unit)} {value}/{total}')
 
@@ -234,7 +240,7 @@ def generate(client, graph, status, cancelled, progress=lambda value: None, node
                                 finish_node(now)
                                 active_node, node_started = node_id, now
                             elif (kind == 'progress' and node_id == active_node and node_id in graph
-                                  and graph[node_id]['class_type'] in ('KSampler', 'SamplerCustomAdvanced')
+                                  and graph[node_id]['class_type'] in SAMPLER_NODES
                                   and data.get('value') == 1):
                                 node_seconds.setdefault('first_sampling_step', round(time.monotonic() - node_started, 2))
                     report_progress(event, graph, prompt_id, status, progress)
