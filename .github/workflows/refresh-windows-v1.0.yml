@@ -3,7 +3,10 @@ name: Refresh RestoRenate 1.0 Windows archive
 on:
   push:
     branches: [main, windows-focus-preview, output-folder-preview]
-    paths: ['.github/workflows/refresh-windows-v1.0.yml']
+    paths:
+      - '.github/workflows/refresh-windows-v1.0.yml'
+      - 'tests/output_destination.py'
+      - 'tests/windows_controls.py'
   workflow_dispatch:
 
 permissions:
