@@ -210,6 +210,8 @@ class Application:
         self.status.set_message('Bereit')
         self.setup_status = tk.StringVar()
         self.input_value = tk.StringVar()
+        last_input = self.config.get('input_folder')
+        self.input_folder = last_input if isinstance(last_input, str) else ''
         self.output_in_source = tk.BooleanVar(value=self.config.get('output_in_source', True) is not False)
         self.automatic_output = tk.StringVar()
         saved_output = self.config.get('custom_output')
@@ -757,7 +759,7 @@ class Application:
         finally:
             self.events.put(('idle', (False, None)))
 
-    def pick_sources(self, selected):
+    def pick_sources(self, selected, *, remember_input=True):
         if not selected:
             return
         path = Path(selected).resolve()
@@ -786,6 +788,8 @@ class Application:
         self.update_dimensions()
         self.input_value.set(str(path))
         source_folder = path if path.is_dir() else path.parent
+        if remember_input:
+            self.input_folder = str(source_folder)
         self.automatic_output.set(str(source_folder / 'output'))
         self.results = self.saved_results(sources)
         self.index = len(self.results) - 1
@@ -992,13 +996,19 @@ class Application:
                 continue
         return results
 
+    def input_dialog_folder(self):
+        if self.input_folder and Path(self.input_folder).is_dir():
+            return self.input_folder
+        return str(ROOT)
+
     def choose_photo(self):
         filetypes = [(translate(label), pattern) for label, pattern in FILE_TYPES]
         self.pick_sources(filedialog.askopenfilename(parent=self.window, title=translate('Bild auswählen'),
-                                                     filetypes=filetypes))
+                                                     initialdir=self.input_dialog_folder(), filetypes=filetypes))
 
     def choose_folder(self):
-        self.pick_sources(filedialog.askdirectory(parent=self.window, title=translate('Eingabeordner auswählen')))
+        self.pick_sources(filedialog.askdirectory(parent=self.window, title=translate('Eingabeordner auswählen'),
+                                                 initialdir=self.input_dialog_folder()))
 
     def update_output_controls(self):
         automatic = self.output_in_source.get()
@@ -1309,7 +1319,8 @@ class Application:
         SETTINGS.parent.mkdir(parents=True, exist_ok=True)
         self.remember_prompt()
         self.remember_scaling()
-        data = dict(output_in_source=self.output_in_source.get(), custom_output=self.custom_output.get().strip(),
+        data = dict(input_folder=self.input_folder, output_in_source=self.output_in_source.get(),
+                    custom_output=self.custom_output.get().strip(),
                     format=self.output_format.get(), seed=self.seed, compute=self.compute.get(),
                     method=self.current_method, prompt_draft=self.draft, presets=self.custom,
                     language=self.language,
@@ -1653,7 +1664,7 @@ class Application:
 
     def reuse_result(self):
         if self.action is None and 0 <= self.index < len(self.results):
-            self.pick_sources(self.results[self.index][1])
+            self.pick_sources(self.results[self.index][1], remember_input=False)
 
     def show_result(self, *, reset_divider=False):
         source, output, crop, rotation = self.results[self.index]

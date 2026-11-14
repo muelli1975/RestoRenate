@@ -29,9 +29,13 @@ def check_output_destination():
                 assert gui.output_entry.get() == ''
                 assert gui.output_entry.instate(['readonly'])
 
-                gui.pick_sources(first / 'image.png')
+                with patch.object(app.filedialog, 'askopenfilename', return_value=str(first / 'image.png')) as dialog:
+                    gui.choose_photo()
+                    assert dialog.call_args.kwargs['initialdir'] == str(app.ROOT)
                 assert gui.output_entry.get() == str(first / 'output')
-                gui.pick_sources(second)
+                with patch.object(app.filedialog, 'askdirectory', return_value=str(second)) as dialog:
+                    gui.choose_folder()
+                    assert dialog.call_args.kwargs['initialdir'] == str(first)
                 assert gui.output_entry.get() == str(second / 'output')
                 assert not (first / 'output').exists()
                 assert not (second / 'output').exists()
@@ -48,7 +52,15 @@ def check_output_destination():
                     gui.choose_output()
                 assert not gui.output_in_source.get()
                 assert gui.output_entry.instate(['!readonly', '!disabled'])
-                gui.pick_sources(first / 'image.png')
+                with patch.object(app.filedialog, 'askopenfilename', return_value='') as dialog:
+                    gui.choose_photo()
+                    assert dialog.call_args.kwargs['initialdir'] == str(second)
+                with patch.object(app.filedialog, 'askdirectory', return_value='') as dialog:
+                    gui.choose_folder()
+                    assert dialog.call_args.kwargs['initialdir'] == str(second)
+                with patch.object(app.filedialog, 'askopenfilename', return_value=str(first / 'image.png')) as dialog:
+                    gui.choose_photo()
+                    assert dialog.call_args.kwargs['initialdir'] == str(second)
                 assert gui.output_entry.get() == str(custom)
                 gui.start_clicked()
                 sources, target, output_format, *_ = gui.launch.call_args.args[1]
@@ -59,6 +71,12 @@ def check_output_destination():
                 assert not (custom / 'output').exists()
                 assert app.read_settings()['output_in_source'] is False
                 assert app.read_settings()['custom_output'] == str(custom)
+                assert app.read_settings()['input_folder'] == str(first)
+                gui.results = [(sources[0], output, None, 0)]
+                gui.index = 0
+                gui.reuse_result()
+                assert gui.input_dialog_folder() == str(first)
+                gui.pick_sources(first / 'image.png')
 
                 gui.output_mode.toggle()
                 assert gui.output_entry.get() == str(first / 'output')
@@ -72,7 +90,9 @@ def check_output_destination():
             try:
                 gui = app.Application(window)
                 assert gui.output_in_source.get()
-                gui.pick_sources(second)
+                with patch.object(app.filedialog, 'askdirectory', return_value=str(second)) as dialog:
+                    gui.choose_folder()
+                    assert dialog.call_args.kwargs['initialdir'] == str(first)
                 assert gui.output_entry.get() == str(second / 'output')
                 gui.output_mode.toggle()
                 assert gui.output_entry.get() == str(custom)
@@ -83,4 +103,4 @@ def check_output_destination():
             finally:
                 gui.destroy_window()
 
-    print('Automatic and custom destinations, job target and saved settings passed.')
+    print('Input dialogs, automatic and custom destinations, job target and saved settings passed.')

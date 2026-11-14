@@ -2,7 +2,7 @@ name: Refresh RestoRenate 1.0 Windows archive
 
 on:
   push:
-    branches: [main, windows-focus-preview, output-folder-preview, reference-button-preview, windows-startup-preview, transcora-focus-preview]
+    branches: [main, windows-focus-preview, output-folder-preview, reference-button-preview, windows-startup-preview, transcora-focus-preview, input-directory-preview]
     paths:
       - '.github/workflows/refresh-windows-v1.0.yml'
       - 'scripts/refresh_windows_layout.py'
@@ -26,7 +26,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
-      RESTORENATE_PREVIOUS_SHA256: 9789b0a75a7f80e730f808d28a3520bfead3e91944e2617270a8ed19bf3ce148
+      RESTORENATE_PREVIOUS_SHA256: c8da41b7103bb7c4cfbaa68bb139874402a4d7d9a79a57aa444ba3cc390cbfc6
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
