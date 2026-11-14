@@ -11,7 +11,6 @@ import re
 import shutil
 import stat
 import subprocess
-import sys
 import threading
 import time
 import urllib.parse
@@ -59,6 +58,10 @@ class SetupCancelled(InterruptedError):
 
 class ComputeUnavailable(RuntimeError):
     pass
+
+
+def compute_label(compute):
+    return translate('AMD (ROCm) · experimentell') if compute == AMD else COMPUTE_DEVICES[compute]
 
 
 def contained(root, relative):
@@ -410,7 +413,7 @@ class Setup:
     def verify_compute(self, python):
         if self.compute == CPU:
             return
-        label = COMPUTE_DEVICES[self.compute]
+        label = compute_label(self.compute)
         self.notify(translate('{0} wird geprüft …', label))
         torch_backend = 'torch.version.hip' if self.compute == AMD else 'torch.version.cuda'
         probe = (f'import torch; assert {torch_backend} and torch.cuda.is_available(); '

@@ -1,4 +1,4 @@
-"""Shared Stereo-Tools policy for native title bars."""
+"""Apply native title-bar colors to RestoRenate's Tk windows."""
 from __future__ import annotations
 
 import ctypes
@@ -111,23 +111,3 @@ def install_tk_titlebars(root):
         restyle_tk_titlebar(root)
 
 
-def install_qt_titlebars(application):
-    if sys.platform == "darwin":
-        _apply_macos_appearance()
-    elif sys.platform == "win32":
-        from PySide6.QtCore import QEvent, QObject, Qt
-        from PySide6.QtWidgets import QWidget
-
-        class TitleBars(QObject):
-            def eventFilter(self, widget, event):
-                if (event.type() in (QEvent.Type.Show, QEvent.Type.WindowStateChange)
-                        and isinstance(widget, QWidget) and widget.isWindow()
-                        and widget.windowType() in (Qt.WindowType.Window, Qt.WindowType.Dialog,
-                                                    Qt.WindowType.Tool, Qt.WindowType.Sheet)
-                        and not widget.isFullScreen() and widget.windowHandle() is not None):
-                    _apply_windows_titlebar(int(widget.winId()))
-                return False
-
-        event_filter = TitleBars(application)
-        application.installEventFilter(event_filter)
-        application._stereo_tools_titlebars = event_filter

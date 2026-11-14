@@ -16,7 +16,7 @@ from cpu_threads import THREAD_VARIABLES, choose_cpu_threads, cpu_thread_overrid
 from methods import DEFAULT_METHOD, GGUF_METHODS, MICROSOFT, QWEN2509_NUNCHAKU
 from microsoft_setup import NODE_NAME
 from nunchaku_setup import NUNCHAKU_NODE
-from portable_setup import COMPUTE_DEVICES, CPU, GGUF_NODE, GPU_HINTS, NVIDIA, ROOT, SetupCancelled, contained, local_environment
+from portable_setup import CPU, GGUF_NODE, GPU_HINTS, NVIDIA, ROOT, SetupCancelled, compute_label, contained, local_environment
 from technical_logs import TechnicalLog, drain_process_log
 
 
@@ -136,7 +136,7 @@ class Backend:
                 if cancelled():
                     raise SetupCancelled(translate('Start abgebrochen.'))
                 if self.process.poll() is not None:
-                    label = COMPUTE_DEVICES[self.compute]
+                    label = compute_label(self.compute)
                     hint = translate(GPU_HINTS.get(self.compute, ''))
                     message = translate(
                                   'ComfyUI konnte im Modus {0} nicht starten. Details in logs/backend.log.',
@@ -145,7 +145,7 @@ class Backend:
                     raise BackendStartError(f'{message}\n\n{hint}' if hint else message)
                 try:
                     with local_http.open(self.url + '/', timeout=1) as response:
-                        ready_token = response.read(4096).decode('utf-8','replace')
+                        ready_token = response.read(4096).decode('utf-8', 'replace')
                     if ready_token == token:
                         with local_http.open(self.url + '/object_info', timeout=2) as response:
                             if response.status == 200:
@@ -167,7 +167,8 @@ class Backend:
             try:
                 process.wait(timeout=8)
             except subprocess.TimeoutExpired:
-                process.kill(); process.wait()
+                process.kill()
+                process.wait()
         if self.log_reader is not None:
             self.log_reader.join(timeout=5)
             self.log_reader = None

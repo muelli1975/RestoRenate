@@ -4,7 +4,7 @@ from tkinter import ttk
 
 from language import translate
 from methods import LANCZOS, LICENSES, METHODS, MICROSOFT, UPSCALE_LICENSES, UPSCALERS, UPSCALING, available_methods
-from portable_setup import COMPUTE_DEVICES, NVIDIA, Setup
+from portable_setup import CPU, NVIDIA, Setup, compute_label
 from theme import APP_BG, MUTED, PANEL_BG, checkbox, set_control_state
 
 
@@ -17,7 +17,7 @@ def preload_requests(methods, upscalers, *, faces=False):
 
 
 def available_preload_methods(compute, supports_nunchaku):
-    return tuple(method for method in available_methods(compute == NVIDIA and supports_nunchaku)
+    return tuple(method for method in available_methods(compute == NVIDIA and supports_nunchaku, cpu=compute == CPU)
                  if method != UPSCALING)
 
 
@@ -52,14 +52,18 @@ class PreloadDialog(tk.Toplevel):
         ttk.Label(left, text=translate('Verfahren'), background=PANEL_BG).pack(anchor='w', pady=(0, 4))
         ttk.Label(right, text='Upscaler', background=PANEL_BG).pack(anchor='w', pady=(0, 4))
 
+        self.faces = tk.BooleanVar(self, faces)
         for method in available_preload_methods(compute, supports_nunchaku):
             license_label = translate(LICENSES[method])
             self.methods[method] = self.option(left, translate(METHODS[method]), license_label,
                                                method == current_method)
-        self.faces = tk.BooleanVar(self, faces)
-        self.face_option = checkbox(left, translate('Gesichtsverbesserung · iBUG (nicht kommerziell)'),
-                                    self.faces, self.update_total)
-        self.face_option.pack(anchor='w', padx=(12, 0), pady=(4, 0))
+            if method == MICROSOFT:
+                faces_row = tk.Frame(left, bg=PANEL_BG)
+                faces_row.pack(fill='x', padx=(14, 0), pady=(0, 4))
+                self.face_option = checkbox(faces_row, translate('Gesichter verbessern'), self.faces, self.update_total)
+                self.face_option.pack(side='left')
+                tk.Label(faces_row, text=translate('iBUG · nicht kommerziell'), bg=PANEL_BG, fg=MUTED,
+                         padx=6).pack(side='right')
         for upscaler in UPSCALERS:
             if upscaler != LANCZOS:
                 self.upscalers[upscaler] = self.option(right, upscaler, UPSCALE_LICENSES[upscaler],
@@ -69,6 +73,8 @@ class PreloadDialog(tk.Toplevel):
         footer.pack(fill='x')
         self.total = tk.StringVar(self)
         tk.Label(footer, textvariable=self.total, bg=APP_BG, fg=MUTED).pack(anchor='w', pady=(0, 8))
+        self.runtime_status = tk.StringVar(self)
+        tk.Label(footer, textvariable=self.runtime_status, bg=APP_BG, fg=MUTED).pack(anchor='w', pady=(0, 8))
         actions = tk.Frame(footer, bg=APP_BG)
         actions.pack(fill='x')
         ttk.Button(actions, text=translate('Alle auswählen'),
@@ -105,14 +111,30 @@ class PreloadDialog(tk.Toplevel):
         set_control_state(self.face_option, 'normal' if self.methods[MICROSOFT].get() else 'disabled')
         requests = self.selection()
         remaining = {}
+        runtime = None
         for request in requests:
             if request not in self.downloads:
                 method, faces, upscaler = request
-                self.downloads[request] = Setup(self.root, method=method, faces=faces, upscaler=upscaler,
-                                                compute=self.compute).remaining_downloads()
-            remaining.update(self.downloads[request])
+                setup = Setup(self.root, method=method, faces=faces, upscaler=upscaler, compute=self.compute)
+                pending = setup.remaining_downloads()
+                info = (setup.runtime['path'], bool(setup.runtime_ready())) if setup.comfy else None
+                self.downloads[request] = pending, info
+            pending, info = self.downloads[request]
+            remaining.update(pending)
+            if info is not None:
+                runtime = info
+        runtime_status = ''
+        if runtime is not None:
+            path, ready = runtime
+            if ready:
+                runtime_status = 'ComfyUI · bereits eingerichtet'
+            elif remaining.get(path, 0):
+                runtime_status = 'ComfyUI · wird mitgeladen'
+            else:
+                runtime_status = 'ComfyUI · wird eingerichtet'
+        self.runtime_status.set(translate(runtime_status))
         self.total.set(translate('Berechnung: {0} · Noch etwa {1} Download',
-                                 COMPUTE_DEVICES[self.compute], format_download_size(sum(remaining.values()))))
+                                 compute_label(self.compute), format_download_size(sum(remaining.values()))))
         self.submit.configure(state='normal' if requests else 'disabled')
 
     def apply(self):

@@ -1,4 +1,4 @@
-# RestoRenate
+# RestoRenate 1.0
 
 Local image restoration, colorization, and AI-powered editing for Windows.
 
@@ -23,7 +23,8 @@ are practical starting points for CPU processing. Large prompt-based models
 can take substantial time and RAM on the CPU. NVIDIA is the default GPU
 mode. AMD (ROCm) is experimental and depends on the Radeon model and driver.
 Qwen 2509 Nunchaku requires a compatible NVIDIA RTX 30 or RTX 40 GPU and driver.
-Qwen 2509 and 2511 offer four-step Lightning and standard processing in NVIDIA, CPU and AMD (ROCm) modes.
+CPU mode offers Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B and the four-step Qwen 2509 and 2511 Lightning variants.
+The Qwen base variants and FireRed require a GPU.
 
 ## Source and license
 
@@ -58,8 +59,9 @@ können auf der CPU viel Zeit und Arbeitsspeicher benötigen. NVIDIA ist
 voreingestellt. AMD (ROCm) ist experimentell und hängt von Grafikkarte und
 Treiber ab. Qwen 2509 Nunchaku braucht eine kompatible NVIDIA RTX 30 oder
 RTX 40 mit passendem Treiber.
-Qwen 2509 und 2511 bieten Lightning mit vier Schritten und die reguläre
-Berechnung in den Modi NVIDIA, CPU und AMD (ROCm).
+Im CPU-Modus stehen Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B sowie Qwen 2509
+und 2511 mit Lightning (vier Schritte) zur Wahl. Die Qwen-Basisvarianten
+und FireRed benötigen eine GPU.
 
 Zum Testen von Quellcodeänderungen die Quelldateien in eine separate Kopie
 des passenden portablen Pakets kopieren und dort `Start.cmd` öffnen.

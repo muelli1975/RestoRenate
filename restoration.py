@@ -57,6 +57,7 @@ PHASES = {
     'ImageUpscaleWithModel': 'Bild wird hochskaliert',
     'PreviewImage': 'Vorschau wird erstellt',
 }
+SAMPLER_NODES = ('KSampler', 'SamplerCustomAdvanced')
 STEP_UNITS = {
     'KSampler': 'Schritt', 'SamplerCustomAdvanced': 'Schritt', 'ImageUpscaleWithModel': 'Kachel',
     'FotoRestaurierungMicrosoft': 'Phase', 'FotoRestaurierungGesichter': 'Phase',
@@ -154,11 +155,16 @@ def report_progress(event, graph, prompt_id, status, progress):
         if node_type == 'FotoRestaurierungMicrosoft' and node['inputs']['scratches']:
             phase = translate('Kratzer werden gesucht')
         progress(None)
-        status(phase + ' …')
+        if node_type in SAMPLER_NODES:
+            status(translate('Sampling · Erster Rechenschritt läuft …'))
+        else:
+            status(phase + ' …')
     elif kind == 'progress':
         unit = STEP_UNITS.get(node_type)
         value, total = data.get('value'), data.get('max')
         if unit and isinstance(value, int) and isinstance(total, int) and 0 <= value <= total and total > 0:
+            if value == 0 and node_type in SAMPLER_NODES:
+                return
             progress(100 * value / total)
             status(f'{phase} · {translate(unit)} {value}/{total}')
 
@@ -181,7 +187,7 @@ def generate(client, graph, status, cancelled, progress=lambda value: None, node
             raise RuntimeError(translate('ComfyUI hat den Workflow abgelehnt: ') + json.dumps(reply, ensure_ascii=False))
         prompt_id = reply['prompt_id']
         unavailable = translate('Bild wird bearbeitet · Fortschritt nicht verfügbar')
-        status(translate('Bearbeitung wird vorbereitet …') if connection else unavailable)
+        status(translate('Bearbeitung wird vorbereitet') + ' …' if connection else unavailable)
         deadline = time.monotonic() + 4 * 3600
         next_history = 0.0
         while time.monotonic() < deadline:
@@ -234,7 +240,7 @@ def generate(client, graph, status, cancelled, progress=lambda value: None, node
                                 finish_node(now)
                                 active_node, node_started = node_id, now
                             elif (kind == 'progress' and node_id == active_node and node_id in graph
-                                  and graph[node_id]['class_type'] in ('KSampler', 'SamplerCustomAdvanced')
+                                  and graph[node_id]['class_type'] in SAMPLER_NODES
                                   and data.get('value') == 1):
                                 node_seconds.setdefault('first_sampling_step', round(time.monotonic() - node_started, 2))
                     report_progress(event, graph, prompt_id, status, progress)
