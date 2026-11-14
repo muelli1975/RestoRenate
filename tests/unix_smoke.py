@@ -23,6 +23,7 @@ from preload_models import PreloadDialog
 from restoration import Client, restore, select_models
 from sizes import DOUBLE_SIZE, NO_RESCALE
 from theme import BORDER, GOLD_LIGHT
+from output_destination import check_output_destination
 
 
 def record(method, models):
@@ -127,6 +128,7 @@ if __name__ == '__main__':
         exif[271] = 'RestoRenate test'
         image.save(source, exif=exif)
     test_gui(source)
+    check_output_destination()
     test_metadata(source, folder / 'output')
     test_colorization(source, folder / 'output')
     test_upscaling(source, folder / 'output')

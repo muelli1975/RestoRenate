@@ -11,7 +11,7 @@ und den Inhalt des Ordners RestoRenate aus der ZIP in den bestehenden
 Programmordner kopieren und die Programmdateien ersetzen.
 Modelle, Einstellungen und eigene Presets lassen sich weiterverwenden.
 
-Ein Bild oder einen Ordner, den Ausgabeordner und ein Verfahren auswählen.
+Ein Bild oder einen Ordner öffnen und ein Verfahren auswählen.
 Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …“
 öffnet einen Rahmen mit Drittelraster. Zum Verschieben innerhalb des Rahmens
 ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverhältnis
@@ -118,6 +118,12 @@ https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/compatibility/com
 
 Ausgabe und Vorschau
 
+„Unterordner im Eingabeordner verwenden“ ist voreingestellt. Das Ziel ist
+der Ordner output neben dem gewählten Einzelbild oder im gewählten
+Eingabeordner. Eine neue Eingabe ändert das Ziel entsprechend.
+„Auswählen …“ wechselt zu einem eigenen Ausgabeordner. Die Ergebnisse
+landen direkt dort. Der eigene Pfad und der Modus werden getrennt gespeichert.
+
 „Zielgröße“ zeigt die berechneten Maße für das aktuelle Bild. 1080 px und
 2160 px beziehen sich auf die Bildhöhe. „Lange Seite“ und „Kurze Seite“
 verwenden eine eingegebene Seitenlänge. Die App hält das Seitenverhältnis.
@@ -190,7 +196,7 @@ RestoRenate folder in the ZIP into the existing program folder. Replace the
 program files. Models, settings and custom presets
 can be reused.
 
-Choose an image or folder, an output folder and a method. Input formats
+Open an image or folder and choose a method. Input formats
 include JPEG, PNG, TIFF, WebP, BMP and AVIF. “Crop …” opens a frame with a
 rule-of-thirds grid. Drag inside the frame to move it or drag a handle to
 resize it. Choose “Free,” a fixed ratio or “Custom …” for a ratio such as
@@ -284,6 +290,12 @@ the card and the operations used. See AMD’s compatibility list at
 https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/compatibility/compatibilityrad/windows/windows_compatibility.html
 
 Output and preview
+
+“Use a subfolder inside the input folder” is enabled by default. The
+destination is output next to the selected image or inside the selected
+input folder. Selecting a new input updates the destination.
+“Browse …” switches to a custom folder. Results go directly there.
+The custom path and output mode are saved separately.
 
 “Output size” shows the calculated dimensions for the current image.
 The 1080 px and 2160 px options set image height. “Long edge” and “Short

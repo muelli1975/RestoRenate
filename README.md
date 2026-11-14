@@ -21,11 +21,13 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 ## Quick start
 
 1. Open a photo or folder. Crop or rotate the input if needed.
-2. Choose an output folder, file format and size, then select a method. Edit the prompt for models that accept text.
+2. Check the output destination, choose a file format and size, then select a method. Edit the prompt for models that accept text.
 3. Select **Start**. Use **Download models …** to prepare multiple methods in one pass. Optional Lightning LoRAs are listed beneath their base models.
 4. Compare the saved result with the before-and-after slider. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
 
 ## Models and output
+
+By default, results go into `output` next to the selected image or inside the selected input folder. Choosing a new input updates the destination. **Browse …** switches to a custom folder and saves results directly there. The app remembers the mode and the custom path separately.
 
 - **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
 - **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.

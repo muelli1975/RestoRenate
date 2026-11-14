@@ -13,6 +13,7 @@ sys.path.insert(0, str(root / '_internal'))
 import app
 from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALING, resolve_upscaler
 from theme import BORDER, DANGER_TEXT, GOLD_LIGHT
+from output_destination import check_output_destination
 
 
 assert resolve_upscaler(UPSCALING) == ULTRASHARP_LITE
@@ -46,3 +47,5 @@ finally:
     window.destroy()
 
 print('Windows model default, field focus and red remove control passed.')
+
+check_output_destination()

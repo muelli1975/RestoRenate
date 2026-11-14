@@ -2,7 +2,7 @@ name: Build and test Linux x64
 
 on:
   push:
-    branches: [linux-preview, unix-gpu-preview, main]
+    branches: [linux-preview, unix-gpu-preview, output-folder-preview, main]
     paths-ignore: ['.github/workflows/refresh-windows-v1.0.yml']
   workflow_dispatch:
 

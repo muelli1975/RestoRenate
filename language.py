@@ -97,6 +97,7 @@ ENGLISH = {
     'Ausgabegröße wird angepasst': 'Resizing output',
     'Ausgabeordner': 'Output folder',
     'Ausgabeordner auswählen': 'Choose an output folder',
+    'Unterordner im Eingabeordner verwenden': 'Use a subfolder inside the input folder',
     'Auswählen …': 'Browse …',
     'Bearbeitung abgebrochen.': 'Processing cancelled.',
     'Bearbeitung mit Fehlern': 'Processing finished with errors',

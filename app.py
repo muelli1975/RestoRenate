@@ -210,7 +210,10 @@ class Application:
         self.status.set_message('Bereit')
         self.setup_status = tk.StringVar()
         self.input_value = tk.StringVar()
-        self.output = tk.StringVar(value=str(self.config.get('output') or ''))
+        self.output_in_source = tk.BooleanVar(value=self.config.get('output_in_source', True) is not False)
+        self.automatic_output = tk.StringVar()
+        saved_output = self.config.get('custom_output')
+        self.custom_output = tk.StringVar(value=saved_output if isinstance(saved_output, str) else '')
         fmt = self.config.get('format')
         if not isinstance(fmt, str) or fmt not in FORMATS:
             fmt = 'PNG'
@@ -334,10 +337,18 @@ class Application:
         label('Ausgabeordner', 3)
         destination = tk.Frame(left, bg=PANEL)
         destination.grid(row=4, column=0, sticky='ew')
-        out_entry = ttk.Entry(destination, textvariable=self.output, style='Path.TEntry')
-        out_entry.pack(side='left', fill='x', expand=True, padx=(0, 4))
-        self.controls.append(out_entry)
-        button(destination, 'Auswählen …', self.choose_output).pack(side='right')
+        self.output_mode = self.labelled(
+            checkbox, destination, 'Unterordner im Eingabeordner verwenden',
+            variable=self.output_in_source, command=self.update_output_controls,
+        )
+        self.output_mode.pack(anchor='w', pady=(0, 4))
+        self.controls.append(self.output_mode)
+        output_row = tk.Frame(destination, bg=PANEL)
+        output_row.pack(fill='x')
+        self.output_entry = ttk.Entry(output_row, style='Path.TEntry')
+        self.output_entry.pack(side='left', fill='x', expand=True, padx=(0, 4))
+        button(output_row, 'Auswählen …', self.choose_output).pack(side='right')
+        self.update_output_controls()
         self.format_widget = ttk.Combobox(left, textvariable=self.output_format, values=list(FORMATS),
                                           state='readonly', height=4)
         self.format_widget.grid(row=5, column=0, sticky='ew', pady=(4, 0))
@@ -768,6 +779,8 @@ class Application:
         self.preview_size = before.size if before else None
         self.update_dimensions()
         self.input_value.set(str(path))
+        source_folder = path if path.is_dir() else path.parent
+        self.automatic_output.set(str(source_folder / 'output'))
         self.results = self.saved_results(sources)
         self.index = len(self.results) - 1
         if self.index >= 0:
@@ -776,8 +789,6 @@ class Application:
             self.show_result(reset_divider=True)
         else:
             self.show_input(before)
-        if not self.output.get():
-            self.output.set(str((path if path.is_dir() else path.parent) / 'Restauriert'))
         self.check_ready()
 
     def show_input(self, before):
@@ -977,10 +988,18 @@ class Application:
     def choose_folder(self):
         self.pick_sources(filedialog.askdirectory(parent=self.window, title=translate('Eingabeordner auswählen')))
 
+    def update_output_controls(self):
+        automatic = self.output_in_source.get()
+        variable = self.automatic_output if automatic else self.custom_output
+        state = 'readonly' if automatic else 'normal'
+        self.output_entry.configure(textvariable=variable, state='disabled' if self.action else state)
+
     def choose_output(self):
         path = filedialog.askdirectory(parent=self.window, title=translate('Ausgabeordner auswählen'))
         if path:
-            self.output.set(path)
+            self.custom_output.set(path)
+            self.output_in_source.set(False)
+            self.update_output_controls()
 
     @property
     def presets(self):
@@ -1278,7 +1297,8 @@ class Application:
         SETTINGS.parent.mkdir(parents=True, exist_ok=True)
         self.remember_prompt()
         self.remember_scaling()
-        data = dict(output=self.output.get(), format=self.output_format.get(), seed=self.seed, compute=self.compute.get(),
+        data = dict(output_in_source=self.output_in_source.get(), custom_output=self.custom_output.get().strip(),
+                    format=self.output_format.get(), seed=self.seed, compute=self.compute.get(),
                     method=self.current_method, prompt_draft=self.draft, presets=self.custom,
                     language=self.language,
                     processing_presets=self.processing_presets,
@@ -1299,7 +1319,8 @@ class Application:
             messagebox.showinfo(translate('Eingabe'), translate('Bitte ein Bild oder einen Ordner auswählen.'), parent=self.window)
             return
         self.finish_variant_edit()
-        output_text = self.output.get().strip()
+        output = self.automatic_output if self.output_in_source.get() else self.custom_output
+        output_text = output.get().strip()
         no_prompt = self.current_method in NO_PROMPT
         prompt = '' if no_prompt else self.prompt.get('1.0', 'end-1c').strip()
         if not output_text or (not prompt and not no_prompt):
@@ -1357,6 +1378,7 @@ class Application:
     def busy(self, value):
         for control in self.controls:
             set_control_state(control, 'disabled' if value else 'normal')
+        self.update_output_controls()
         for control in (self.method_widget, self.size_widget):
             control.configure(state='disabled' if value else 'readonly')
         self.upscale_options.configure(state='disabled' if value or self.size_choice() == NO_RESCALE else 'readonly')
