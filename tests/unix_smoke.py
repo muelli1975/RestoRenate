@@ -84,7 +84,7 @@ def test_upscaling(source, folder):
         assert device['type'] == compute, device
         definitions = client.json('/object_info')
         models = select_models(definitions, UPSCALING)
-        assert models['upscale_lite'] == '4x-UltraSharpV2_Lite.safetensors', models
+        assert models['upscale'] == '4xNomos2_hq_mosr.safetensors', models
         output, warning = restore(client, models, source, folder, 'PNG', None, '', None, print, lambda: False,
                                   record(UPSCALING, models), method=UPSCALING,
                                   size_choice=(DOUBLE_SIZE, 0), definitions=definitions)
@@ -120,8 +120,8 @@ if __name__ == '__main__':
     assert UNIX_RUNTIME and app.ROOT == root
     assert Path(sys.executable).is_relative_to(root / 'runtime/python')
     assert (root / 'vendor/ComfyUI/main.py').is_file()
-    assert resolve_upscaler(UPSCALING) == ULTRASHARP_LITE
-    assert resolve_upscaler(UPSCALING, NOMOS2_HQ) == NOMOS2_HQ
+    assert resolve_upscaler(UPSCALING) == NOMOS2_HQ
+    assert resolve_upscaler(UPSCALING, ULTRASHARP_LITE) == ULTRASHARP_LITE
     assert resolve_upscaler(DDCOLOR_TINY) == LANCZOS
     folder = root / 'work/smoke'
     folder.mkdir(parents=True, exist_ok=True)
@@ -135,4 +135,4 @@ if __name__ == '__main__':
     test_metadata(source, folder / 'output')
     test_colorization(source, folder / 'output')
     test_upscaling(source, folder / 'output')
-    print(f'GUI, real ExifTool JPEG/TIFF export, DDColor Tiny and UltraSharp V2 Lite on {MPS if MACOS else CPU} passed.')
+    print(f'GUI, real ExifTool JPEG/TIFF export, DDColor Tiny and Nomos2 HQ MoSR on {MPS if MACOS else CPU} passed.')

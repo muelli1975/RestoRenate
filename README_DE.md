@@ -33,7 +33,7 @@ Standardmäßig landen die Ergebnisse in `output` neben dem gewählten Bild oder
 
 - **Restaurierung und Bearbeitung:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, Qwen Image Edit 2509/2511 und FireRed Image Edit 1.1. Unterstützte Edit-Modelle können ein separat drehbares zweites Bild nutzen.
 - **Kolorierung:** DDColor ModelScope, Paper, Artistic und Tiny sowie DeOldify Stable und Artistic. Die Kolorierung läuft auf der CPU. DDColor Paper ist ein optionaler Download.
-- **Hochskalieren:** UltraSharp V2 Lite ist die Vorgabe für Restaurierung und Hochskalierung. Zur Auswahl stehen auch Lanczos, Nomos2 HQ MoSR, Real-ESRGAN und FaceUpDAT für Porträts.
+- **Hochskalieren:** Nomos2 HQ MoSR ist die Vorgabe für Restaurierung und Hochskalierung. Zur Auswahl stehen auch Lanczos, UltraSharp V2 Lite, Real-ESRGAN und FaceUpDAT für Porträts.
 - **Export:** PNG, JPEG mit Qualität 95 und 4:4:4 sowie TIFF mit LZW-Kompression. JPEG und TIFF übernehmen geeignete Metadaten. PNG speichert bei ComfyUI-Verarbeitung den Workflow.
 
 ## Quellcode und Builds

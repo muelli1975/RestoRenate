@@ -16,10 +16,10 @@ from theme import BORDER, DANGER_TEXT, GOLD_LIGHT
 from output_destination import check_output_destination
 
 
-assert resolve_upscaler(UPSCALING) == ULTRASHARP_LITE
-assert resolve_upscaler(UPSCALING, NOMOS2_HQ) == NOMOS2_HQ
+assert resolve_upscaler(UPSCALING) == NOMOS2_HQ
+assert resolve_upscaler(UPSCALING, ULTRASHARP_LITE) == ULTRASHARP_LITE
 assert resolve_upscaler(DDCOLOR_TINY) == LANCZOS
-assert app.BUILTIN_PROCESSING_PRESETS['Standard']['upscaler'] == ULTRASHARP_LITE
+assert app.BUILTIN_PROCESSING_PRESETS['Standard']['upscaler'] == NOMOS2_HQ
 
 image_path = root.parent / 'reference.png'
 with Image.new('RGB', (48, 32), '#303030') as image:

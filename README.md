@@ -33,7 +33,7 @@ By default, results go into `output` next to the selected image or inside the se
 
 - **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
 - **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.
-- **Upscaling:** UltraSharp V2 Lite is the default for restoration and upscaling. The selection also includes Lanczos, Nomos2 HQ MoSR, Real-ESRGAN and FaceUpDAT for portraits.
+- **Upscaling:** Nomos2 HQ MoSR is the default for restoration and upscaling. The selection also includes Lanczos, UltraSharp V2 Lite, Real-ESRGAN and FaceUpDAT for portraits.
 - **Export:** PNG, JPEG quality 95 with 4:4:4 chroma and TIFF with LZW compression. JPEG and TIFF copy compatible source metadata. PNG stores a ComfyUI workflow when applicable.
 
 ## Source and builds
