@@ -36,7 +36,10 @@ class LookControls:
         self.available = False
         self.wheel_remainder = 0
         self.resetting_slider = False
-        row = self.frame = tk.Frame(parent, bg=PANEL_BG)
+        frame = self.frame = tk.Frame(parent, bg=PANEL_BG)
+        frame.columnconfigure(0, weight=1)
+        row = self.settings = tk.Frame(frame, bg=PANEL_BG)
+        row.grid(row=0, column=0, sticky='ew')
         row.columnconfigure(2, weight=1)
         row.columnconfigure(3, weight=1)
         self.check = app.labelled(checkbox, row, 'LUT anwenden', variable=self.enabled, command=self.toggle_changed)
@@ -63,9 +66,10 @@ class LookControls:
         self.value = ctk.CTkLabel(row, width=36, height=20, fg_color=PANEL_BG, anchor='e',
                                   text_color=TEXT, font=('Segoe UI', 13))
         self.value.grid(row=0, column=4, padx=(2, 6))
-        self.save_button = app.labelled(ttk.Button, row, 'Variante mit LUT erstellen',
+        self.save_button = app.labelled(ttk.Button, frame, 'Variante mit LUT erstellen',
                                        command=app.create_lut_variant, style='Input.TButton')
-        self.save_button.grid(row=0, column=5, sticky='e')
+        self.save_button.grid(row=0, column=1, sticky='e')
+        frame.bind('<Configure>', self.fit_actions)
         self.slider.bind('<Double-Button-1>', self.begin_slider_reset)
         self.slider.bind('<ButtonRelease-1>', self.finish_slider_reset)
         self.slider.bind('<MouseWheel>', self.wheel)
@@ -99,6 +103,14 @@ class LookControls:
         if previous is not None:
             previous.destroy()
         self.refresh()
+        self.frame.after_idle(self.fit_actions)
+
+    def fit_actions(self, _event=None):
+        needed = self.settings.winfo_reqwidth() + self.save_button.winfo_reqwidth()
+        compact = self.frame.winfo_width() < needed
+        if self.save_button.grid_info()['row'] != int(compact):
+            self.save_button.grid_configure(row=int(compact), column=0 if compact else 1,
+                                            columnspan=2 if compact else 1, pady=(4 if compact else 0, 0))
 
     def label(self, entry):
         return entry.get('name_en', entry['name']) if self.app.language == 'en' else entry['name']

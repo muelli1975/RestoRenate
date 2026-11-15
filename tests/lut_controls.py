@@ -246,10 +246,12 @@ def test_gui(root):
             for width in (window.minsize()[0], 1600):
                 window.geometry(f'{width}x750')
                 window.update()
-                bounds = controls.choose.winfo_width(), gui.preview_tools.grid_info()['row']
+                bounds = controls.choose.winfo_width(), controls.save_button.grid_info()['row']
                 picker = controls.choose.master
                 sizes = (language, width, window.winfo_width(), window.minsize())
-                assert controls.frame.winfo_width() >= controls.frame.winfo_reqwidth(), sizes
+                unwrapped_width = controls.settings.winfo_reqwidth() + controls.save_button.winfo_reqwidth()
+                assert controls.settings.winfo_width() >= controls.settings.winfo_reqwidth(), sizes
+                assert bounds[1] == int(controls.frame.winfo_width() < unwrapped_width), sizes
                 assert gui.browse_controls.winfo_width() >= gui.browse_controls.winfo_reqwidth(), sizes
                 assert abs((controls.choose.winfo_width() - picker.winfo_reqwidth())
                            - (controls.slider.winfo_width() - controls.slider.winfo_reqwidth())) <= 1
@@ -260,11 +262,11 @@ def test_gui(root):
                     # Builds may run with a small desktop or different font scaling.
                     # The picker and slider split the space left after the fixed controls.
                     name_extra = max(0, probe.winfo_reqwidth() - picker.winfo_reqwidth())
-                    free = controls.frame.winfo_width() - controls.frame.winfo_reqwidth()
+                    free = controls.settings.winfo_width() - controls.settings.winfo_reqwidth()
                     if free >= 2 * name_extra:
                         assert controls.choose.winfo_width() >= probe.winfo_reqwidth()
                     assert controls.choose.cget('text') == probe.cget('text')
-                    assert (controls.choose.winfo_width(), gui.preview_tools.grid_info()['row']) == bounds
+                    assert (controls.choose.winfo_width(), controls.save_button.grid_info()['row']) == bounds
         probe.destroy()
 
         controls.select(other_look)
@@ -295,6 +297,10 @@ def test_gui(root):
         gui.pick_sources(new_source)
         assert controls.armed() == Look(other_look, 35)
         assert gui.compare.look_basis is gui.compare.before_image
+        gui.rotate_source(1)
+        assert controls.armed() == Look(other_look, 35)
+        gui.rotate_source(None)
+        assert controls.armed() == Look(other_look, 35)
 
         gui.seed_value.set('')
         with patch.object(app.simpledialog, 'askstring', return_value='Series look'):

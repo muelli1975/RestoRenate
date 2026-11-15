@@ -579,7 +579,8 @@ class Application:
         content_height = sum(section.winfo_reqheight()
                              for section in (self.header, self.settings_panel, self.footer))
         preview_width = max(part.winfo_reqwidth() for part in
-                            (self.look_controls.frame, self.browse_controls, self.preview_tools))
+                            (self.look_controls.settings, self.look_controls.save_button,
+                             self.browse_controls, self.preview_tools))
         width = max(MIN_WINDOW_WIDTH, self.preview_width_offset + preview_width)
         height = max(720, content_height + footer_gap)
         if (width, height) != self.window.minsize():
@@ -1089,6 +1090,8 @@ class Application:
         )
 
     def refresh_input_preview(self, *, look=None):
+        if self.index < 0 and self.look_controls.keep.get():
+            look = self.look_controls.armed()
         self.index = -1
         source = self.preview_source
         try:
