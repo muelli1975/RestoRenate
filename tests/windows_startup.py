@@ -43,6 +43,16 @@ transition_supported = False
 def create_observed_window():
     window = create_window()
     assert not user32.IsWindowVisible(hwnd(window)), 'The icon exposed an unconfigured window'
+    attributes = window.attributes
+
+    def observe_attributes(*args):
+        result = attributes(*args)
+        if args == ('-alpha', 1.0):
+            assert user32.IsWindowVisible(hwnd(window))
+            visible_sizes.append(native_size(window))
+        return result
+
+    window.attributes = observe_attributes
     return window
 
 
@@ -51,7 +61,7 @@ def build_observed_application(window):
     assert not user32.IsWindowVisible(hwnd(window)), 'The window became visible during layout'
 
     def observe(event):
-        if event.widget is window and user32.IsWindowVisible(hwnd(window)):
+        if event.widget is window and window.attributes('-alpha') > 0 and user32.IsWindowVisible(hwnd(window)):
             visible_sizes.append(native_size(window))
 
     window.bind('<Map>', observe, add='+')

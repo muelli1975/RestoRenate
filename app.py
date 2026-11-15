@@ -109,6 +109,7 @@ ROTATION_CHOICES = (('90° links', -1), ('90° rechts', 1), ('180°', 2), ('Dreh
 REFERENCE_PREVIEW_SIZE = (152, 104)
 MIN_WINDOW_WIDTH = 950
 START_WINDOW_WIDTH = 1200
+START_WINDOW_HEIGHT = 860
 
 
 def read_settings():
@@ -214,7 +215,7 @@ class Application:
         self.config = read_settings()
         self.language = configure_language(self.config.get('language'))
         self.window.title(f'{APP_NAME} - {APP_VERSION}')
-        self.window.geometry(f'{START_WINDOW_WIDTH}x860')
+        self.window.geometry(f'{START_WINDOW_WIDTH}x{START_WINDOW_HEIGHT}')
         self.compact_window = min(window.maxsize()[1], window.winfo_screenheight()) < 860
         self.minimum_size_job = None
         self.window.minsize(MIN_WINDOW_WIDTH, 720)
@@ -256,6 +257,7 @@ class Application:
         self.result_records = {}
         self.index = -1
         self.last_result_index = -1
+        self.stay_on_input = False
         self.status = LocalizedText()
         self.status.set_message('Bereit')
         self.setup_status = tk.StringVar()
@@ -636,7 +638,7 @@ class Application:
         self.labelled(ttk.Button, tools, '100 %', command=self.compare.full_size,
                       width=-1, style='Input.TButton').pack(side='left', padx=(0, 4))
         self.labelled(ttk.Button, tools, 'Ansicht einpassen', command=self.compare.fit,
-                      width=-1).pack(side='left')
+                      width=-1, style='Input.TButton').pack(side='left')
         navigation.bind('<Configure>', self.fit_result_navigation)
         browsing.bind('<Configure>', self.fit_result_navigation)
 
@@ -764,9 +766,9 @@ class Application:
 
     def choose_compute(self):
         selection = self.compute.get()
-        self.save_settings()
+        saved = self.save_settings()
         self.update_compute_label()
-        if selection != self.startup_compute:
+        if saved and selection != self.startup_compute:
             messagebox.showinfo(translate('Berechnung'),
                                 translate(
                                     '{0} wird nach einem Neustart von {1} verwendet.',
@@ -1388,8 +1390,7 @@ class Application:
         self.preset_widget.configure(values=self.preset_names())
         self.preset.set(self.preset_labels[name])
         self.draft = {'prompt': value, 'preset': name}
-        self.save_settings()
-        if self.action is None:
+        if self.save_settings() and self.action is None:
             self.status.set_message('Prompt „{0}“ gespeichert.', name)
 
     def refresh_processing_menu(self):
@@ -1457,9 +1458,10 @@ class Application:
         ):
             return
         self.processing_presets[name] = preset
-        self.save_settings()
+        saved = self.save_settings()
         self.refresh_processing_menu()
-        self.status.set_message('Preset „{0}“ gespeichert.', name)
+        if saved:
+            self.status.set_message('Preset „{0}“ gespeichert.', name)
 
     def load_processing_preset(self, name):
         if self.action:
@@ -1502,8 +1504,8 @@ class Application:
         self.update_size_controls()
         self.load_method_prompt()
         self.check_ready()
-        self.save_settings()
-        self.status.set_message('Preset „{0}“ geladen.', name)
+        if self.save_settings():
+            self.status.set_message('Preset „{0}“ geladen.', name)
 
     def delete_processing_preset(self, name):
         if self.action or name not in self.processing_presets:
@@ -1514,7 +1516,6 @@ class Application:
             self.refresh_processing_menu()
 
     def save_settings(self):
-        SETTINGS.parent.mkdir(parents=True, exist_ok=True)
         self.remember_prompt()
         self.remember_scaling()
         data = dict(input_folder=self.input_folder, output_in_source=self.output_in_source.get(),
@@ -1527,8 +1528,14 @@ class Application:
                     scratches=self.scratches.get(), faces=self.faces.get(),
                     lut={'strength': self.look_controls.look().strength})
         stage = SETTINGS.with_suffix('.tmp')
-        stage.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
-        stage.replace(SETTINGS)
+        try:
+            SETTINGS.parent.mkdir(parents=True, exist_ok=True)
+            stage.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+            stage.replace(SETTINGS)
+        except OSError as exc:
+            self.status.set_message('Einstellungen konnten nicht gespeichert werden: {0}', exc)
+            return False
+        return True
 
     def start_clicked(self):
         if self.action:
@@ -1645,6 +1652,7 @@ class Application:
     def start_worker(self, action, target, *args):
         self.action = action
         self.saved_during_job = False
+        self.stay_on_input = False
         self.cancelled.clear()
         self.stop_after.clear()
         self.progress_bar.set(None)
@@ -1851,7 +1859,9 @@ class Application:
                     self.result_records[output] = record
                     if seed is not None:
                         self.seed = seed
-                    follow_latest = self.action == 'lut' or self.index < 0 or self.index == len(self.results) - 1
+                    follow_latest = not self.stay_on_input and (
+                        self.action == 'lut' or self.index < 0 or self.index == len(self.results) - 1
+                    )
                     self.results.append((source, output, crop, rotation))
                     if follow_latest:
                         self.index = len(self.results) - 1
@@ -1885,10 +1895,10 @@ class Application:
                     self.last_file_error = None
                     self.check_ready()
                     self.busy(False)
-                    self.save_settings()
                     if self.closing:
                         self.finish_close()
                         return
+                    self.save_settings()
                     if retry_on_cpu and not self.cancelled.is_set() and not self.stop_after.is_set():
                         reason, job, upscaler = retry_on_cpu
                         if self.offer_cpu_fallback(reason):
@@ -1940,8 +1950,10 @@ class Application:
 
     def switch_preview(self):
         if self.index >= 0:
+            self.stay_on_input = True
             self.show_original()
         elif self.results:
+            self.stay_on_input = False
             self.index = self.last_result_index
             self.show_result()
 
@@ -2029,10 +2041,10 @@ class Application:
         for label in (self.status, self.caption, self.elapsed, self.device):
             label.refresh()
         self.compare.schedule()
-        try:
-            self.save_settings()
-        except OSError as exc:
-            self.status.set_message('Einstellungen konnten nicht gespeichert werden: {0}', exc)
+        help_dialog = getattr(self, 'controls_help', None)
+        if help_dialog is not None and help_dialog.winfo_exists():
+            help_dialog.event_generate('<<LanguageChanged>>')
+        self.save_settings()
 
     def close(self):
         if self.closing:
@@ -2100,7 +2112,11 @@ def run_gui():
         if sys.platform == 'win32':
             window.update_idletasks()
             suppress_transition = set_window_transitions_disabled(window, True)
+            # Windows completes the native client sizing after the frame is mapped.
+            window.attributes('-alpha', 0.0)
             window.deiconify()
+            window.update()
+            window.attributes('-alpha', 1.0)
             if suppress_transition:
                 window.after(150, set_window_transitions_disabled, window, False)
         window.mainloop()

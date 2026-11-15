@@ -66,8 +66,6 @@ class Comparison(tk.Canvas):
         self.bind('<Button-4>', self.wheel)
         self.bind('<Button-5>', self.wheel)
         self.bind('<Double-Button-1>', self.fit)
-        self.bind('<Left>', lambda event: self.nudge(-0.025))
-        self.bind('<Right>', lambda event: self.nudge(0.025))
 
     def show(self, before=None, after=None, *, reset_divider=False, view_key=None):
         keep_view = view_key is not None and view_key == self.view_key and not reset_divider

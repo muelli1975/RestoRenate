@@ -90,6 +90,14 @@ def test_metadata(root, exiftool):
 def test_gui(root):
     window = tk.Tk()
     window.attributes('-alpha', 0)
+
+    def wait_for(condition):
+        deadline = time.monotonic() + 8
+        while not condition() and time.monotonic() < deadline:
+            window.update()
+            time.sleep(.025)
+        assert condition()
+
     try:
         app.SETTINGS = root / 'settings.json'
         app.JOBS_LOG = root / 'jobs.jsonl'
@@ -185,10 +193,7 @@ def test_gui(root):
 
         gui.play_ready_sound = lambda: None
         gui.create_lut_variant()
-        deadline = time.monotonic() + 8
-        while gui.action and time.monotonic() < deadline:
-            window.update()
-            time.sleep(.025)
+        wait_for(lambda: gui.action is None)
         assert gui.action is None and len(gui.results) == 1
         saved = gui.compare.after_image
         assert saved is not None and not controls.enabled.get() and gui.compare.look_basis is None
@@ -218,10 +223,7 @@ def test_gui(root):
 
         controls.check.toggle()
         gui.create_lut_variant()
-        deadline = time.monotonic() + 8
-        while gui.action and time.monotonic() < deadline:
-            window.update()
-            time.sleep(.025)
+        wait_for(lambda: gui.action is None)
         assert gui.action is None and len(gui.results) == 2 and gui.index == 1
         assert gui.next_button.instate(['disabled'])
         gui.prev_button.invoke()
@@ -236,9 +238,16 @@ def test_gui(root):
 
         help_button = next(widget for widget, label in gui.labels.items() if label == 'F1 · Bedienhilfe')
         assert isinstance(help_button, ttk.Button) and help_button.cget('style') == 'Input.TButton'
+        gui.change_language('de')
         help_button.invoke()
-        assert gui.controls_help.winfo_exists()
-        gui.controls_help.destroy()
+        help_dialog = gui.controls_help
+        assert help_dialog.title() == 'Bedienhilfe'
+        window.update()
+        gui.change_language('en')
+        assert gui.controls_help is help_dialog and help_dialog.title() == 'Controls'
+        assert any(child.cget('text') == 'Close' for child in help_dialog.winfo_children()
+                   if isinstance(child, ttk.Button))
+        help_dialog.destroy()
 
         gui.caption.set('Long file name ' * 40 + 'result.png · 80 × 48 px')
         window.update()
@@ -251,6 +260,8 @@ def test_gui(root):
         assert gui.reuse_result_button.winfo_rootx() > gui.next_button.winfo_rootx()
         assert controls.keep_check.winfo_rootx() > controls.check.winfo_rootx()
         assert controls.keep_check.winfo_rootx() < controls.choose.winfo_rootx()
+        tool_labels = {'100 %', 'Ansicht einpassen', 'Verlauf löschen …'}
+        assert len({widget.winfo_height() for widget, label in gui.labels.items() if label in tool_labels}) == 1
 
         probe = ttk.Menubutton(window, style=controls.choose.cget('style'))
         for language in ('de', 'en'):
@@ -350,16 +361,34 @@ def test_gui(root):
         gui.size.set(app.translate(DOUBLE_SIZE))
         gui.upscaler.set(LANCZOS)
         gui.start_clicked()
-        deadline = time.monotonic() + 8
-        while gui.action and time.monotonic() < deadline:
-            window.update()
-            time.sleep(.025)
+        wait_for(lambda: gui.action is None)
         assert gui.action is None and len(gui.results) == 2 and not controls.enabled.get()
         for image_path, output, *_ in gui.results:
             with Image.open(image_path) as image, Image.open(output) as result:
                 with image.resize(result.size, Image.Resampling.LANCZOS) as scaled:
                     with apply_look(scaled, Look(other_look, 35)) as expected:
                         assert result.size == (64, 48) and result.tobytes() == expected.tobytes()
+
+        gui.action = 'run'
+        gui.busy(True)
+        gui.preview_switch.invoke()
+        image_path, output, crop, rotation = gui.results[-1]
+        gui.events.put(('result', (image_path, output, None, crop, rotation, {})))
+        wait_for(lambda: len(gui.results) == 3)
+        assert gui.index == -1 and gui.compare.after_image is None
+        gui.preview_switch.invoke()
+        assert gui.index == 1
+
+        with patch.object(Path, 'replace', side_effect=PermissionError('settings denied')):
+            gui.events.put(('idle', (False, None)))
+            wait_for(lambda: gui.action is None)
+            assert 'settings denied' in gui.status.get()
+            gui.start_clicked()
+            assert gui.action == 'run'
+            wait_for(lambda: gui.action is None)
+            assert len(gui.results) == 5
+        gui.events.put(('status', 'event after settings error'))
+        wait_for(lambda: gui.status.get() == 'event after settings error')
     finally:
         window.destroy()
 

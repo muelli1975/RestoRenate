@@ -30,8 +30,8 @@ mit Zoom und Reglerposition geöffnet.
 
 „Zweites Bild“ unter der Eingabe steht für Fibo 2.0 Edit Turbo, FLUX.2 [klein]
 4B, Qwen Image Edit 2509 und 2511 einschließlich Nunchaku sowie FireRed Image
-Edit 1.1 zur Verfügung. „Hinzufügen …“ lädt das zweite Bild in die Vorschau.
-Es lässt sich separat drehen, ersetzen oder entfernen.
+Edit 1.1 zur Verfügung. „Bild …“ lädt das zweite Bild in die Vorschau.
+Es lässt sich separat beschneiden, drehen, ersetzen oder entfernen.
 Bei einem Ordner gilt es für alle Eingabebilder. Im Prompt lässt sich etwa
 beschreiben, welche Inhalte aus Bild 2 in Bild 1 übernommen werden sollen.
 Für Fibo die Platzhalter `<image_1>` und `<image_2>` verwenden.
@@ -219,8 +219,8 @@ be switched in place while keeping the comparison view, zoom and slider position
 
 “Second image” below the input is available for Fibo 2.0 Edit Turbo, FLUX.2
 [klein] 4B, Qwen Image Edit 2509 and 2511 including Nunchaku, and FireRed Image
-Edit 1.1. “Add …” loads the second image into the preview. It can be rotated
-independently, replaced or removed. For a folder, it applies to all
+Edit 1.1. “Image …” loads the second image into the preview. It can be cropped
+and rotated independently, replaced or removed. For a folder, it applies to all
 inputs. The prompt can describe which content to transfer from image 2 into
 image 1. In Fibo prompts, use the placeholders `<image_1>` and `<image_2>`.
 

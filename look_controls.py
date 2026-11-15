@@ -78,8 +78,6 @@ class LookControls:
         self.slider.bind('<Leave>', self.clear_wheel, add='+')
         app.window.bind('<KeyPress>', self.key_press, add='+')
         app.window.bind('<KeyRelease>', self.key_release, add='+')
-        for key in ('Left', 'Right'):
-            self.view.unbind(f'<{key}>')
         app.window.bind('<FocusOut>', self.check_focus, add='+')
         self.localize()
 
@@ -309,29 +307,45 @@ def open_controls(app):
         current.destroy()
         return 'break'
     dialog = app.controls_help = tk.Toplevel(app.window)
-    dialog.title(translate('Bedienhilfe'))
     dialog.transient(app.window)
     dialog.configure(bg=PANEL_BG)
     dialog.resizable(False, False)
     body = tk.Frame(dialog, bg=SECONDARY_BG, padx=16, pady=12, highlightthickness=1, highlightbackground=BORDER)
     body.pack(padx=12, pady=12)
-    for row, (key, description) in enumerate((
-        ('C', 'LUT ein / aus'),
-        (translate('C halten') + ' + ← / →', 'Look zurück / vor'),
-        (translate('C halten') + ' + ↑ / ↓', 'LUT-Stärke ändern'),
-        (translate('Umschalt + Mausrad'), 'LUT-Stärke ändern'),
-        (translate('Doppelklick auf den Regler'), 'Auf 100 % zurücksetzen'),
-        (translate('Z halten'), '100-%-Ansicht halten'),
-        (translate('Bild↑ / Bild↓'), 'Vorheriges / nächstes Ergebnis'),
-        ('F1', 'Bedienhilfe öffnen'),
-    )):
-        tk.Label(body, text=key, fg=GOLD_LIGHT, bg=SECONDARY_BG).grid(row=row, column=0, sticky='w', padx=(0, 14), pady=2)
-        tk.Label(body, text=translate(description), fg=TEXT, bg=SECONDARY_BG).grid(row=row, column=1, sticky='w', pady=2)
-    tk.Label(body, text=translate('„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.'),
-             fg=TEXT, bg=SECONDARY_BG, justify='left', wraplength=380).grid(
-                 row=row + 1, column=0, columnspan=2, sticky='w', pady=(8, 0),
-             )
-    ttk.Button(dialog, text=translate('Schließen'), command=dialog.destroy).pack(pady=(0, 12))
+    shortcuts = (
+        ('C', '', 'LUT ein / aus'),
+        ('C halten', ' + ← / →', 'Look zurück / vor'),
+        ('C halten', ' + ↑ / ↓', 'LUT-Stärke ändern'),
+        ('Umschalt + Mausrad', '', 'LUT-Stärke ändern'),
+        ('Doppelklick auf den Regler', '', 'Auf 100 % zurücksetzen'),
+        ('Z halten', '', '100-%-Ansicht halten'),
+        ('Bild↑ / Bild↓', '', 'Vorheriges / nächstes Ergebnis'),
+        ('F1', '', 'Bedienhilfe öffnen'),
+    )
+    rows = []
+    for row in range(len(shortcuts)):
+        key_label = tk.Label(body, fg=GOLD_LIGHT, bg=SECONDARY_BG)
+        key_label.grid(row=row, column=0, sticky='w', padx=(0, 14), pady=2)
+        description_label = tk.Label(body, fg=TEXT, bg=SECONDARY_BG)
+        description_label.grid(row=row, column=1, sticky='w', pady=2)
+        rows.append((key_label, description_label))
+    hint = tk.Label(body, fg=TEXT, bg=SECONDARY_BG, justify='left', wraplength=380)
+    hint.grid(row=len(shortcuts), column=0, columnspan=2, sticky='w', pady=(8, 0))
+    close_button = ttk.Button(dialog, command=dialog.destroy)
+    close_button.pack(pady=(0, 12))
+
+    def localize(_event=None):
+        dialog.title(translate('Bedienhilfe'))
+        for (key_label, description_label), (key, suffix, description) in zip(rows, shortcuts):
+            key_label.configure(text=translate(key) + suffix)
+            description_label.configure(text=translate(description))
+        hint.configure(text=translate(
+            '„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.'
+        ))
+        close_button.configure(text=translate('Schließen'))
+
+    dialog.bind('<<LanguageChanged>>', localize)
+    localize()
     dialog.bind('<Escape>', lambda _event: dialog.destroy())
     dialog.bind('<F1>', lambda _event: dialog.destroy())
     dialog.focus_set()

@@ -1,6 +1,6 @@
 # RestoRenate 1.1
 
-[Windows 1.0](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux 1.0](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [macOS 1.0](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-macos-preview) · [English](README.md) · [Ausführliche Anleitung](README_DE_EN.txt)
+[Downloads](https://github.com/muelli1975/RestoRenate/releases) · [1.1-Testbuilds](https://github.com/muelli1975/RestoRenate/actions?query=branch%3Acodex%2Frestorenate-1.1) · [English](README.md) · [Ausführliche Anleitung](README_DE_EN.txt)
 
 RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner. Mit unterstützten Modellen lassen sich Bilder auch per Prompt bearbeiten oder anhand eines zweiten Fotos verändern. Die Oberfläche ist auf Deutsch und Englisch verfügbar.
 
@@ -24,7 +24,7 @@ Restauriert und koloriert mit Fibo 2.0 Edit Turbo. Originalfoto aus der McManus-
 
 | Plattform | Paket und Voraussetzungen |
 | --- | --- |
-| Windows x64 | Die [portable ZIP](https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_Windows_x64.zip) in einen kurzen, beschreibbaren Pfad wie `D:\RestoRenate` entpacken und `RestoRenate.exe` öffnen. Python und ExifTool sind enthalten. |
+| Windows x64 | Die portable ZIP in einen kurzen, beschreibbaren Pfad wie `D:\RestoRenate` entpacken und `RestoRenate.exe` öffnen. Python und ExifTool sind enthalten. |
 | Ubuntu 24.04 x86-64 | Portable Ausgabe. Das `.tar.gz` in einen beschreibbaren Ordner entpacken und `./Start.sh` in einer grafischen Sitzung starten. |
 | macOS 15 oder neuer, Apple Silicon | Portable Ausgabe. Die ZIP in einen beschreibbaren Ordner entpacken und `RestoRenate.app` aus diesem Ordner öffnen. |
 
