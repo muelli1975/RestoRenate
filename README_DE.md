@@ -1,18 +1,18 @@
 # RestoRenate 1.1
 
-[Downloads](https://github.com/muelli1975/RestoRenate/releases) · [English](README.md) · [Ausführliche Anleitung](README_DE_EN.txt)
+[Downloads und SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.1) · [English](README.md) · [Anleitung](README_DE_EN.txt)
 
 RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner. Mit unterstützten Modellen lassen sich Bilder auch per Prompt bearbeiten oder anhand eines zweiten Fotos verändern. Die Oberfläche ist auf Deutsch und Englisch verfügbar.
 
-Die App fragt vor dem Download fehlender Modelle und Laufzeitdateien nach. Nach der Einrichtung funktioniert die Bildbearbeitung offline.
+Die App fragt vor dem Download fehlender Modelle und Laufzeitdateien nach. Nach der Einrichtung läuft die Bildbearbeitung lokal und offline. Über **Modelle vorab laden …** lassen sich weitere Dateien im Hintergrund laden. Einsatzbereite Verfahren stehen dabei weiter zur Verfügung.
 
 ## Neu in 1.1
 
-Bild 2 kann unabhängig beschnitten und gedreht werden. Den Ausgabeausschnitt bestimmt Bild 1. Zwei Montage-Presets und zusätzliche Satzbausteine stehen im Prompt-Menü bereit.
+Bild 2 kann unabhängig beschnitten und gedreht werden. Bild 1 bestimmt mit seinem Ausschnitt das Seitenverhältnis der Ausgabe. Zwei Montage-Presets und zusätzliche Satzbausteine stehen im Prompt-Menü bereit.
 
 50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
 
-JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. Die Quellen und Lizenzen sind unter assets/luts/CREDITS.md dokumentiert.
+JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. Die mitgelieferten LUTs sind in den [Quellen und Lizenzen](assets/luts/CREDITS.md) dokumentiert.
 
 ## Vorher und nachher
 
@@ -39,7 +39,7 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 1. Ein Foto oder einen Ordner öffnen. Die Eingabe bei Bedarf beschneiden oder drehen.
 2. Ausgabeziel prüfen, Format und Größe wählen, dann ein Verfahren auswählen. Bei Modellen mit Texteingabe den Prompt bearbeiten.
 3. **Start** wählen. Über **Modelle vorab laden …** lassen sich mehrere Verfahren gemeinsam einrichten. Optionale Lightning-LoRAs stehen unter ihrem Basismodell.
-4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild↑ / Bild↓** blättern durch die Ergebnisse.
+4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. Die Navigation zeigt beispielsweise **Ergebnis 1/3**. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild↑ / Bild↓** blättern durch die Ergebnisse.
 
 ## Modelle und Ausgabe
 

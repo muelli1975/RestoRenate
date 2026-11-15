@@ -52,6 +52,9 @@ GPU_HINTS = {
 GGUF_NODE = 'ComfyUI-GGUF'
 GGUF_PACKAGE = 'gguf==0.19.0'
 GGUF_SETUP = '6ea2651e7df66d7585f6ffee804b20e92fb38b8a/' + GGUF_PACKAGE
+RECEIPTS_LOCK = threading.RLock()
+DOWNLOAD_LOCKS = {}
+DOWNLOAD_LOCKS_GUARD = threading.Lock()
 # Official GitHub API endpoints for the pinned archives.
 GITHUB_RELEASE_ASSETS = {
     '7170c2db49c182a81adcc051e80234f99dd891656fb200737f87797876348f96':
@@ -84,6 +87,14 @@ def contained(root, relative):
     if not path.is_relative_to(root.resolve()):
         raise ValueError('Path outside the portable application')
     return path
+
+
+def file_size(path):
+    try:
+        info = path.stat()
+    except FileNotFoundError:
+        return None
+    return info.st_size if stat.S_ISREG(info.st_mode) else None
 
 
 def local_environment(root):
@@ -156,11 +167,7 @@ class Setup:
         self.download_limits = {} if download_limits is None else download_limits
         self.confirm_download = confirm_download
         self.state_path = self.root / 'runtime/download_receipts.json'
-        try:
-            self.state = json.loads(self.state_path.read_text())
-        except (OSError, ValueError):
-            self.state = {'files': {}}
-        self.state.setdefault('files', {})
+        self.state = self.read_receipts()
         if UNIX_RUNTIME:
             self.backend_state = self.state.setdefault(f'{self.unix_platform}_{compute}_backend', {})
         else:
@@ -181,11 +188,25 @@ class Setup:
             self.download_limits[path] = amount
             self.check()
 
-    def persist(self):
+    def read_receipts(self):
+        with RECEIPTS_LOCK:
+            try:
+                receipts = json.loads(self.state_path.read_text(encoding='utf-8'))
+            except (OSError, ValueError):
+                receipts = {}
+        receipts.setdefault('files', {})
+        return receipts
+
+    def write_receipts(self, receipts):
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.state_path.with_suffix('.partial.json')
-        temporary.write_text(json.dumps(self.state, indent=2), encoding='utf-8')
+        temporary.write_text(json.dumps(receipts, indent=2), encoding='utf-8')
         temporary.replace(self.state_path)
+
+    def persist(self):
+        with RECEIPTS_LOCK:
+            self.state['files'] = self.read_receipts()['files']
+            self.write_receipts(self.state)
 
     def valid(self, spec):
         path = contained(self.root, spec['path'])
@@ -199,9 +220,14 @@ class Setup:
 
     def mark(self, spec):
         path = contained(self.root, spec['path'])
-        stat = path.stat()
-        self.state['files'][spec['path']] = {'size':stat.st_size, 'mtime_ns':stat.st_mtime_ns, 'sha256':spec['sha256']}
-        self.persist()
+        info = path.stat()
+        with RECEIPTS_LOCK:
+            receipts = self.read_receipts()
+            receipts['files'][spec['path']] = {
+                'size': info.st_size, 'mtime_ns': info.st_mtime_ns, 'sha256': spec['sha256'],
+            }
+            self.write_receipts(receipts)
+            self.state['files'] = receipts['files']
 
     def progress(self, spec, current, phase):
         if self.transfer:
@@ -316,6 +342,18 @@ class Setup:
     def download(self, spec):
         self.check()
         target = contained(self.root, spec['path'])
+        with DOWNLOAD_LOCKS_GUARD:
+            lock = DOWNLOAD_LOCKS.setdefault(target, threading.Lock())
+        while not lock.acquire(timeout=.1):
+            self.check()
+        try:
+            self.check()
+            self.state['files'] = self.read_receipts()['files']
+            return self.download_file(spec, target)
+        finally:
+            lock.release()
+
+    def download_file(self, spec, target):
         if self.valid(spec):
             return target
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -422,22 +460,29 @@ class Setup:
             return self.paths() is not None and self.backend_state.get('dependencies_signature') == self.signature
         return self.paths() and self.backend_state.get('runtime_sha256') == self.runtime['sha256']
 
-    def remaining_downloads(self):
-        specs = self.models + self.nunchaku_runtime
+    def download_specs(self):
+        specs = self.models.copy()
+        if self.nunchaku_runtime:
+            paths = self.paths()
+            if paths is None or not nunchaku_ready(self, paths[1]):
+                specs.extend(self.nunchaku_runtime)
         if self.comfy and self.runtime is not None and not self.runtime_ready():
             specs.append(self.runtime)
+        return specs
+
+    def remaining_downloads(self):
         remaining = {}
-        for spec in specs:
+        for spec in self.download_specs():
             target = contained(self.root, spec['path'])
-            if target.is_file() and target.stat().st_size == spec['size']:
+            if file_size(target) == spec['size']:
                 continue
             if spec == self.runtime:
                 name = Path(urllib.parse.urlsplit(spec['url']).path).name
                 local = target.with_name(name)
-                if local.is_file() and local.stat().st_size == spec['size']:
+                if file_size(local) == spec['size']:
                     continue
             part = target.with_name(target.name + '.part')
-            existing = part.stat().st_size if part.is_file() else 0
+            existing = file_size(part) or 0
             remaining[spec['path']] = spec['size'] - existing if existing <= spec['size'] else spec['size']
         return remaining
 
@@ -456,6 +501,14 @@ class Setup:
 
     def remaining_download_bytes(self):
         return sum(self.remaining_downloads().values())
+
+    def download_preload_files(self):
+        if shutil.disk_usage(self.root).free < self.remaining_download_bytes() + 128 * 1024**2:
+            raise RuntimeError(translate('Für die Einrichtung ist zu wenig freier Speicher vorhanden.'))
+        # Only save verified archives and weights. Installing packages or changing
+        # the running backend belongs to the separate setup phase.
+        for spec in self.download_specs():
+            self.download(spec)
 
     def color_ready(self):
         return not self.color_runtime or (self.color_runtime_path / 'onnxruntime/__init__.py').is_file()
@@ -616,8 +669,6 @@ class Setup:
             self.notify(translate('Modelldateien geprüft. Verfahren ist bereit.'))
             return self.paths()
         runtime_missing = not self.runtime_ready()
-        if runtime_missing and not UNIX_RUNTIME:
-            self.adopt_runtime_archive(self.runtime)
         required = self.remaining_download_bytes() + 2 * 1024**3
         if runtime_missing:
             required += (3 if UNIX_RUNTIME and self.compute in (CPU, MPS) else 8) * 1024**3

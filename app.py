@@ -31,7 +31,7 @@ from looks import Look, catalog
 from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINTS, LINUX, NVIDIA,
                             UNIX_RUNTIME, ComputeUnavailable, Setup, SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
-from preload_models import choose_preloads, format_download_size, preload_label
+from preload_models import PreloadProgress, choose_preloads, format_download_size, preload_label
 from methods import (COLORIZATION_METHODS, CPU_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES,
                      METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
                      TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
@@ -108,7 +108,7 @@ FILE_TYPES = [('Bilddateien', ' '.join('*' + ext for ext in sorted(EXTENSIONS)))
 ROTATION_CHOICES = (('90° links', -1), ('90° rechts', 1), ('180°', 2), ('Drehung zurücksetzen', None))
 REFERENCE_PREVIEW_SIZE = (152, 104)
 MIN_WINDOW_WIDTH = 950
-START_WINDOW_WIDTH = 1200
+START_WINDOW_WIDTH = 1280
 START_WINDOW_HEIGHT = 860
 
 
@@ -243,6 +243,11 @@ class Application:
         self.seed_value = tk.StringVar(value='')
         self.events = Queue()
         self.cancelled, self.stop_after = Event(), Event()
+        self.preload_cancelled = None
+        self.preload_progress = None
+        self.preload_download_paths = frozenset()
+        self.preload_to_install = None
+        self.preload_installing = False
         self.backend = Backend(ROOT, compute=self.active_compute)
         self.action = None
         self.closing = False
@@ -448,7 +453,9 @@ class Application:
         tk.Label(left, textvariable=self.dimensions, bg=PANEL, fg=MUTED, anchor='w',
                  justify='left', wraplength=336).grid(row=7, column=0, sticky='ew', pady=(2, 0))
         label('Verfahren', 8)
-        button(left, 'Modelle vorab laden …', self.preload_clicked).grid(row=8, column=0, sticky='e', pady=(6, 2))
+        self.preload_button = ttk.Button(left, text=translate('Modelle vorab laden …'),
+                                         command=self.preload_clicked, style='Input.TButton')
+        self.preload_button.grid(row=8, column=0, sticky='e', pady=(6, 2))
         self.method_widget = ttk.Combobox(left, textvariable=self.method, values=list(self.method_ids), state='readonly')
         self.method_widget.grid(row=9, column=0, sticky='ew')
         self.method_widget.bind('<<ComboboxSelected>>', self.choose_method)
@@ -630,7 +637,7 @@ class Application:
         self.next_button = self.labelled(ttk.Button, browsing, 'Weiter', command=lambda: self.move(1),
                                          width=-1, style='Input.TButton')
         self.next_button.pack(side='left')
-        self.result_counter = tk.Label(browsing, textvariable=self.result_position, fg=MUTED, bg=PANEL, anchor='w')
+        self.result_counter = tk.Label(browsing, textvariable=self.result_position, fg=INK, bg=PANEL, anchor='w')
         self.reuse_result_button = self.labelled(ttk.Button, browsing, 'Ergebnis weiterbearbeiten',
                                                 command=self.reuse_result, state='disabled', style='Input.TButton')
         self.reuse_result_button.pack(side='left', padx=(4, 0))
@@ -810,6 +817,8 @@ class Application:
                 ),
                 parent=self.window):
             return False
+        if self.preload_installing:
+            return False
         self.backend.close()
         self.backend.compute = CPU
         self.active_compute = CPU
@@ -867,10 +876,12 @@ class Application:
             parent=self.window,
         )
 
-    def confirm_additional_download(self, name, amount):
+    def confirm_additional_download(self, name, amount, *, preloading=False):
+        cancelled = self.preload_cancelled if preloading else self.cancelled
         answer = Queue(maxsize=1)
-        self.events.put(('approve_download', (name, amount, answer)))
-        while not self.cancelled.is_set():
+        kind = 'preload_approve' if preloading else 'approve_download'
+        self.events.put((kind, (name, amount, answer)))
+        while not cancelled.is_set():
             try:
                 return answer.get(timeout=.1)
             except Empty:
@@ -878,52 +889,133 @@ class Application:
         return False
 
     def preload_clicked(self):
-        if self.action or self.closing:
+        if self.closing:
+            return
+        if self.preload_progress is not None and self.preload_progress.winfo_exists():
+            self.preload_progress.show()
             return
         selected = choose_preloads(self.window, ROOT, self.active_compute, self.supports_nunchaku())
         if selected:
             requests, downloads = selected
-            self.start_worker('preload', self.preload, requests, self.active_compute, downloads)
+            self.preload_cancelled = Event()
+            self.preload_download_paths = frozenset(downloads)
+            self.preload_progress = PreloadProgress(self.window, self.cancel_preload, self.close_preload_progress)
+            self.update_preload_button()
+            Thread(target=self.preload, args=(requests, self.active_compute, downloads, []), daemon=True).start()
 
-    def preload(self, requests, compute, downloads):
-        completed = 0
-        failures = []
+    def update_preload_button(self):
+        label = 'Modelldownloads …' if self.preload_progress is not None else 'Modelle vorab laden …'
+        self.preload_button.configure(text=translate(label))
+
+    def close_preload_progress(self):
+        self.preload_progress = None
+        self.update_preload_button()
+
+    def cancel_preload(self):
+        self.preload_cancelled.set()
+        self.preload_progress.cancelling()
+
+    def preload(self, requests, compute, downloads, failures, *, install=False):
+        pending = []
         backend_closed = False
+
+        def notify(text):
+            self.events.put(('preload_status', (text,)))
+
+        def transfer(name, current, total, phase):
+            detail = f'{format_download_size(current)} / {format_download_size(total)} · {name}'
+            self.events.put(('preload_status', (phase, detail, 100 * current / total)))
+
+        def confirm(name, amount):
+            return self.confirm_additional_download(name, amount, preloading=True)
+
         try:
             for method, faces, upscaler in requests:
-                if self.cancelled.is_set():
-                    raise SetupCancelled(translate('Einrichtung abgebrochen.'))
-                label = preload_label(method, upscaler)
+                if self.preload_cancelled.is_set():
+                    break
                 try:
-                    setup = Setup(ROOT, notify=self.notify_setup, transfer=self.show_transfer,
-                                  cancelled=self.cancelled.is_set, method=method, faces=faces,
+                    setup = Setup(ROOT, notify=notify, transfer=transfer,
+                                  cancelled=self.preload_cancelled.is_set, method=method, faces=faces,
                                   upscaler=upscaler, compute=compute, download_limits=downloads,
-                                  confirm_download=self.confirm_additional_download)
-                    self.notify_setup(label)
-                    if setup.comfy and not backend_closed and not setup.ready():
-                        self.backend.close()
-                        backend_closed = True
-                    setup.ensure()
-                    completed += 1
+                                  confirm_download=confirm)
+                    if setup.ready():
+                        continue
+                    notify(preload_label(method, upscaler))
+                    if install:
+                        if setup.comfy and compute == self.backend.compute and not backend_closed:
+                            self.backend.close()
+                            self.verified_compute = None
+                            backend_closed = True
+                        setup.ensure()
+                    else:
+                        setup.download_preload_files()
+                        if not setup.ready():
+                            pending.append((method, faces, upscaler))
                 except SetupCancelled:
-                    raise
+                    self.preload_cancelled.set()
+                    break
                 except (OSError, RuntimeError, ValueError) as exc:
                     TechnicalLog(ROOT / 'logs/application.log').write(traceback.format_exc() + '\n')
-                    failures.append(f'{label} · {exc}')
-            if self.cancelled.is_set():
-                raise SetupCancelled(translate('Einrichtung abgebrochen.'))
-            if failures:
-                summary = translate('{0} eingerichtet · {1} fehlgeschlagen', completed, len(failures))
-                self.events.put(('error', summary + '\n\n' + '\n\n'.join(failures)))
-            else:
-                self.events.put(('done', (('Einrichtung abgeschlossen.',),)))
-        except SetupCancelled as exc:
-            self.events.put(('done', str(exc)))
+                    failures.append(f'{preload_label(method, upscaler)} · {exc}')
+                self.events.put(('preload_refresh', None))
         except Exception as exc:
             TechnicalLog(ROOT / 'logs/application.log').write(traceback.format_exc() + '\n')
-            self.events.put(('error', str(exc)))
+            failures.append(str(exc))
         finally:
-            self.events.put(('idle', (False, None)))
+            self.events.put(('preload_stage_done', (pending, compute, downloads, failures)))
+
+    def preload_event(self, kind, value):
+        if kind == 'preload_stage_done':
+            requests, _, _, failures = value
+            self.preload_download_paths = frozenset()
+            if requests and not self.preload_cancelled.is_set():
+                self.preload_to_install = value
+                if self.action:
+                    self.preload_progress.update_status(translate('Laufzeit wartet auf die laufende Bearbeitung.'), percent=0)
+            else:
+                self.finish_preload(failures)
+        elif kind == 'preload_refresh':
+            if not self.closing:
+                self.check_ready()
+        elif not self.preload_cancelled.is_set():
+            if kind == 'preload_approve':
+                self.preload_progress.ask(*value)
+            elif kind == 'preload_status':
+                self.preload_progress.update_status(*value)
+
+    def install_pending_preloads(self):
+        if self.preload_to_install is None:
+            return
+        requests, compute, downloads, failures = self.preload_to_install
+        if self.preload_cancelled.is_set():
+            self.finish_preload(failures)
+        elif not self.action:
+            self.preload_to_install = None
+            self.preload_installing = True
+            self.start_button.configure(state='disabled')
+            self.preload_progress.update_status(translate('Laufzeit wird eingerichtet …'))
+            Thread(target=self.preload, args=(requests, compute, downloads, failures),
+                   kwargs={'install': True}, daemon=True).start()
+
+    def finish_preload(self, failures):
+        cancelled = self.preload_cancelled.is_set()
+        self.preload_cancelled = None
+        self.preload_to_install = None
+        self.preload_installing = False
+        if not self.closing:
+            detail = ''
+            if cancelled:
+                message = translate('Einrichtung abgebrochen. Teil-Downloads bleiben erhalten.')
+            elif failures:
+                message = translate('Vorab-Laden mit Fehlern ({0}).', len(failures))
+                detail = failures[0] + translate('\nDetails in logs/application.log.')
+            else:
+                message = translate('Einrichtung abgeschlossen.')
+            self.preload_progress.finish(message, detail, success=not (cancelled or failures),
+                                         dismiss_hidden=not failures)
+            self.check_ready()
+            if not self.action:
+                self.start_button.configure(state='normal')
 
     def pick_sources(self, selected, *, remember_input=True):
         if not selected:
@@ -1549,6 +1641,8 @@ class Application:
             self.stop_button.configure(state='disabled')
             self.status.set_message('Abbruch läuft …')
             return
+        if self.preload_installing:
+            return
         if not self.sources:
             messagebox.showinfo(translate('Eingabe'), translate('Bitte ein Bild oder einen Ordner auswählen.'), parent=self.window)
             return
@@ -1645,10 +1739,19 @@ class Application:
             self.events.put(('idle', (ok, None)))
 
     def launch(self, job, *, upscaler, setup):
+        if self.preload_installing or self.closing:
+            return
         ready = setup.ready()
         downloads = {} if ready else setup.remaining_downloads()
+        if self.preload_download_paths.intersection(downloads):
+            messagebox.showinfo(translate('Modelldownloads'),
+                                translate('Dateien für dieses Verfahren werden bereits vorab geladen.'),
+                                parent=self.window)
+            return
         setup_runtime = not ready and setup.runtime_needs_setup()
         if (setup_runtime or any(downloads.values())) and not self.approve_setup(setup, upscaler, downloads, setup_runtime):
+            return
+        if self.preload_installing or self.closing:
             return
         self.save_settings()
         self.start_worker('run' if ready else 'run_setup', self.work, setup.method,
@@ -1677,7 +1780,7 @@ class Application:
         self.format_widget.configure(state='disabled' if value else 'readonly')
         self.start_button.configure(
             text=translate('Abbrechen') if value else 'Start',
-            state='disabled' if value and self.cancelled.is_set() else 'normal',
+            state='disabled' if (self.cancelled.is_set() if value else self.preload_installing) else 'normal',
         )
         self.stop_button.configure(
             text=self.stop_label(),
@@ -1829,7 +1932,9 @@ class Application:
         try:
             while True:
                 kind, value = self.events.get_nowait()
-                if kind == 'status' and not self.cancelled.is_set():
+                if kind.startswith('preload_'):
+                    self.preload_event(kind, value)
+                elif kind == 'status' and not self.cancelled.is_set():
                     self.status.set(value)
                 elif kind == 'transfer' and not self.cancelled.is_set():
                     name, current, total, phase = value
@@ -1901,8 +2006,7 @@ class Application:
                     self.check_ready()
                     self.busy(False)
                     if self.closing:
-                        self.finish_close()
-                        return
+                        continue
                     self.save_settings()
                     if retry_on_cpu and not self.cancelled.is_set() and not self.stop_after.is_set():
                         reason, job, upscaler = retry_on_cpu
@@ -1915,6 +2019,10 @@ class Application:
                         self.play_ready_sound()
         except Empty:
             pass
+        self.install_pending_preloads()
+        if self.closing and not self.action and self.preload_cancelled is None:
+            self.finish_close()
+            return
         self.update_elapsed()
         self.window.after(75, self.poll)
 
@@ -1986,7 +2094,7 @@ class Application:
 
     def navigation(self):
         showing_result = self.index >= 0
-        position = f'{self.index + 1}/{len(self.results)}' if showing_result else ''
+        position = translate('Ergebnis {0}/{1}', self.index + 1, len(self.results)) if showing_result else ''
         self.result_position.set(position)
         self.preview_switch.configure(text=translate('Eingabe' if showing_result else 'Ergebnisse'),
                                       state='normal' if self.results else 'disabled')
@@ -2026,6 +2134,9 @@ class Application:
         self.prompt_menu.set_language(self.language)
         self.look_controls.localize()
         self.update_compute_label()
+        self.update_preload_button()
+        if self.preload_progress is not None:
+            self.preload_progress.localize()
         self.update_setup_status()
         self.method_ids = self.available_method_ids()
         self.method_widget.configure(values=list(self.method_ids))
@@ -2054,12 +2165,16 @@ class Application:
     def close(self):
         if self.closing:
             return
-        if self.action:
-            if not messagebox.askyesno(APP_NAME, translate('Laufenden Auftrag beenden und das Fenster schließen?'),
+        if self.action or self.preload_cancelled is not None:
+            question = ('Laufende Aufträge beenden und das Fenster schließen?' if self.action and self.preload_cancelled
+                        else 'Laufenden Auftrag beenden und das Fenster schließen?')
+            if not messagebox.askyesno(APP_NAME, translate(question),
                                        parent=self.window):
                 return
             self.closing = True
             self.cancelled.set()
+            if self.preload_cancelled is not None:
+                self.cancel_preload()
             self.status.set_message('Programm wird beendet …')
             return
         self.finish_close()

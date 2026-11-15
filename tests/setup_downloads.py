@@ -1,7 +1,9 @@
 """Regression checks for local verification and download approval."""
+from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 from pathlib import Path
 from shutil import copy2
+from threading import Barrier, Event
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -80,7 +82,8 @@ def check_downloads(root):
     setup.remaining_downloads.return_value = {}
     setup.runtime_needs_setup.return_value = False
     controller = SimpleNamespace(approve_setup=Mock(return_value=False), start_worker=Mock(),
-                                 save_settings=Mock(), work=Mock())
+                                 save_settings=Mock(), work=Mock(), closing=False,
+                                 preload_installing=False, preload_download_paths=frozenset())
     Application.launch(controller, 'job', upscaler=LANCZOS, setup=setup)
     controller.approve_setup.assert_not_called()
     controller.start_worker.assert_called_once_with('run_setup', controller.work, 'test', False, 'job', LANCZOS, {})
@@ -89,3 +92,42 @@ def check_downloads(root):
     Application.launch(controller, 'job', upscaler=LANCZOS, setup=setup)
     controller.approve_setup.assert_called_once_with(setup, LANCZOS, {}, True)
     controller.start_worker.assert_not_called()
+
+    folder = root / 'concurrent-downloads'
+    folder.mkdir()
+    for name in files:
+        copy2(CODE / name, folder / name)
+    back = Setup(folder, notify=lambda _: None, upscaler=LANCZOS)
+    fore = Setup(folder, notify=lambda _: None, upscaler=LANCZOS)
+    runtime = Setup(folder, notify=lambda _: None, upscaler=LANCZOS)
+    other = dict(spec, path='models/test/another-model.bin')
+    barrier = Barrier(2, timeout=5)
+    started = Event()
+
+    def concurrent_transfer(specification, partial, digest, offset, _attempt):
+        assert offset == 0
+        if specification is spec:
+            started.set()
+        barrier.wait()
+        partial.write_bytes(original)
+        digest.update(original)
+        return digest, len(original)
+
+    back.stream = Mock(side_effect=concurrent_transfer)
+    fore.stream = Mock(side_effect=concurrent_transfer)
+    already_waiting = Setup(folder, notify=lambda _: None, upscaler=LANCZOS)
+    already_waiting.stream = Mock(side_effect=AssertionError('Duplicate transfer started'))
+    with ThreadPoolExecutor(max_workers=3) as workers:
+        first = workers.submit(back.download, spec)
+        assert started.wait(4)
+        duplicate = workers.submit(already_waiting.download, spec)
+        second = workers.submit(fore.download, other)
+        for task in (first, duplicate, second):
+            assert task.result(timeout=8).read_bytes() == original
+
+    runtime.backend_state['setup_signature'] = 'test-signature'
+    runtime.persist()
+    fresh = Setup(folder, notify=lambda _: None, upscaler=LANCZOS)
+    assert fresh.valid(spec) and fresh.valid(other)
+    assert fresh.backend_state['setup_signature'] == 'test-signature'
+    already_waiting.stream.assert_not_called()

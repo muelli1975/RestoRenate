@@ -6,11 +6,12 @@ from pathlib import Path
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+from threading import Event
 import time
 import tkinter as tk
 from tkinter import font, ttk
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from PIL import Image
 
@@ -123,6 +124,82 @@ def check_preload(window, root):
         dialog.destroy()
 
 
+def check_background_preload(gui, wait_for):
+    downloading, downloaded = Event(), Event()
+    installing, installed = Event(), Event()
+    other_request = (MICROSOFT, True, LANCZOS)
+    pending = {'downloads/face_checkpoints.zip': 100}
+    real_setup = app.Setup
+
+    def fetch():
+        downloading.set()
+        assert downloaded.wait(8)
+
+    def install():
+        installing.set()
+        assert installed.wait(8)
+
+    setup = Mock(comfy=True, download_preload_files=Mock(side_effect=fetch),
+                 ensure=Mock(side_effect=install))
+    setup.ready.return_value = False
+
+    def choose_setup(*args, **kwargs):
+        return setup if kwargs.get('method') == MICROSOFT and 'transfer' in kwargs else real_setup(*args, **kwargs)
+
+    with (patch('app.choose_preloads', return_value=((other_request,), pending)),
+          patch('app.Setup', side_effect=choose_setup),
+          patch.object(gui.backend, 'close') as close_backend):
+        gui.preload_button.invoke()
+        wait_for(downloading.is_set)
+        progress = gui.preload_progress
+        assert progress.grab_current() is None
+        assert gui.action is None and gui.start_button.instate(['!disabled'])
+        gui.start_worker('run', lambda: gui.events.put(('status', 'Processing test image')))
+        wait_for(lambda: gui.status.get() == 'Processing test image')
+        assert gui.preload_button.instate(['!disabled'])
+        assert not gui.preload_cancelled.is_set()
+        progress.dismiss()
+        assert progress.state() == 'withdrawn'
+        gui.preload_button.invoke()
+        assert progress.state() == 'normal'
+        downloaded.set()
+        wait_for(lambda: gui.preload_to_install is not None)
+        assert gui.action == 'run' and gui.status.get() == 'Processing test image'
+        assert not installing.is_set()
+        close_backend.assert_not_called()
+
+        gui.events.put(('idle', (False, None)))
+        wait_for(installing.is_set)
+        assert gui.action is None and gui.preload_installing
+        assert gui.start_button.instate(['disabled'])
+        close_backend.assert_called_once()
+        installed.set()
+        wait_for(lambda: gui.preload_cancelled is None)
+        assert gui.start_button.instate(['!disabled']) and not progress.active
+        progress.dismiss()
+        assert gui.preload_progress is None
+
+        waiting = Event()
+
+        def cancel_test():
+            waiting.set()
+            assert gui.preload_cancelled.wait(8)
+            raise app.SetupCancelled()
+
+        setup.download_preload_files.side_effect = cancel_test
+        gui.start_worker('run', lambda: None)
+        gui.preload_button.invoke()
+        wait_for(waiting.is_set)
+        gui.preload_progress.cancel_button.invoke()
+        wait_for(lambda: gui.preload_cancelled is None)
+        assert gui.action == 'run' and not gui.cancelled.is_set()
+        assert gui.start_button.instate(['!disabled'])
+        close_backend.assert_called_once()
+        gui.preload_progress.dismiss()
+        gui.events.put(('idle', (False, None)))
+        wait_for(lambda: gui.action is None)
+
+
 def test_gui(root):
     window = tk.Tk()
     window.attributes('-alpha', 0)
@@ -145,6 +222,7 @@ def test_gui(root):
         assert window.title() == f'{app.APP_NAME} – {app.APP_VERSION}'
         window.update()
         check_preload(window, root)
+        check_background_preload(gui, wait_for)
         assert gui.preview_switch.cget('text') == app.translate('Ergebnisse')
         assert gui.preview_switch.instate(['disabled'])
         assert not gui.result_counter.winfo_manager()
@@ -254,7 +332,8 @@ def test_gui(root):
         assert gui.index == 0
         assert gui.preview_switch.cget('text') == app.translate('Eingabe')
         assert not gui.preview_switch.instate(['disabled'])
-        assert gui.result_position.get() == '1/1' and gui.result_counter.winfo_manager() == 'pack'
+        assert gui.result_position.get() == app.translate('Ergebnis {0}/{1}', 1, 1)
+        assert gui.result_counter.winfo_manager() == 'pack'
         gui.preview_switch.invoke()
         assert gui.index == -1 and gui.compare.after_image is None and not controls.enabled.get()
         assert gui.prev_button.instate(['disabled']) and gui.next_button.instate(['disabled'])
@@ -317,11 +396,11 @@ def test_gui(root):
             window.update()
             assert gui.prev_button.cget('text') == app.translate('Zurück')
             assert gui.next_button.cget('text') == app.translate('Weiter')
-            gui.result_position.set('100/100')
+            gui.result_position.set(app.translate('Ergebnis {0}/{1}', 100, 100))
             window.update()
             if window.winfo_width() >= app.START_WINDOW_WIDTH:
                 assert gui.preview_tools.grid_info()['row'] == 0
-            gui.result_position.set('2/2')
+            gui.result_position.set(app.translate('Ergebnis {0}/{1}', 2, 2))
             for width in (window.minsize()[0], 1600):
                 window.geometry(f'{width}x750')
                 window.update()

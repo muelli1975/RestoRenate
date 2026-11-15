@@ -1,10 +1,10 @@
 # RestoRenate 1.1
 
-[Downloads](https://github.com/muelli1975/RestoRenate/releases) · [Deutsch](README_DE.md) · [Detailed guide](README_DE_EN.txt)
+[Downloads and SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.1) · [Deutsch](README_DE.md) · [User guide](README_DE_EN.txt)
 
 RestoRenate is a local desktop tool for restoring, colorizing and upscaling photos. With text prompts and supported models, it can also edit an image or use a second photo as a reference. The interface is available in English and German.
 
-The app asks before downloading missing models and the processing runtime. After setup, image processing runs locally and offline.
+The app asks before downloading missing models and the processing runtime. Image processing runs locally and offline after setup. **Download models …** can fetch additional files in the background while you work with ready-to-use methods.
 
 ## New in 1.1
 
@@ -39,7 +39,7 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 1. Open a photo or folder. Crop or rotate the input if needed.
 2. Check the output destination, choose a file format and size, then select a method. Edit the prompt for models that accept text.
 3. Select **Start**. Use **Download models …** to prepare multiple methods in one pass. Optional Lightning LoRAs are listed beneath their base models.
-4. Compare the saved result with the before-and-after slider. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
+4. Compare the saved result with the before-and-after slider. The navigation shows **Result 1/3**, for example. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
 
 ## Models and output
 

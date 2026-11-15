@@ -173,9 +173,11 @@ Downloads und Verlauf
 Beim ersten Einsatz fragt die App vor dem Download fehlender Komponenten.
 „Modelle vorab laden …“ neben „Verfahren“ richtet mehrere Verfahren und Upscaler
 in einem Durchgang ein. Lightning-LoRAs stehen unter ihrem Basismodell.
-Gemeinsame Dateien werden einmal geladen. Ein
-Abbruch lässt fortsetzbare Downloads erhalten. Nach der Einrichtung läuft
-die Verarbeitung lokal und offline.
+Gemeinsame Dateien werden einmal geladen. Während des Downloads stehen
+bereits einsatzbereite Verfahren zur Verfügung. Die Einrichtung einer Laufzeit
+wartet auf die laufende Bearbeitung. Das Fenster „Modelldownloads“ zeigt den
+Fortschritt und lässt sich ausblenden. Ein Abbruch erhält fortsetzbare
+Downloads. Nach der Einrichtung läuft die Verarbeitung lokal und offline.
 
 NVIDIA und CPU teilen sich das portable ComfyUI v0.44.0. AMD verwendet das
 separate v0.45.0-Archiv. Die Modelldateien werden gemeinsam genutzt. Bei einem
@@ -350,8 +352,10 @@ Downloads and history
 On first use, the app asks before downloading missing components.
 “Download models …” next to “Method” sets up several methods and
 upscalers in one pass. Lightning LoRAs appear under their base models.
-Shared files are downloaded once. Cancelling keeps
-resumable downloads. After setup, processing runs locally and offline.
+Shared files are downloaded once. You can keep working with ready-to-use
+methods during downloads. Runtime installation waits for the current job.
+The Model downloads window shows progress and can be hidden. Cancelling
+keeps resumable downloads. After setup, processing runs locally and offline.
 
 NVIDIA and CPU share ComfyUI portable v0.44.0. AMD uses the separate
 v0.45.0 archive. Model files are shared. If a ComfyUI download fails, put the

@@ -8,7 +8,8 @@ from methods import (FIRERED_BASE, FIRERED_LIGHTNING, LANCZOS, LICENSES, METHODS
                      QWEN2511_BASE, QWEN2511_LIGHTNING_4, UPSCALE_LICENSES, UPSCALERS,
                      UPSCALING, available_methods)
 from portable_setup import CPU, NVIDIA, Setup, compute_label
-from theme import APP_BG, MUTED, PANEL_BG, checkbox
+from progress_track import ProgressTrack
+from theme import APP_BG, BORDER, GOLD, MUTED, PANEL_BG, TEXT, checkbox
 
 
 LIGHTNING_MODELS = {
@@ -221,6 +222,88 @@ class PreloadDialog(tk.Toplevel):
         if selected:
             self.result = selected, self.quoted_downloads
             self.destroy()
+
+
+class PreloadProgress(tk.Toplevel):
+    def __init__(self, parent, cancel, closed):
+        super().__init__(parent)
+        self.transient(parent)
+        self.configure(bg=APP_BG, padx=14, pady=12)
+        self.resizable(False, False)
+        self.protocol('WM_DELETE_WINDOW', self.dismiss)
+        self.bind('<Escape>', self.dismiss)
+        self.active = True
+        self.answer = None
+        self.closed = closed
+
+        panel = tk.Frame(self, bg=PANEL_BG, padx=12, pady=10, width=448)
+        panel.pack(fill='both', expand=True)
+        panel.columnconfigure(0, weight=1, minsize=424)
+        self.status = tk.Label(panel, bg=PANEL_BG, fg=TEXT, anchor='w', justify='left', wraplength=424)
+        self.status.grid(row=0, column=0, sticky='ew')
+        self.progress = ProgressTrack(panel, PANEL_BG, GOLD, BORDER)
+        self.progress.grid(row=1, column=0, sticky='ew', pady=6)
+        self.details = tk.Label(panel, bg=PANEL_BG, fg=MUTED, anchor='nw', justify='left', wraplength=424)
+        self.details.grid(row=2, column=0, sticky='ew')
+        actions = tk.Frame(self, bg=APP_BG)
+        actions.pack(fill='x', pady=(8, 0))
+        self.dismiss_button = ttk.Button(actions, command=self.dismiss)
+        self.dismiss_button.pack(side='right')
+        self.cancel_button = ttk.Button(actions, command=cancel)
+        self.cancel_button.pack(side='right', padx=(4, 6))
+        self.approve_button = ttk.Button(actions, style='Primary.TButton', command=self.approve)
+        self.localize()
+        self.update_status(translate('Modelldateien werden geprüft …'))
+
+    def localize(self):
+        self.title(translate('Modelldownloads'))
+        self.dismiss_button.configure(text=translate('Ausblenden' if self.active else 'Schließen'))
+        self.cancel_button.configure(text=translate('Abbrechen'))
+        self.approve_button.configure(text=translate('Herunterladen'))
+
+    def update_status(self, text, detail='', percent=None):
+        self.status.configure(text=text)
+        self.details.configure(text=detail)
+        self.progress.set(percent)
+
+    def ask(self, name, amount, answer):
+        self.answer = answer
+        self.update_status(translate('Zusätzlicher Download'), f'{name} · {format_download_size(amount)}', 0)
+        self.approve_button.pack(side='left')
+        self.show()
+
+    def approve(self):
+        if self.answer is not None:
+            self.answer.put_nowait(True)
+            self.answer = None
+        self.approve_button.pack_forget()
+
+    def cancelling(self):
+        self.approve_button.pack_forget()
+        self.cancel_button.configure(state='disabled')
+        self.update_status(translate('Abbruch läuft …'))
+
+    def finish(self, text, detail='', *, success, dismiss_hidden=False):
+        self.active = False
+        self.answer = None
+        if self.state() == 'withdrawn' and dismiss_hidden:
+            self.dismiss()
+            return
+        self.cancel_button.pack_forget()
+        self.approve_button.pack_forget()
+        self.dismiss_button.configure(text=translate('Schließen'))
+        self.update_status(text, detail, 100 if success else 0)
+
+    def dismiss(self, _event=None):
+        if self.active:
+            self.withdraw()
+        else:
+            self.destroy()
+            self.closed()
+
+    def show(self):
+        self.deiconify()
+        self.lift()
 
 
 def choose_preloads(parent, root, compute, supports_nunchaku):
