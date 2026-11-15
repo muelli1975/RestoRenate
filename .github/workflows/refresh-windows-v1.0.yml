@@ -26,7 +26,6 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
-      RESTORENATE_PREVIOUS_SHA256: c8da41b7103bb7c4cfbaa68bb139874402a4d7d9a79a57aa444ba3cc390cbfc6
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,6 +35,9 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory original,dist | Out-Null
+          $digest = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/v1.0" --jq '.assets[] | select(.name == "RestoRenate_1.0_Windows_x64.zip") | .digest'
+          if ($LASTEXITCODE -ne 0 -or $digest -notmatch '^sha256:[a-f0-9]{64}$') { throw 'Published Windows archive checksum is unavailable' }
+          $env:RESTORENATE_PREVIOUS_SHA256 = $digest.Substring(7)
           gh release download v1.0 --pattern 'RestoRenate_1.0_Windows_x64.zip' --dir original
           python scripts/refresh_windows_layout.py original/RestoRenate_1.0_Windows_x64.zip dist/RestoRenate_1.0_Windows_x64.zip
       - name: Test the EXE from a fresh extraction

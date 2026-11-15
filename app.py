@@ -169,7 +169,8 @@ class Application:
         self.config = read_settings()
         self.language = configure_language(self.config.get('language'))
         self.window.title(f'{APP_NAME} - {APP_VERSION}')
-        self.window.geometry('1130x750')
+        self.window.geometry('1130x860')
+        self.minimum_size_job = None
         self.window.minsize(950, 720)
         self.window.configure(bg=BG)
         self.window.protocol('WM_DELETE_WINDOW', self.close)
@@ -242,6 +243,7 @@ class Application:
         self.controls = []
         self.labels = {}
         self.build()
+        self.dimensions.trace_add('write', self.schedule_window_minimum)
         self.navigation()
         self.variants.trace_add('write', self.variant_changed)
         self.size.trace_add('write', self.update_dimensions)
@@ -265,7 +267,7 @@ class Application:
 
     def build(self):
         apply_theme(self.window)
-        header = tk.Frame(self.window, bg=BG, padx=18, pady=10)
+        header = self.header = tk.Frame(self.window, bg=BG, padx=18, pady=10)
         header.pack(fill='x')
         tk.Label(header, text=APP_NAME, bg=BG, fg=GOLD_LIGHT, font=('Segoe UI', 18, 'bold')).pack(side='left')
         self.labelled(tk.Label, header, 'Bildrestaurierung und -bearbeitung', bg=BG, fg=MUTED, padx=12).pack(
@@ -300,9 +302,11 @@ class Application:
         body.pack(fill='both', expand=True)
         body.grid_columnconfigure(1, weight=1)
         body.grid_rowconfigure(0, weight=1)
-        left = tk.Frame(body, bg=PANEL, padx=12, pady=10, width=366)
-        left.grid(row=0, column=0, sticky='ns', padx=(0, 10))
-        left.grid_propagate(False)
+        settings_slot = tk.Frame(body, bg=PANEL, width=366)
+        settings_slot.grid(row=0, column=0, sticky='ns', padx=(0, 10))
+        settings_slot.pack_propagate(False)
+        left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=12, pady=10)
+        left.pack(fill='both', expand=True)
         left.grid_columnconfigure(0, weight=1)
         left.grid_rowconfigure(11, weight=1)
 
@@ -489,7 +493,7 @@ class Application:
         self.reuse_result_button.pack(side='right', padx=(8, 0))
         tk.Label(result_info, textvariable=self.caption, fg=MUTED, bg=PANEL, anchor='w').pack(side='left', fill='x', expand=True)
 
-        footer = tk.Frame(self.window, bg=PANEL, padx=12, pady=7)
+        footer = self.footer = tk.Frame(self.window, bg=PANEL, padx=12, pady=7)
         footer.pack(fill='x', padx=14, pady=(9, 8))
         job_info = tk.Frame(footer, bg=PANEL)
         job_info.pack(fill='x')
@@ -500,6 +504,23 @@ class Application:
         )
         self.progress_bar = ProgressTrack(footer, PANEL, GOLD, BORDER)
         self.progress_bar.pack(fill='x', pady=(4, 0))
+        for section in (header, left, footer):
+            section.bind('<Configure>', self.schedule_window_minimum, add='+')
+
+    def schedule_window_minimum(self, *_args):
+        if self.minimum_size_job is None:
+            self.minimum_size_job = self.window.after_idle(self.update_window_minimum)
+
+    def update_window_minimum(self):
+        self.minimum_size_job = None
+        padding = self.window.tk.splitlist(self.footer.pack_info()['pady'])
+        footer_gap = sum(self.window.winfo_pixels(value) for value in padding)
+        content_height = sum(section.winfo_reqheight()
+                             for section in (self.header, self.settings_panel, self.footer))
+        width, previous_height = self.window.minsize()
+        height = max(720, content_height + footer_gap)
+        if height != previous_height:
+            self.window.minsize(width, height)
 
     def build_second_image(self, parent, menu_colors):
         width, height = REFERENCE_PREVIEW_SIZE
@@ -1118,6 +1139,7 @@ class Application:
         self.update_dimensions()
 
     def load_method_prompt(self):
+        self.schedule_window_minimum()
         method = self.current_method
         self.update_second_image()
         self.stop_button.configure(text=self.stop_label())
