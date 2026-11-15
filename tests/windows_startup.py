@@ -65,12 +65,15 @@ def build_observed_application(window):
             window.unbind('<Map>', map_binding)
             window.unbind('<Configure>', configure_binding)
             method = next(method for method in gui.method_ids.values() if method in app.TWO_IMAGE_METHODS)
-            gui.method.set(app.translate(app.METHODS[method]))
-            gui.choose_method()
             for language in ('de', 'en'):
                 gui.change_language(language)
+                gui.method.set(app.translate(app.METHODS[app.UPSCALING]))
+                gui.choose_method()
                 window.geometry('950x720')
-                window.update_idletasks()
+                window.update()
+                gui.method.set(app.translate(app.METHODS[method]))
+                gui.choose_method()
+                window.update()
                 assert native_size(window)[1] >= window.minsize()[1]
                 settings = gui.settings_panel
                 assert settings.winfo_height() >= settings.winfo_reqheight()

@@ -170,6 +170,7 @@ class Application:
         self.language = configure_language(self.config.get('language'))
         self.window.title(f'{APP_NAME} - {APP_VERSION}')
         self.window.geometry('1130x860')
+        self.compact_window = min(window.maxsize()[1], window.winfo_screenheight()) < 860
         self.minimum_size_job = None
         self.window.minsize(950, 720)
         self.window.configure(bg=BG)
@@ -267,7 +268,7 @@ class Application:
 
     def build(self):
         apply_theme(self.window)
-        header = self.header = tk.Frame(self.window, bg=BG, padx=18, pady=10)
+        header = self.header = tk.Frame(self.window, bg=BG, padx=18, pady=5 if self.compact_window else 10)
         header.pack(fill='x')
         tk.Label(header, text=APP_NAME, bg=BG, fg=GOLD_LIGHT, font=('Segoe UI', 18, 'bold')).pack(side='left')
         self.labelled(tk.Label, header, 'Bildrestaurierung und -bearbeitung', bg=BG, fg=MUTED, padx=12).pack(
@@ -305,7 +306,7 @@ class Application:
         settings_slot = tk.Frame(body, bg=PANEL, width=366)
         settings_slot.grid(row=0, column=0, sticky='ns', padx=(0, 10))
         settings_slot.pack_propagate(False)
-        left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=12, pady=10)
+        left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=12, pady=4 if self.compact_window else 10)
         left.pack(fill='both', expand=True)
         left.grid_columnconfigure(0, weight=1)
         left.grid_rowconfigure(11, weight=1)
@@ -398,7 +399,7 @@ class Application:
                                           values=self.preset_names())
         self.preset_widget.grid(row=0, column=0, sticky='ew', pady=(0, 4))
         self.preset_widget.bind('<<ComboboxSelected>>', self.choose_preset)
-        self.prompt = tk.Text(prompt_frame, height=3, wrap='word', bg=SECONDARY_BG, fg=INK, insertbackground=INK,
+        self.prompt = tk.Text(prompt_frame, height=2 if self.compact_window else 3, wrap='word', bg=SECONDARY_BG, fg=INK, insertbackground=INK,
                               selectbackground=HOVER_BG, selectforeground=INK, relief='flat', highlightthickness=1,
                               highlightbackground=BORDER, highlightcolor=GOLD_LIGHT,
                               padx=7, pady=6, font=('Segoe UI', 10), undo=True)
@@ -493,8 +494,13 @@ class Application:
         self.reuse_result_button.pack(side='right', padx=(8, 0))
         tk.Label(result_info, textvariable=self.caption, fg=MUTED, bg=PANEL, anchor='w').pack(side='left', fill='x', expand=True)
 
-        footer = self.footer = tk.Frame(self.window, bg=PANEL, padx=12, pady=7)
-        footer.pack(fill='x', padx=14, pady=(9, 8))
+        if self.compact_window:
+            for control in left.grid_slaves():
+                control.grid_configure(pady=0)
+
+        footer = self.footer = tk.Frame(self.window, bg=PANEL, padx=12,
+                                        pady=3 if self.compact_window else 7)
+        footer.pack(fill='x', padx=14, pady=(3, 3) if self.compact_window else (9, 8))
         job_info = tk.Frame(footer, bg=PANEL)
         job_info.pack(fill='x')
         tk.Label(job_info, textvariable=self.elapsed, fg=MUTED, bg=PANEL, anchor='e').pack(side='right')
@@ -512,6 +518,8 @@ class Application:
             self.minimum_size_job = self.window.after_idle(self.update_window_minimum)
 
     def update_window_minimum(self):
+        # A procedure change can resize the grid's request without resizing its frame.
+        self.window.update_idletasks()
         self.minimum_size_job = None
         padding = self.window.tk.splitlist(self.footer.pack_info()['pady'])
         footer_gap = sum(self.window.winfo_pixels(value) for value in padding)
