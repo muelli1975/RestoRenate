@@ -104,14 +104,19 @@ def check_preload(window, root):
         dialog = PreloadDialog(window, root, app.CPU, False)
     try:
         base = dialog.methods[MICROSOFT]
-        assert base.get() and str(base) in dialog.installed
-        assert not dialog.selection() and dialog.submit.instate(['disabled'])
+        assert base.get() and not dialog.faces.get()
+        assert dialog.selection() == ((MICROSOFT, False, LANCZOS),)
+        assert not dialog.quoted_downloads
         dialog.faces.set(True)
         dialog.select_faces()
         assert dialog.selection() == ((MICROSOFT, True, LANCZOS),)
         assert dialog.quoted_downloads == {'downloads/face_checkpoints.zip': 10}
         dialog.select_all(False)
-        assert base.get() and not dialog.faces.get() and not dialog.selection()
+        assert not base.get() and not dialog.faces.get() and not dialog.selection()
+        assert dialog.submit.instate(['disabled'])
+        dialog.faces.set(True)
+        dialog.select_faces()
+        assert base.get() and dialog.selection() == ((MICROSOFT, True, LANCZOS),)
         dialog.select_all(True)
         assert dialog.faces.get() and dialog.selection()
     finally:

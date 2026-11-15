@@ -281,12 +281,7 @@ ENGLISH = {
     'MIT-Code': 'MIT code',
     'Modelle einrichten': 'Set up models',
     'Modelle vorab laden …': 'Download models …',
-    'Vorhanden': 'Available',
-    'Zu prüfen': 'Needs checking',
-    'Download nötig': 'Download needed',
     'Keine Auswahl': 'Nothing selected',
-    'Ausgegraute Haken zeigen vorhandene Dateien. Weitere Dateien per Haken auswählen.':
-        'Dimmed checkmarks show available files. Use the other checkboxes to select files.',
     'Leeren': 'Clear',
     'iBUG · nicht kommerziell': 'iBUG · non-commercial',
     'ComfyUI · wird mitgeladen': 'ComfyUI · included in download',
