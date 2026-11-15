@@ -6,14 +6,6 @@ RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner.
 
 Die App fragt vor dem Download fehlender Modelle und Laufzeitdateien nach. Nach der Einrichtung läuft die Bildbearbeitung lokal und offline. Über **Modelle vorab laden …** lassen sich weitere Dateien im Hintergrund laden. Einsatzbereite Verfahren stehen dabei weiter zur Verfügung.
 
-## Neu in 1.1
-
-Bild 2 kann unabhängig beschnitten und gedreht werden. Bild 1 bestimmt mit seinem Ausschnitt das Seitenverhältnis der Ausgabe. Zwei Montage-Presets und zusätzliche Satzbausteine stehen im Prompt-Menü bereit.
-
-50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
-
-JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. Die mitgelieferten LUTs sind in den [Quellen und Lizenzen](assets/luts/CREDITS.md) dokumentiert.
-
 ## Vorher und nachher
 
 ![RestoRenate vergleicht das Schwarz-Weiß-Originalfoto von Harry Houdini mit dem restaurierten und kolorierten Ergebnis](./docs/screenshots/restorenate-houdini.png)
@@ -25,8 +17,8 @@ Restauriert und koloriert mit Fibo 2.0 Edit Turbo. Originalfoto aus der McManus-
 | Plattform | Paket und Voraussetzungen |
 | --- | --- |
 | Windows x64 | Die portable ZIP in einen kurzen, beschreibbaren Pfad wie `D:\RestoRenate` entpacken und `RestoRenate.exe` öffnen. Python und ExifTool sind enthalten. |
-| Ubuntu 24.04 x86-64 | Portable Ausgabe. Das `.tar.gz` in einen beschreibbaren Ordner entpacken und `./Start.sh` in einer grafischen Sitzung starten. |
 | macOS 15 oder neuer, Apple Silicon | Portable Ausgabe. Die ZIP in einen beschreibbaren Ordner entpacken und `RestoRenate.app` aus diesem Ordner öffnen. |
+| Ubuntu 24.04 x86-64 | Portable Ausgabe. Das `.tar.gz` in einen beschreibbaren Ordner entpacken und `./Start.sh` in einer grafischen Sitzung starten. |
 
 Die Pakete für Linux und macOS enthalten Python, Tk und ExifTool. ExifTool verwendet das Perl des Systems. RestoRenate lädt ausgewählte Modelle und Rechenbibliotheken bei Bedarf in den Programmordner. [Linux-Builds](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml) · [macOS-Builds](https://github.com/muelli1975/RestoRenate/actions/workflows/macos.yml)
 
@@ -40,6 +32,14 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 2. Ausgabeziel prüfen, Format und Größe wählen, dann ein Verfahren auswählen. Bei Modellen mit Texteingabe den Prompt bearbeiten.
 3. **Start** wählen. Über **Modelle vorab laden …** lassen sich mehrere Verfahren gemeinsam einrichten. Optionale Lightning-LoRAs stehen unter ihrem Basismodell.
 4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. Die Navigation zeigt beispielsweise **Ergebnis 1/3**. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild↑ / Bild↓** blättern durch die Ergebnisse.
+
+## Neu in 1.1
+
+Bild 2 kann unabhängig beschnitten und gedreht werden. Bild 1 bestimmt mit seinem Ausschnitt das Seitenverhältnis der Ausgabe. Zwei Montage-Presets und zusätzliche Satzbausteine stehen im Prompt-Menü bereit.
+
+50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
+
+JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. Die mitgelieferten LUTs sind in den [Quellen und Lizenzen](assets/luts/CREDITS.md) dokumentiert.
 
 ## Modelle und Ausgabe
 

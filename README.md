@@ -6,14 +6,6 @@ RestoRenate is a local desktop tool for restoring, colorizing and upscaling phot
 
 The app asks before downloading missing models and the processing runtime. Image processing runs locally and offline after setup. **Download models …** can fetch additional files in the background while you work with ready-to-use methods.
 
-## New in 1.1
-
-Crop and rotate the second reference independently. The primary image and its crop determine the output aspect ratio. The prompt menu adds two compositing presets and reusable edit instructions.
-
-Choose from 50 StereoFine LUTs. Use **C** to inspect the look on the right, hold **C** with the left/right arrows to choose a look, and use up/down to change strength. Enable **Apply LUT** to include the look in the next model run. **Create LUT variant** exports the selected input or result as a new numbered file without running a model. Press **F1** for controls.
-
-JPEG and TIFF retain compatible original EXIF and store RestoRenate settings in XMP. PNG uses ComfyUI's prompt and workflow metadata. For the bundled LUTs, see [sources and licenses](assets/luts/CREDITS.md).
-
 ## Before and after
 
 ![RestoRenate comparing the original black-and-white portrait of Harry Houdini with the restored and colorized result](./docs/screenshots/restorenate-houdini.png)
@@ -25,8 +17,8 @@ Restored and colorized with Fibo 2.0 Edit Turbo. Original photograph from the Li
 | Platform | Package and requirements |
 | --- | --- |
 | Windows x64 | Extract the portable ZIP to a short, writable path such as `D:\RestoRenate` and open `RestoRenate.exe`. Python and ExifTool are included. |
-| Ubuntu 24.04 x86-64 | Portable release. Extract the `.tar.gz` to a writable folder and run `./Start.sh` in a graphical desktop session. |
 | macOS 15 or newer, Apple Silicon | Portable release. Extract the ZIP to a writable folder and open `RestoRenate.app` from that folder. |
+| Ubuntu 24.04 x86-64 | Portable release. Extract the `.tar.gz` to a writable folder and run `./Start.sh` in a graphical desktop session. |
 
 The Linux and macOS packages include Python, Tk and ExifTool. ExifTool uses the system Perl. The app downloads the selected models and processing libraries into the program folder when needed. [Linux builds](https://github.com/muelli1975/RestoRenate/actions/workflows/linux.yml) · [macOS builds](https://github.com/muelli1975/RestoRenate/actions/workflows/macos.yml)
 
@@ -40,6 +32,14 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 2. Check the output destination, choose a file format and size, then select a method. Edit the prompt for models that accept text.
 3. Select **Start**. Use **Download models …** to prepare multiple methods in one pass. Optional Lightning LoRAs are listed beneath their base models.
 4. Compare the saved result with the before-and-after slider. The navigation shows **Result 1/3**, for example. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
+
+## New in 1.1
+
+Crop and rotate the second reference independently. The primary image and its crop determine the output aspect ratio. The prompt menu adds two compositing presets and reusable edit instructions.
+
+Choose from 50 StereoFine LUTs. Use **C** to inspect the look on the right. Hold **C** while pressing the left or right arrow to choose a look, or the up or down arrow to change the strength. Enable **Apply LUT** to include the look in the next model run. **Create LUT variant** exports the selected input or result as a new numbered file without running a model. Press **F1** for controls.
+
+JPEG and TIFF retain compatible original EXIF and store RestoRenate settings in XMP. PNG uses ComfyUI's prompt and workflow metadata. For the bundled LUTs, see [sources and licenses](assets/luts/CREDITS.md).
 
 ## Models and output
 
