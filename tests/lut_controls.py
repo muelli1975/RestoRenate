@@ -231,8 +231,13 @@ def test_gui(root):
         assert gui.result_caption.font.measure(visible) <= gui.result_caption.winfo_width()
         window.geometry('1130x750')
         window.update()
-        assert gui.reuse_result_button.grid_info()['row'] == 0
-        assert gui.look_controls.save_button.winfo_rootx() < gui.reuse_result_button.winfo_rootx()
+        available = gui.result_actions.winfo_width()
+        needed = controls.frame.winfo_reqwidth() + gui.reuse_result_button.winfo_reqwidth() + 8
+        assert gui.reuse_result_button.grid_info()['row'] == int(available < needed)
+        if available >= needed:
+            assert controls.save_button.winfo_rootx() < gui.reuse_result_button.winfo_rootx()
+        else:
+            assert controls.save_button.winfo_rooty() < gui.reuse_result_button.winfo_rooty()
 
         probe = ttk.Menubutton(window, style=controls.choose.cget('style'))
         for language in ('de', 'en'):
@@ -248,7 +253,11 @@ def test_gui(root):
                     controls.select(key)
                     probe.configure(text=controls.label(entry))
                     window.update_idletasks()
-                    if width == 1600:
+                    # Builds may run with a small desktop or different font scaling.
+                    # The picker and slider split the space left after the fixed controls.
+                    name_extra = max(0, probe.winfo_reqwidth() - picker.winfo_reqwidth())
+                    free = controls.frame.winfo_width() - controls.frame.winfo_reqwidth()
+                    if free >= 2 * name_extra:
                         assert controls.choose.winfo_width() >= probe.winfo_reqwidth()
                     assert controls.choose.cget('text') == probe.cget('text')
                     assert (controls.choose.winfo_width(), gui.reuse_result_button.grid_info()['row']) == bounds
