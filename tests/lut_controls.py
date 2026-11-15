@@ -100,10 +100,11 @@ def test_gui(root):
         assert gui.look_controls.key == first_look
         window.update()
         assert window.winfo_height() >= window.minsize()[1]
-        window.geometry('950x720')
         gui.pick_sources(source)
         for language in ('de', 'en'):
             gui.change_language(language)
+            window.update()
+            window.geometry(f'{window.minsize()[0]}x720')
             window.update()
             right = gui.look_controls.save_button
             assert right.winfo_rootx() + right.winfo_width() < window.winfo_rootx() + window.winfo_width()
@@ -241,13 +242,15 @@ def test_gui(root):
         probe = ttk.Menubutton(window, style=controls.choose.cget('style'))
         for language in ('de', 'en'):
             gui.change_language(language)
-            for width in (950, 1600):
+            window.update()
+            for width in (window.minsize()[0], 1600):
                 window.geometry(f'{width}x750')
                 window.update()
                 bounds = controls.choose.winfo_width(), gui.preview_tools.grid_info()['row']
                 picker = controls.choose.master
-                assert controls.frame.winfo_width() >= controls.frame.winfo_reqwidth()
-                assert gui.browse_controls.winfo_width() >= gui.browse_controls.winfo_reqwidth()
+                sizes = (language, width, window.winfo_width(), window.minsize())
+                assert controls.frame.winfo_width() >= controls.frame.winfo_reqwidth(), sizes
+                assert gui.browse_controls.winfo_width() >= gui.browse_controls.winfo_reqwidth(), sizes
                 assert abs((controls.choose.winfo_width() - picker.winfo_reqwidth())
                            - (controls.slider.winfo_width() - controls.slider.winfo_reqwidth())) <= 1
                 for key, entry in catalog().items():
