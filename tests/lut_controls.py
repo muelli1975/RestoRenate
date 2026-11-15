@@ -8,7 +8,8 @@ import sys
 from tempfile import TemporaryDirectory
 import time
 import tkinter as tk
-from tkinter import ttk
+from tkinter import font, ttk
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from PIL import Image
@@ -23,7 +24,8 @@ from crop import CropRegion
 from export_metadata import editor_graph
 from imaging import exiftool_executable
 from looks import Look, apply_look, catalog
-from methods import LANCZOS, UPSCALING
+from methods import LANCZOS, MICROSOFT, UPSCALING
+from preload_models import PreloadDialog
 from restoration import export_look_variant, restore
 from sizes import DOUBLE_SIZE
 from reference_controls import check_reference_controls
@@ -87,6 +89,35 @@ def test_metadata(root, exiftool):
         assert inherited['luts'] == [look.record(), look.record()], inherited
 
 
+def check_preload(window, root):
+    def setup(_root, *, method, faces, upscaler, compute):
+        files = [{'path': f'models/{method}/{upscaler}'}]
+        if method == MICROSOFT and faces:
+            files.append({'path': 'downloads/face_checkpoints.zip'})
+        pending = {spec['path']: 10 for spec in files if not spec['path'].startswith('models/microsoft/')}
+        return SimpleNamespace(
+            models=files, comfy=False, remaining_downloads=lambda: pending,
+            valid=lambda spec: spec['path'] not in pending,
+        )
+
+    with patch('preload_models.Setup', side_effect=setup):
+        dialog = PreloadDialog(window, root, app.CPU, False)
+    try:
+        base = dialog.methods[MICROSOFT]
+        assert base.get() and str(base) in dialog.installed
+        assert not dialog.selection() and dialog.submit.instate(['disabled'])
+        dialog.faces.set(True)
+        dialog.select_faces()
+        assert dialog.selection() == ((MICROSOFT, True, LANCZOS),)
+        assert dialog.quoted_downloads == {'downloads/face_checkpoints.zip': 10}
+        dialog.select_all(False)
+        assert base.get() and not dialog.faces.get() and not dialog.selection()
+        dialog.select_all(True)
+        assert dialog.faces.get() and dialog.selection()
+    finally:
+        dialog.destroy()
+
+
 def test_gui(root):
     window = tk.Tk()
     window.attributes('-alpha', 0)
@@ -106,7 +137,9 @@ def test_gui(root):
         app.SETTINGS.write_text(json.dumps({'lut': {'id': other_look, 'strength': 100}}), encoding='utf-8')
         gui = app.Application(window)
         assert gui.look_controls.key == first_look
+        assert window.title() == f'{app.APP_NAME} – {app.APP_VERSION}'
         window.update()
+        check_preload(window, root)
         assert gui.preview_switch.cget('text') == app.translate('Ergebnisse')
         assert gui.preview_switch.instate(['disabled'])
         assert not gui.result_counter.winfo_manager()
@@ -120,6 +153,13 @@ def test_gui(root):
             window.update()
             window.geometry(f'{window.minsize()[0]}x720')
             window.update()
+            seed_font = font.Font(window, font=ttk.Style(window).lookup('Seed.TEntry', 'font'))
+            assert gui.seed_entry.winfo_width() >= seed_font.measure(str(app.MAX_SEED)) + 4
+            assert gui.clear_seed_button.instate(['disabled'])
+            gui.seed_value.set(str(app.MAX_SEED))
+            assert gui.fixed_seed() == app.MAX_SEED and gui.clear_seed_button.instate(['!disabled'])
+            gui.clear_seed_button.invoke()
+            assert gui.fixed_seed() is None and gui.clear_seed_button.instate(['disabled'])
             right = gui.look_controls.save_button
             assert right.winfo_rootx() + right.winfo_width() < window.winfo_rootx() + window.winfo_width()
             assert gui.compare.winfo_height() > 380

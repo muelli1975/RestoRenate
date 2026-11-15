@@ -50,7 +50,9 @@ def test_gui(source):
         assert gui.remove_second_button.winfo_width() >= gui.remove_second_button.winfo_reqwidth()
         gui.remove_second_button.invoke()
         assert gui.second_image is None
-        dialog = PreloadDialog(window, root, CPU, gui.current_method, LANCZOS, False, False)
+        dialog = PreloadDialog(window, root, CPU, False)
+        assert not dialog.selection()
+        dialog.select_all(True)
         assert dialog.runtime_status.get()
         assert dialog.lightning
         dialog.destroy()

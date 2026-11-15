@@ -37,6 +37,7 @@ try:
     gui.set_second_image(image_path)
     window.lift()
     window.update()
+    gui.update_window_minimum()
     row = gui.second_row
     left, top = row.winfo_rootx(), row.winfo_rooty()
     with ImageGrab.grab((left, top, left + row.winfo_width(), top + row.winfo_height())) as screenshot:

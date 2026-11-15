@@ -41,7 +41,7 @@ jobs:
           if (!$launcher.WaitForExit(10000) -or $launcher.ExitCode -ne 0) { throw 'Launcher failed' }
           $app = $null
           for ($i=0; $i -lt 60 -and !$app; $i++) {
-            $app = Get-Process pythonw -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $root 'runtime/python/pythonw.exe') -and $_.MainWindowTitle -eq 'RestoRenate - 1.1' } | Select-Object -First 1
+            $app = Get-Process pythonw -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $root 'runtime/python/pythonw.exe') -and $_.MainWindowTitle -eq 'RestoRenate – 1.1' } | Select-Object -First 1
             if (!$app) { Start-Sleep -Milliseconds 250 }
           }
           if (!$app -or !$app.Responding) {

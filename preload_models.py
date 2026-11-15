@@ -46,7 +46,7 @@ def format_download_size(size):
 
 
 class PreloadDialog(tk.Toplevel):
-    def __init__(self, parent, root, compute, current_method, current_upscaler, faces, supports_nunchaku):
+    def __init__(self, parent, root, compute, supports_nunchaku):
         super().__init__(parent)
         self.transient(parent)
         self.title(translate('Modelle vorab laden …'))
@@ -59,7 +59,10 @@ class PreloadDialog(tk.Toplevel):
         self.methods = {}
         self.lightning = {}
         self.upscalers = {}
+        self.installed = set()
 
+        tk.Label(self, text=translate('Ausgegraute Haken zeigen vorhandene Dateien. Weitere Dateien per Haken auswählen.'),
+                 bg=APP_BG, fg=MUTED).pack(anchor='w', padx=14, pady=(10, 0))
         options = tk.Frame(self, bg=APP_BG, padx=14, pady=12)
         options.pack(fill='both', expand=True)
         left = tk.Frame(options, bg=PANEL_BG, padx=12, pady=8)
@@ -69,21 +72,19 @@ class PreloadDialog(tk.Toplevel):
         ttk.Label(left, text=translate('Verfahren'), background=PANEL_BG).pack(anchor='w', pady=(0, 4))
         ttk.Label(right, text='Upscaler', background=PANEL_BG).pack(anchor='w', pady=(0, 4))
 
-        self.faces = tk.BooleanVar(self, faces)
         methods = available_preload_methods(compute, supports_nunchaku)
         grouped_bases = {base for base, _ in LIGHTNING_MODELS.values()}
         for method in methods:
             if method in LIGHTNING_MODELS:
                 base, label = LIGHTNING_MODELS[method]
                 base_option = self.option(left, translate(METHODS[base]), translate(LICENSES[base]),
-                                          current_method in (base, method),
-                                          command=lambda method=method: self.update_lightning(method, base_changed=True),
-                                          enabled=base in methods)
-                lora_option = self.option(left, translate(label), '', current_method == method, indent=OPTION_INDENT,
+                                          request=(base, False, LANCZOS),
+                                          command=lambda method=method: self.update_lightning(method, base_changed=True))
+                lora_option = self.option(left, translate(label), '', indent=OPTION_INDENT,
+                                          request=(method, False, LANCZOS), base=(base, False, LANCZOS),
                                           command=lambda method=method: self.update_lightning(method))
                 self.lightning[method] = base_option, lora_option
-                if base in methods:
-                    self.methods[base] = base_option
+                self.methods[base] = base_option
                 continue
             if method in grouped_bases:
                 continue
@@ -91,18 +92,21 @@ class PreloadDialog(tk.Toplevel):
             label = translate(METHODS[method])
             if method == QWEN2509_NUNCHAKU:
                 label = translate('{0} · Lightning integriert', label)
-            self.methods[method] = self.option(left, label, license_label, method == current_method)
+            request = (method, False, LANCZOS)
+            self.methods[method] = self.option(
+                left, label, license_label, request=request,
+                command=self.update_microsoft if method == MICROSOFT else None,
+            )
             if method == MICROSOFT:
-                faces_row = tk.Frame(left, bg=PANEL_BG)
-                faces_row.pack(fill='x', padx=(OPTION_INDENT, 0), pady=OPTION_SPACING)
-                self.face_option = checkbox(faces_row, translate('Gesichter verbessern'), self.faces, self.update_total)
-                self.face_option.pack(side='left')
-                tk.Label(faces_row, text=translate('iBUG · nicht kommerziell'), bg=PANEL_BG, fg=MUTED,
-                         padx=6).pack(side='right')
+                self.faces = self.option(
+                    left, translate('Gesichter verbessern'), translate('iBUG · nicht kommerziell'),
+                    request=(method, True, LANCZOS), base=request,
+                    indent=OPTION_INDENT, command=self.select_faces,
+                )
         for upscaler in UPSCALERS:
             if upscaler != LANCZOS:
                 self.upscalers[upscaler] = self.option(right, upscaler, UPSCALE_LICENSES[upscaler],
-                                                       upscaler == current_upscaler)
+                                                       request=(UPSCALING, False, upscaler))
 
         footer = tk.Frame(self, bg=APP_BG, padx=14, pady=10)
         footer.pack(fill='x')
@@ -123,59 +127,92 @@ class PreloadDialog(tk.Toplevel):
         self.bind('<Return>', lambda event: self.apply())
         self.update_total()
 
-    def option(self, parent, label, license_label, selected, *, indent=0, command=None, enabled=True):
+    def option(self, parent, label, license_label, *, request, base=None, indent=0, command=None):
         row = tk.Frame(parent, bg=PANEL_BG)
         row.pack(fill='x', padx=(indent, 0), pady=OPTION_SPACING)
-        value = tk.BooleanVar(self, selected)
+        status = self.model_status(request, base)
+        available = status == 'Vorhanden'
+        value = tk.BooleanVar(self, available)
         control = checkbox(row, label, value, command or self.update_total)
         control.pack(side='left')
-        if not enabled:
+        if available:
+            self.installed.add(str(value))
             set_control_state(control, 'disabled')
-        if license_label:
-            tk.Label(row, text=license_label, bg=PANEL_BG, fg=MUTED, padx=6).pack(side='right')
+        details = ' · '.join(filter(None, (license_label, translate(status))))
+        if details:
+            tk.Label(row, text=details, bg=PANEL_BG, fg=MUTED, padx=6).pack(side='right')
         return value
+
+    def download_plan(self, request):
+        if request not in self.downloads:
+            method, faces, upscaler = request
+            setup = Setup(self.root, method=method, faces=faces, upscaler=upscaler, compute=self.compute)
+            pending = setup.remaining_downloads()
+            runtime = ((setup.runtime['path'] if setup.runtime else None, not setup.runtime_needs_setup())
+                       if setup.comfy else None)
+            self.downloads[request] = setup, pending, runtime
+        return self.downloads[request]
+
+    def model_status(self, request, base):
+        setup, pending, _ = self.download_plan(request)
+        base_files = {spec['path'] for spec in self.download_plan(base)[0].models} if base else set()
+        models = [spec for spec in setup.models
+                  if spec['path'] not in base_files and not spec['path'].endswith('.whl')]
+        if not models:
+            return ''
+        if any(pending.get(spec['path'], 0) for spec in models):
+            return 'Download nötig'
+        return 'Vorhanden' if all(setup.valid(spec) for spec in models) else 'Zu prüfen'
+
+    def chosen(self, value):
+        return str(value) not in self.installed and value.get()
+
+    def choose(self, value, selected):
+        if str(value) not in self.installed:
+            value.set(selected)
+
+    def update_microsoft(self):
+        if not self.methods[MICROSOFT].get():
+            self.choose(self.faces, False)
+        self.update_total()
+
+    def select_faces(self):
+        if self.chosen(self.faces):
+            self.choose(self.methods[MICROSOFT], True)
+        self.update_total()
 
     def update_lightning(self, method, *, base_changed=False):
         base_option, lora_option = self.lightning[method]
-        base = LIGHTNING_MODELS[method][0]
-        if base not in self.methods:
-            base_option.set(lora_option.get())
-        elif base_changed and not base_option.get():
-            lora_option.set(False)
-        elif lora_option.get():
-            base_option.set(True)
+        if base_changed and not base_option.get():
+            self.choose(lora_option, False)
+        elif self.chosen(lora_option):
+            self.choose(base_option, True)
         self.update_total()
 
     def select_all(self, selected):
-        for value in (*self.methods.values(), *self.upscalers.values()):
-            value.set(selected)
-        for base, lora in self.lightning.values():
-            base.set(selected)
-            lora.set(selected)
-        self.faces.set(selected)
+        loras = [lora for _, lora in self.lightning.values()]
+        for value in (*self.methods.values(), *self.upscalers.values(), *loras, self.faces):
+            self.choose(value, selected)
         self.update_total()
 
     def selection(self):
-        lightning = {LIGHTNING_MODELS[method][0]: method for method, (_, lora) in self.lightning.items() if lora.get()}
-        methods = [method for method, value in self.methods.items() if value.get() and method not in lightning]
+        lightning = {LIGHTNING_MODELS[method][0]: method
+                     for method, (_, lora) in self.lightning.items() if self.chosen(lora)}
+        methods = [method for method, value in self.methods.items() if self.chosen(value) and method not in lightning]
         methods.extend(lightning.values())
+        faces = self.chosen(self.faces)
+        if faces and MICROSOFT not in methods:
+            methods.append(MICROSOFT)
         return preload_requests(methods,
-                                (upscaler for upscaler, value in self.upscalers.items() if value.get()),
-                                faces=self.faces.get())
+                                (upscaler for upscaler, value in self.upscalers.items() if self.chosen(value)),
+                                faces=faces)
 
     def update_total(self):
-        set_control_state(self.face_option, 'normal' if self.methods[MICROSOFT].get() else 'disabled')
         requests = self.selection()
         remaining = {}
         runtime = None
         for request in requests:
-            if request not in self.downloads:
-                method, faces, upscaler = request
-                setup = Setup(self.root, method=method, faces=faces, upscaler=upscaler, compute=self.compute)
-                pending = setup.remaining_downloads()
-                info = (setup.runtime['path'] if setup.runtime else None, not setup.runtime_needs_setup()) if setup.comfy else None
-                self.downloads[request] = pending, info
-            pending, info = self.downloads[request]
+            _, pending, info = self.download_plan(request)
             remaining.update(pending)
             if info is not None and (runtime is None or not info[1]):
                 runtime = info
@@ -195,7 +232,9 @@ class PreloadDialog(tk.Toplevel):
         remaining_bytes = sum(remaining.values())
         transfer = (translate('Noch etwa {0} Download', format_download_size(remaining_bytes)) if remaining_bytes
                     else translate('Keine Downloads erforderlich'))
-        if runtime is not None and runtime[0] is None and not runtime[1]:
+        if not requests:
+            transfer = translate('Keine Auswahl')
+        elif runtime is not None and runtime[0] is None and not runtime[1]:
             transfer = translate('Noch etwa {0} Modelldownload', format_download_size(remaining_bytes)) if remaining_bytes else translate('Keine Modelle herunterzuladen')
         self.total.set(translate('Berechnung: {0}', compute_label(self.compute)) + ' · ' + transfer)
         self.submit.configure(state='normal' if requests else 'disabled')
@@ -207,8 +246,8 @@ class PreloadDialog(tk.Toplevel):
             self.destroy()
 
 
-def choose_preloads(parent, root, compute, method, upscaler, faces, supports_nunchaku):
-    dialog = PreloadDialog(parent, root, compute, method, upscaler, faces, supports_nunchaku)
+def choose_preloads(parent, root, compute, supports_nunchaku):
+    dialog = PreloadDialog(parent, root, compute, supports_nunchaku)
     dialog.wait_visibility()
     dialog.grab_set()
     dialog.focus_set()

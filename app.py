@@ -214,7 +214,7 @@ class Application:
         self.window = window
         self.config = read_settings()
         self.language = configure_language(self.config.get('language'))
-        self.window.title(f'{APP_NAME} - {APP_VERSION}')
+        self.window.title(f'{APP_NAME} – {APP_VERSION}')
         self.window.geometry(f'{START_WINDOW_WIDTH}x{START_WINDOW_HEIGHT}')
         self.compact_window = min(window.maxsize()[1], window.winfo_screenheight()) < 860
         self.minimum_size_job = None
@@ -294,6 +294,7 @@ class Application:
         self.controls = []
         self.labels = {}
         self.build()
+        self.seed_value.trace_add('write', self.update_seed)
         self.dimensions.trace_add('write', self.schedule_window_minimum)
         self.navigation()
         self.variants.trace_add('write', self.variant_changed)
@@ -506,8 +507,11 @@ class Application:
         self.seed_row = tk.Frame(left, bg=PANEL)
         self.seed_row.grid(row=14, column=0, sticky='ew', pady=(4, 0))
         self.labelled(tk.Label, self.seed_row, 'Seed (leer = Zufall)', bg=PANEL, fg=INK).pack(side='left')
-        self.seed_entry = ttk.Entry(self.seed_row, textvariable=self.seed_value, width=21, style='Seed.TEntry')
+        self.seed_entry = ttk.Entry(self.seed_row, textvariable=self.seed_value, width=1, style='Seed.TEntry')
         self.seed_entry.pack(side='left', fill='x', expand=True, padx=(8, 0))
+        self.clear_seed_button = self.labelled(ttk.Button, self.seed_row, 'Leeren',
+                                               command=lambda: self.seed_value.set(''), width=-1, style='Input.TButton')
+        self.clear_seed_button.pack(side='left', padx=(4, 0))
         self.seed_actions = tk.Frame(left, bg=PANEL)
         self.seed_actions.grid(row=15, column=0, sticky='ew', pady=(4, 0))
         self.last_seed_button = self.labelled(ttk.Button, self.seed_actions, 'Letzten übernehmen',
@@ -690,8 +694,9 @@ class Application:
         if not self.variants.get():
             self.variants.set(str(self.variant_count))
 
-    def update_seed(self):
+    def update_seed(self, *_args):
         self.seed_entry.configure(state='normal' if self.action is None else 'disabled')
+        self.clear_seed_button.configure(state='normal' if self.action is None and self.seed_value.get() else 'disabled')
         self.png_seed_button.configure(state='normal' if self.action is None else 'disabled')
         self.last_seed_button.configure(state='normal' if self.seed is not None and self.action is None else 'disabled')
         if self.action is None:
@@ -874,8 +879,7 @@ class Application:
     def preload_clicked(self):
         if self.action or self.closing:
             return
-        selected = choose_preloads(self.window, ROOT, self.active_compute, self.current_method,
-                                  self.effective_upscaler(), self.faces.get(), self.supports_nunchaku())
+        selected = choose_preloads(self.window, ROOT, self.active_compute, self.supports_nunchaku())
         if selected:
             requests, downloads = selected
             self.start_worker('preload', self.preload, requests, self.active_compute, downloads)
