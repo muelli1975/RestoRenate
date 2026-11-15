@@ -108,6 +108,7 @@ FILE_TYPES = [('Bilddateien', ' '.join('*' + ext for ext in sorted(EXTENSIONS)))
 ROTATION_CHOICES = (('90° links', -1), ('90° rechts', 1), ('180°', 2), ('Drehung zurücksetzen', None))
 REFERENCE_PREVIEW_SIZE = (152, 104)
 MIN_WINDOW_WIDTH = 950
+START_WINDOW_WIDTH = 1200
 
 
 def read_settings():
@@ -213,7 +214,7 @@ class Application:
         self.config = read_settings()
         self.language = configure_language(self.config.get('language'))
         self.window.title(f'{APP_NAME} - {APP_VERSION}')
-        self.window.geometry('1130x860')
+        self.window.geometry(f'{START_WINDOW_WIDTH}x860')
         self.compact_window = min(window.maxsize()[1], window.winfo_screenheight()) < 860
         self.minimum_size_job = None
         self.window.minsize(MIN_WINDOW_WIDTH, 720)
@@ -287,7 +288,7 @@ class Application:
         self.image_started = None
         self.caption = LocalizedText()
         self.caption.set_message('Wähle ein Bild oder einen Ordner.')
-        self.result_position = tk.StringVar(value='0/0')
+        self.result_position = tk.StringVar()
         self.controls = []
         self.labels = {}
         self.build()
@@ -551,7 +552,7 @@ class Application:
         job_info = tk.Frame(footer, bg=PANEL)
         job_info.pack(fill='x')
         self.labelled(ttk.Button, job_info, 'F1 · Bedienhilfe', command=lambda: open_controls(self),
-                      style='Input.Help.TButton').pack(side='left', padx=(0, 9))
+                      style='Input.TButton').pack(side='left', padx=(0, 9))
         tk.Label(job_info, textvariable=self.elapsed, fg=MUTED, bg=PANEL, anchor='e').pack(side='right')
         tk.Label(job_info, textvariable=self.device, fg=MUTED, bg=PANEL).pack(side='right', padx=(10, 13))
         tk.Label(job_info, textvariable=self.status, fg=INK, bg=PANEL, anchor='w').pack(
@@ -614,21 +615,15 @@ class Application:
         navigation.columnconfigure(0, weight=1)
         browsing = self.browse_controls = tk.Frame(navigation, bg=PANEL)
         browsing.grid(row=0, column=0, sticky='w')
-        self.input_view_button = self.labelled(ttk.Button, browsing, 'Eingabe', command=self.show_original,
-                                               width=-1, style='Input.TButton')
-        self.input_view_button.pack(side='left', padx=(0, 4))
-        self.result_view_button = self.labelled(ttk.Button, browsing, 'Ergebnisse', command=self.show_last_result,
-                                                width=-1, style='Input.TButton')
-        self.result_view_button.pack(side='left', padx=(0, 7))
-        self.prev_button = ttk.Button(browsing, text='←', command=lambda: self.move(-1),
-                                      width=-2, style='Input.TButton')
-        self.prev_button.pack(side='left')
-        self.next_button = ttk.Button(browsing, text='→', command=lambda: self.move(1),
-                                      width=-2, style='Input.TButton')
-        self.next_button.pack(side='left', padx=(4, 0))
-        tk.Label(browsing, textvariable=self.result_position, fg=MUTED, bg=PANEL, width=7, anchor='w').pack(
-            side='left', padx=(6, 0),
-        )
+        self.preview_switch = ttk.Button(browsing, command=self.switch_preview, width=-10, style='Input.TButton')
+        self.preview_switch.pack(side='left', padx=(0, 4))
+        self.prev_button = self.labelled(ttk.Button, browsing, 'Zurück', command=lambda: self.move(-1),
+                                         width=-1, style='Input.TButton')
+        self.prev_button.pack(side='left', padx=(0, 4))
+        self.next_button = self.labelled(ttk.Button, browsing, 'Weiter', command=lambda: self.move(1),
+                                         width=-1, style='Input.TButton')
+        self.next_button.pack(side='left')
+        self.result_counter = tk.Label(browsing, textvariable=self.result_position, fg=MUTED, bg=PANEL, anchor='w')
         self.reuse_result_button = self.labelled(ttk.Button, browsing, 'Ergebnis weiterbearbeiten',
                                                 command=self.reuse_result, state='disabled', style='Input.TButton')
         self.reuse_result_button.pack(side='left', padx=(4, 0))
@@ -643,6 +638,7 @@ class Application:
         self.labelled(ttk.Button, tools, 'Ansicht einpassen', command=self.compare.fit,
                       width=-1).pack(side='left')
         navigation.bind('<Configure>', self.fit_result_navigation)
+        browsing.bind('<Configure>', self.fit_result_navigation)
 
     def fit_result_navigation(self, _event=None):
         needed = self.browse_controls.winfo_reqwidth() + self.preview_tools.winfo_reqwidth() + 4
@@ -1942,8 +1938,10 @@ class Application:
             self.preview_source = self.results[self.index][0]
             self.refresh_input_preview(look=self.look_controls.kept_look)
 
-    def show_last_result(self):
-        if self.index < 0 and self.results:
+    def switch_preview(self):
+        if self.index >= 0:
+            self.show_original()
+        elif self.results:
             self.index = self.last_result_index
             self.show_result()
 
@@ -1973,10 +1971,12 @@ class Application:
         showing_result = self.index >= 0
         position = f'{self.index + 1}/{len(self.results)}' if showing_result else ''
         self.result_position.set(position)
-        self.input_view_button.configure(state='normal' if self.sources else 'disabled',
-                                         style='Input.TButton' if showing_result else 'Input.Primary.TButton')
-        self.result_view_button.configure(state='normal' if self.results else 'disabled',
-                                          style='Input.Primary.TButton' if showing_result else 'Input.TButton')
+        self.preview_switch.configure(text=translate('Eingabe' if showing_result else 'Ergebnisse'),
+                                      state='normal' if self.results else 'disabled')
+        if showing_result and not self.result_counter.winfo_manager():
+            self.result_counter.pack(side='left', before=self.reuse_result_button, padx=(4, 0))
+        elif not showing_result:
+            self.result_counter.pack_forget()
         self.prev_button.configure(state='normal' if self.index > 0 else 'disabled')
         self.next_button.configure(state='normal' if showing_result and self.index + 1 < len(self.results)
                                    else 'disabled')

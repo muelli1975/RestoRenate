@@ -92,8 +92,6 @@ def apply_theme(window):
               arrowcolor=[('disabled', DISABLED)])
     for input_style in ('Input.TButton', 'Input.Primary.TButton', 'Input.TMenubutton'):
         style.configure(input_style, padding=(5, 2))
-    style.configure('Input.Help.TButton', foreground=GOLD_LIGHT, padding=(5, 2))
-    style.map('Input.Help.TButton', foreground=[('disabled', DISABLED), ('active', TEXT)])
     flat_menu_layout = [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [
             ('Menubutton.padding', {'sticky': 'nswe', 'children': [

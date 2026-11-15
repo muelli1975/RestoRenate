@@ -99,8 +99,14 @@ def test_gui(root):
         gui = app.Application(window)
         assert gui.look_controls.key == first_look
         window.update()
+        assert gui.preview_switch.cget('text') == app.translate('Ergebnisse')
+        assert gui.preview_switch.instate(['disabled'])
+        assert not gui.result_counter.winfo_manager()
+        if window.winfo_width() >= app.START_WINDOW_WIDTH:
+            assert gui.preview_tools.grid_info()['row'] == 0
         assert window.winfo_height() >= window.minsize()[1]
         gui.pick_sources(source)
+        assert gui.preview_switch.instate(['disabled'])
         for language in ('de', 'en'):
             gui.change_language(language)
             window.update()
@@ -193,14 +199,19 @@ def test_gui(root):
         assert gui.prev_button.instate(['disabled']) and gui.next_button.instate(['disabled'])
         gui.move(-1)
         assert gui.index == 0
-        gui.input_view_button.invoke()
+        assert gui.preview_switch.cget('text') == app.translate('Eingabe')
+        assert not gui.preview_switch.instate(['disabled'])
+        assert gui.result_position.get() == '1/1' and gui.result_counter.winfo_manager() == 'pack'
+        gui.preview_switch.invoke()
         assert gui.index == -1 and gui.compare.after_image is None and not controls.enabled.get()
         assert gui.prev_button.instate(['disabled']) and gui.next_button.instate(['disabled'])
+        assert gui.preview_switch.cget('text') == app.translate('Ergebnisse')
+        assert not gui.result_counter.winfo_manager()
         gui.move(1)
         assert gui.index == -1
         controls.check.toggle()
         assert gui.compare.look_basis is gui.compare.before_image
-        gui.result_view_button.invoke()
+        gui.preview_switch.invoke()
         assert gui.index == 0 and gui.compare.after_image is not None and not controls.enabled.get()
         assert controls.key != first_look and controls.look().strength == 95
         assert gui.second_button.cget('text') == app.translate('Bild …')
@@ -215,24 +226,26 @@ def test_gui(root):
         assert gui.next_button.instate(['disabled'])
         gui.prev_button.invoke()
         assert gui.index == 0 and not gui.next_button.instate(['disabled'])
-        gui.input_view_button.invoke()
-        gui.result_view_button.invoke()
+        gui.preview_switch.invoke()
+        gui.preview_switch.invoke()
         assert gui.index == 0
         gui.next_button.invoke()
-        gui.input_view_button.invoke()
-        gui.result_view_button.invoke()
+        gui.preview_switch.invoke()
+        gui.preview_switch.invoke()
         assert gui.index == 1
 
-        style = ttk.Style(window)
-        assert style.lookup('Input.Help.TButton', 'foreground') == app.GOLD_LIGHT
-        assert style.lookup('Input.Help.TButton', 'focuscolor') == app.GOLD_LIGHT
+        help_button = next(widget for widget, label in gui.labels.items() if label == 'F1 · Bedienhilfe')
+        assert isinstance(help_button, ttk.Button) and help_button.cget('style') == 'Input.TButton'
+        help_button.invoke()
+        assert gui.controls_help.winfo_exists()
+        gui.controls_help.destroy()
 
         gui.caption.set('Long file name ' * 40 + 'result.png · 80 × 48 px')
         window.update()
         visible = gui.result_caption.cget('text')
         assert '…' in visible and visible.endswith('result.png · 80 × 48 px'), visible
         assert gui.result_caption.font.measure(visible) <= gui.result_caption.winfo_width()
-        window.geometry('1130x750')
+        window.geometry(f'{app.START_WINDOW_WIDTH}x750')
         window.update()
         assert gui.reuse_result_button.master is gui.browse_controls
         assert gui.reuse_result_button.winfo_rootx() > gui.next_button.winfo_rootx()
@@ -243,6 +256,13 @@ def test_gui(root):
         for language in ('de', 'en'):
             gui.change_language(language)
             window.update()
+            assert gui.prev_button.cget('text') == app.translate('Zurück')
+            assert gui.next_button.cget('text') == app.translate('Weiter')
+            gui.result_position.set('100/100')
+            window.update()
+            if window.winfo_width() >= app.START_WINDOW_WIDTH:
+                assert gui.preview_tools.grid_info()['row'] == 0
+            gui.result_position.set('2/2')
             for width in (window.minsize()[0], 1600):
                 window.geometry(f'{width}x750')
                 window.update()
@@ -280,13 +300,13 @@ def test_gui(root):
         assert controls.look().strength == 95 and not controls.enabled.get()
 
         gui.pick_sources(source)
-        gui.input_view_button.invoke()
+        gui.preview_switch.invoke()
         controls.check.toggle()
         controls.select(other_look)
         controls.set_strength(35)
         controls.keep_check.toggle()
         assert controls.kept_look == Look(other_look, 35)
-        gui.result_view_button.invoke()
+        gui.preview_switch.invoke()
         assert controls.keep.get() and not controls.enabled.get() and gui.compare.look_basis is None
         controls.check.toggle()
         controls.select(first_look)
