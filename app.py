@@ -41,7 +41,7 @@ from progress_track import ProgressTrack
 from prompt_menu import PromptMenu
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
                    TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, checkbox,
-                   set_control_state, style_method_scrollbar)
+                   set_control_state)
 from restoration import Client, restore, select_models
 from technical_logs import TechnicalLog, prepare_technical_logs
 from titlebar import install_tk_titlebars, set_window_transitions_disabled
@@ -385,7 +385,6 @@ class Application:
         button(left, 'Modelle vorab laden …', self.preload_clicked).grid(row=8, column=0, sticky='e', pady=(6, 2))
         self.method_widget = ttk.Combobox(left, textvariable=self.method, values=list(self.method_ids), state='readonly')
         self.method_widget.grid(row=9, column=0, sticky='ew')
-        style_method_scrollbar(self.method_widget)
         self.method_widget.bind('<<ComboboxSelected>>', self.choose_method)
         self.prompt_heading = tk.StringVar(value='Prompt')
         self.prompt_heading_widget = tk.Label(left, textvariable=self.prompt_heading, bg=PANEL, fg=INK, anchor='w',

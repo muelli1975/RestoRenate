@@ -31,31 +31,6 @@ def set_control_state(widget, state):
         widget.configure(state=state)
 
 
-def style_method_scrollbar(combobox):
-    if combobox.tk.call('tk', 'windowingsystem') == 'aqua':
-        return
-    # Tk uses a native menu on macOS and a separate scrollbar elsewhere.
-    popup = combobox.tk.call('ttk::combobox::PopdownWindow', str(combobox))
-    scrollbar = next((path for path in (f'{popup}.f.sb', f'{popup}.sb')
-                      if combobox.tk.getboolean(combobox.tk.call('winfo', 'exists', path))), None)
-    if scrollbar is None:
-        return
-    style_name = 'Method.Vertical.TScrollbar'
-    style = ttk.Style(combobox)
-    style.layout(style_name, [
-        ('Vertical.Scrollbar.trough', {'sticky': 'ns', 'children': [
-            ('Vertical.Scrollbar.thumb', {'sticky': 'nswe'}),
-        ]}),
-    ])
-    style.configure(style_name, troughcolor=PANEL_BG, bordercolor=PANEL_BG,
-                    background='#666666', lightcolor='#666666', darkcolor='#666666',
-                    arrowsize=11)
-    thumb_colors = [('pressed', '#929292'), ('active', '#7c7c7c')]
-    style.map(style_name, background=thumb_colors, lightcolor=thumb_colors, darkcolor=thumb_colors)
-
-    combobox.tk.call(scrollbar, 'configure', '-style', style_name)
-
-
 def apply_theme(window):
     ctk.set_appearance_mode('dark')
     style = ttk.Style(window)
@@ -123,6 +98,8 @@ def apply_theme(window):
               background=[('disabled', HOVER_BG), ('active', BORDER)],
               selectbackground=[('disabled', PANEL_BG), ('readonly', PANEL_BG)],
               selectforeground=[('disabled', DISABLED), ('readonly', TEXT)])
+    style.configure('TScrollbar', background=BORDER, troughcolor=SECONDARY_BG, arrowcolor=MUTED)
+    style.map('TScrollbar', background=[('active', HOVER_BG)])
     window.option_add('*TCombobox*Listbox.background', SECONDARY_BG)
     window.option_add('*TCombobox*Listbox.foreground', TEXT)
     window.option_add('*TCombobox*Listbox.selectBackground', HOVER_BG)

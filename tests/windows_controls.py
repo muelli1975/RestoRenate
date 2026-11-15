@@ -34,6 +34,14 @@ try:
     window.geometry('950x720')
     gui.pick_sources(image_path)
     check_reference_controls(gui, image_path)
+    for combo in (gui.method_widget, gui.upscale_options):
+        popup = str(window.tk.call('ttk::combobox::PopdownWindow', str(combo)))
+        assert window.tk.call(popup + '.f.sb', 'cget', '-style') == ''
+    style = ttk.Style(window)
+    assert style.lookup('Vertical.TScrollbar', 'background') == app.BORDER
+    assert style.lookup('Vertical.TScrollbar', 'troughcolor') == app.SECONDARY_BG
+    assert style.lookup('Vertical.TScrollbar', 'arrowcolor') == app.MUTED
+    assert style.lookup('Vertical.TScrollbar', 'background', ('active',)) == app.HOVER_BG
     gui.set_second_image(image_path)
     window.lift()
     window.update()
