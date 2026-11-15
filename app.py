@@ -42,7 +42,7 @@ from photo_colors import Colorizer
 from progress_track import ProgressTrack
 from prompt_menu import PromptMenu
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
-                   TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, checkbox,
+                   TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, attach_tooltip, checkbox,
                    set_control_state)
 from restoration import Client, export_look_variant, restore, select_models
 from technical_logs import TechnicalLog, prepare_technical_logs
@@ -506,9 +506,10 @@ class Application:
         self.controls.append(self.variant_widget)
         self.seed_row = tk.Frame(left, bg=PANEL)
         self.seed_row.grid(row=14, column=0, sticky='ew', pady=(4, 0))
-        self.labelled(tk.Label, self.seed_row, 'Seed (leer = Zufall)', bg=PANEL, fg=INK).pack(side='left')
+        tk.Label(self.seed_row, text='Seed', bg=PANEL, fg=INK).pack(side='left')
         self.seed_entry = ttk.Entry(self.seed_row, textvariable=self.seed_value, width=1, style='Seed.TEntry')
         self.seed_entry.pack(side='left', fill='x', expand=True, padx=(8, 0))
+        attach_tooltip(self.seed_entry, lambda: translate('Leer lassen für Zufalls-Seed.'))
         self.clear_seed_button = self.labelled(ttk.Button, self.seed_row, 'Leeren',
                                                command=lambda: self.seed_value.set(''), width=-1, style='Input.TButton')
         self.clear_seed_button.pack(side='left', padx=(4, 0))

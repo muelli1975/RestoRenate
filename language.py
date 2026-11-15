@@ -259,7 +259,7 @@ ENGLISH = {
     'Lange Seite': 'Long edge',
     'Laufenden Auftrag beenden und das Fenster schließen?': 'Cancel the current job and close the window?',
     'Laufzeit {0:02d}:{1:02d}': 'Elapsed {0:02d}:{1:02d}',
-    'Seed (leer = Zufall)': 'Seed (blank = random)',
+    'Leer lassen für Zufalls-Seed.': 'Leave blank for a random seed.',
     'Letzten übernehmen': 'Use last seed',
     'Aus PNG übernehmen …': 'Import from PNG …',
     'Bitte eine PNG-Datei wählen.': 'Choose a PNG file.',

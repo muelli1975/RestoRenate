@@ -154,7 +154,10 @@ def test_gui(root):
             window.geometry(f'{window.minsize()[0]}x720')
             window.update()
             seed_font = font.Font(window, font=ttk.Style(window).lookup('Seed.TEntry', 'font'))
-            assert gui.seed_entry.winfo_width() >= seed_font.measure(str(app.MAX_SEED)) + 4
+            required_seed_width = seed_font.measure(str(app.MAX_SEED)) + 4
+            assert gui.seed_entry.winfo_width() >= required_seed_width, (
+                language, gui.seed_entry.winfo_width(), required_seed_width,
+            )
             assert gui.clear_seed_button.instate(['disabled'])
             gui.seed_value.set(str(app.MAX_SEED))
             assert gui.fixed_seed() == app.MAX_SEED and gui.clear_seed_button.instate(['!disabled'])
