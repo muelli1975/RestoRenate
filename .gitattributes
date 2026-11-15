@@ -1,0 +1,3 @@
+# Keep the shipped lookup tables and notices byte-identical to their sources.
+assets/luts/*.cube -text -diff -whitespace
+licenses/*.txt -text -whitespace

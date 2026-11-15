@@ -1,0 +1,299 @@
+"""Transient LUT preview and output controls for the comparison pane."""
+import tkinter as tk
+from tkinter import ttk
+
+import customtkinter as ctk
+
+from language import translate
+from looks import Look, catalog
+from theme import BORDER, DISABLED, GOLD, GOLD_LIGHT, PANEL_BG, SECONDARY_BG, TEXT, checkbox, set_control_state
+
+SECTIONS = {
+    'film': 'Farbfilm & Kameralooks', 'monochrome': 'Schwarzweiß & Tonung',
+    'cinema': 'Kino-Looks', 'night': 'Nacht & Effekte',
+    'retro': 'Retro & Labor', 'mood': 'Licht & Stimmung',
+}
+
+
+class LookControls:
+    def __init__(self, app, parent, menu_colors):
+        self.app = app
+        self.view = app.compare
+        self.enabled = tk.BooleanVar(master=parent, value=False)
+        pref = app.config.get('lut')
+        pref = pref if isinstance(pref, dict) else {}
+        self.first_key = self.key = next(iter(catalog()))
+        amount = pref.get('strength')
+        self.strength = tk.DoubleVar(master=parent, value=amount if type(amount) is int and 0 <= amount <= 100 else 100)
+        self.hover = None
+        self.hover_menu = None
+        self.held = set()
+        self.release_jobs = {}
+        self.used_c = False
+        self.result = False
+        self.available = False
+        self.wheel_remainder = 0
+        self.resetting_slider = False
+        row = self.frame = tk.Frame(parent, bg=PANEL_BG)
+        row.columnconfigure(1, weight=1)
+        row.columnconfigure(2, weight=1)
+        self.check = app.labelled(checkbox, row, 'LUT anwenden', variable=self.enabled, command=self.toggle_changed)
+        self.check.grid(row=0, column=0, sticky='w', padx=(0, 5))
+        self.menu_colors = menu_colors
+        # Keep the field's minimum size independent of the selected preset.
+        picker = tk.Frame(row, bg=PANEL_BG)
+        picker.grid(row=0, column=1, sticky='ew', padx=(0, 6))
+        self.choose = ttk.Menubutton(picker, width=11, style='Input.TMenubutton')
+        picker.configure(width=self.choose.winfo_reqwidth(), height=self.choose.winfo_reqheight())
+        picker.pack_propagate(False)
+        self.choose.configure(width=0)
+        self.choose.pack(fill='both', expand=True)
+        self.menu = None
+        # Use StereoFine's LUT slider widget, range and colour treatment.
+        self.slider = ctk.CTkSlider(row, from_=0, to=100, width=68, number_of_steps=100,
+                                    variable=self.strength, command=self.set_strength, bg_color=PANEL_BG,
+                                    fg_color=BORDER, progress_color=GOLD,
+                                    button_color=GOLD_LIGHT, button_hover_color=GOLD_LIGHT)
+        self.slider.grid(row=0, column=2, sticky='ew')
+        self.value = ctk.CTkLabel(row, width=36, height=20, fg_color=PANEL_BG, anchor='e',
+                                  text_color=TEXT, font=('Segoe UI', 13))
+        self.value.grid(row=0, column=3, padx=(2, 6))
+        self.save_button = app.labelled(ttk.Button, row, 'Variante mit LUT erstellen',
+                                       command=app.create_lut_variant, style='Input.TButton')
+        self.save_button.grid(row=0, column=4, sticky='e')
+        self.slider.bind('<Double-Button-1>', self.begin_slider_reset)
+        self.slider.bind('<ButtonRelease-1>', self.finish_slider_reset)
+        self.slider.bind('<MouseWheel>', self.wheel)
+        self.slider.bind('<Button-4>', lambda event: self.wheel(event, 1))
+        self.slider.bind('<Button-5>', lambda event: self.wheel(event, -1))
+        self.slider.bind('<Leave>', self.clear_wheel, add='+')
+        app.window.bind('<KeyPress>', self.key_press, add='+')
+        app.window.bind('<KeyRelease>', self.key_release, add='+')
+        for key in ('Left', 'Right'):
+            self.view.unbind(f'<{key}>')
+        app.window.bind('<FocusOut>', self.check_focus, add='+')
+        self.localize()
+
+    def localize(self):
+        previous = self.menu
+        self.menu = tk.Menu(self.choose, **self.menu_colors, postcommand=self.begin_menu)
+        self.menu.bind('<Unmap>', self.end_menu)
+        groups = {}
+        section = 'film'
+        for key, entry in catalog().items():
+            section = entry.get('section', section)
+            groups.setdefault(section, []).append((key, entry))
+        for section, options in groups.items():
+            group = tk.Menu(self.menu, **self.menu_colors)
+            for key, entry in options:
+                group.add_command(label=self.label(entry), command=lambda k=key: self.select(k))
+            group.bind('<<MenuSelect>>', lambda event, g=group, opts=options: self.highlight(g, opts))
+            group.bind('<Unmap>', lambda event, g=group: self.end_menu(event, g))
+            self.menu.add_cascade(label=translate(SECTIONS[section]), menu=group)
+        self.choose.configure(menu=self.menu)
+        if previous is not None:
+            previous.destroy()
+        self.refresh()
+
+    def label(self, entry):
+        return entry.get('name_en', entry['name']) if self.app.language == 'en' else entry['name']
+
+    def look(self):
+        return Look(self.key, round(self.strength.get()))
+
+    def armed(self):
+        return self.look() if self.enabled.get() and round(self.strength.get()) else None
+
+    def update_image(self, has_input, has_result, *, showing_result, busy):
+        self.result = has_result
+        self.available = has_input and not busy and (has_result or not showing_result)
+        self.refresh()
+
+    def clear(self, *, reset_armed=True):
+        self.hover = self.hover_menu = None
+        self.cancel_keys()
+        if reset_armed:
+            self.enabled.set(False)
+
+    def reset_preset(self):
+        self.key = self.first_key
+
+    def toggle_changed(self):
+        self.hover = self.hover_menu = None
+        self.refresh()
+
+    def begin_menu(self):
+        self.hover = self.hover_menu = None
+
+    def highlight(self, group, options):
+        active = group.index('active')
+        self.hover_menu = group
+        self.hover = options[active][0] if active is not None else None
+        self.refresh()
+
+    def end_menu(self, _event, group=None):
+        if group is None or self.hover_menu is group:
+            self.hover = self.hover_menu = None
+            self.refresh()
+
+    def select(self, key):
+        self.key = key
+        self.hover = self.hover_menu = None
+        self.refresh()
+
+    def set_strength(self, value):
+        if self.available and self.enabled.get():
+            self.strength.set(round(float(value)))
+            self.refresh()
+
+    def step(self, amount):
+        self.set_strength(max(0, min(100, round(self.strength.get()) + amount)))
+
+    def begin_slider_reset(self, _event):
+        self.resetting_slider = self.available and self.enabled.get()
+        if self.resetting_slider:
+            return 'break'
+
+    def finish_slider_reset(self, _event):
+        if self.resetting_slider:
+            self.resetting_slider = False
+            self.set_strength(100)
+            return 'break'
+
+    def clear_wheel(self, _event=None):
+        self.wheel_remainder = 0
+
+    def wheel(self, event, ticks=None):
+        if not event.state & 0x0001 or not self.available or not self.enabled.get():
+            self.clear_wheel()
+            return None
+        if ticks is None:
+            delta = event.delta
+            if self.slider.tk.call('tk', 'windowingsystem') == 'win32':
+                delta += self.wheel_remainder
+                ticks = int(delta / 120)
+                self.wheel_remainder = delta - 120 * ticks
+            else:
+                ticks = (delta > 0) - (delta < 0)
+        if ticks:
+            self.step(5 * ticks)
+        return 'break'
+
+    @staticmethod
+    def is_text_input(widget):
+        return isinstance(widget, (tk.Text, tk.Entry, ttk.Entry, ttk.Combobox, ttk.Spinbox, tk.Spinbox))
+
+    def check_focus(self, _event=None):
+        if self.held:
+            self.view.after_idle(self.cancel_keys_if_unfocused)
+
+    def cancel_keys_if_unfocused(self):
+        focus = self.app.window.focus_get()
+        if focus is None or focus.winfo_toplevel() is not self.app.window or self.is_text_input(focus):
+            self.cancel_keys()
+
+    def key_press(self, event):
+        widget = event.widget
+        if self.is_text_input(widget) or isinstance(widget, tk.Menu):
+            return None
+        key = event.keysym.lower()
+        if pending := self.release_jobs.pop(key, None):
+            self.view.after_cancel(pending)
+        if event.state & 0x0c:  # Ctrl / Alt combinations belong to the application.
+            return None
+        if key == 'z' and self.view.before_image is not None:
+            if key not in self.held:
+                self.held.add(key)
+                self.view.hold_detail()
+            return 'break'
+        if self.available and key == 'c':
+            if key not in self.held:
+                self.held.add(key)
+                self.used_c = False
+            return 'break'
+        if self.available and 'c' in self.held and key in ('left', 'right', 'up', 'down'):
+            self.used_c = True
+            if not self.enabled.get():
+                self.enabled.set(True)
+            if key in ('left', 'right'):
+                order = list(catalog())
+                index = order.index(self.key) + (1 if key == 'right' else -1)
+                self.select(order[index % len(order)])
+            else:
+                self.step(5 if key == 'up' else -5)
+            return 'break'
+        if widget is self.view and key in ('left', 'right'):
+            return self.view.nudge(-0.025 if key == 'left' else 0.025)
+        return None
+
+    def key_release(self, event):
+        key = event.keysym.lower()
+        if key not in self.held:
+            return None
+        if key not in self.release_jobs:
+            # X11 can emit adjacent synthetic release/press events for a held key.
+            self.release_jobs[key] = self.view.after(15, self.finish_release, key)
+        return 'break'
+
+    def finish_release(self, key):
+        self.release_jobs.pop(key, None)
+        self.held.discard(key)
+        if key == 'z':
+            self.view.release_detail()
+        elif not self.used_c and self.available:
+            self.enabled.set(not self.enabled.get())
+            self.toggle_changed()
+
+    def cancel_keys(self, _event=None):
+        for job in self.release_jobs.values():
+            self.view.after_cancel(job)
+        self.release_jobs.clear()
+        self.held.clear()
+        self.view.release_detail()
+
+    def refresh(self):
+        active = self.available and self.enabled.get()
+        state = 'normal' if active else 'disabled'
+        set_control_state(self.check, 'normal' if self.available else 'disabled')
+        self.choose.configure(state=state, text=self.label(catalog()[self.key]))
+        self.slider.configure(state=state, progress_color=GOLD if active else BORDER,
+                              button_color=GOLD_LIGHT if active else DISABLED,
+                              button_hover_color=GOLD_LIGHT if active else DISABLED)
+        self.value.configure(text=f'{round(self.strength.get())} %', text_color=TEXT if active else DISABLED)
+        self.save_button.configure(state='normal' if active and round(self.strength.get()) else 'disabled')
+        look = Look(self.hover or self.key, round(self.strength.get())) if active else None
+        basis = self.view.after_image if self.result else self.view.before_image
+        self.view.preview_look(basis if look is not None else None, look)
+        self.app.after_heading.configure(text=translate('LUT-Vorschau' if active else 'Nachher'),
+                                         fg=GOLD_LIGHT if active else TEXT)
+
+
+def open_controls(app):
+    current = getattr(app, 'controls_help', None)
+    if current is not None and current.winfo_exists():
+        current.destroy()
+        return 'break'
+    dialog = app.controls_help = tk.Toplevel(app.window)
+    dialog.title(translate('Bedienhilfe'))
+    dialog.transient(app.window)
+    dialog.configure(bg=PANEL_BG)
+    dialog.resizable(False, False)
+    body = tk.Frame(dialog, bg=SECONDARY_BG, padx=16, pady=12, highlightthickness=1, highlightbackground=BORDER)
+    body.pack(padx=12, pady=12)
+    for row, (key, description) in enumerate((
+        ('C', 'LUT ein / aus'),
+        (translate('C halten') + ' + ← / →', 'Look zurück / vor'),
+        (translate('C halten') + ' + ↑ / ↓', 'LUT-Stärke ändern'),
+        (translate('Umschalt + Mausrad'), 'LUT-Stärke ändern'),
+        (translate('Doppelklick auf den Regler'), 'Auf 100 % zurücksetzen'),
+        (translate('Z halten'), '100-%-Ansicht halten'),
+        (translate('Bild↑ / Bild↓'), 'Vorheriges / nächstes Ergebnis'),
+        ('F1', 'Bedienhilfe öffnen'),
+    )):
+        tk.Label(body, text=key, fg=GOLD_LIGHT, bg=SECONDARY_BG).grid(row=row, column=0, sticky='w', padx=(0, 14), pady=2)
+        tk.Label(body, text=translate(description), fg=TEXT, bg=SECONDARY_BG).grid(row=row, column=1, sticky='w', pady=2)
+    ttk.Button(dialog, text=translate('Schließen'), command=dialog.destroy).pack(pady=(0, 12))
+    dialog.bind('<Escape>', lambda _event: dialog.destroy())
+    dialog.bind('<F1>', lambda _event: dialog.destroy())
+    dialog.focus_set()
+    return 'break'

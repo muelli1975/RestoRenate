@@ -172,6 +172,11 @@ Real-ESRGAN · BSD 3-Clause.
   https://github.com/xinntao/Real-ESRGAN
   https://huggingface.co/nateraw/real-esrgan
   https://huggingface.co/Comfy-Org/Real-ESRGAN
+  Real-ESRGAN Anime 4× (RealESRGAN_x4plus_anime_6B):
+  https://github.com/xinntao/Real-ESRGAN/blob/master/docs/anime_model.md
+
+AnimeSharp 4× (4x-TextSharpV1) by Kim2091 · CC BY-NC-SA 4.0.
+  https://huggingface.co/Kim2091/AnimeSharp
 
 SwinIR-S 4× by Jingyun Liang and contributors · Apache 2.0.
   https://github.com/JingyunLiang/SwinIR

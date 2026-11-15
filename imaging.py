@@ -109,18 +109,7 @@ def copy_metadata(exiftool, source, destination, size, settings=None):
     width, height = size
     args = ['-overwrite_original', '-TagsFromFile', str(source.resolve())]
     args.append('-EXIF:all')
-    config = []
-    if destination.suffix.lower() == '.jpg':
-        if source.suffix.lower() == '.png':
-            args.extend((
-                '-XMP-dc:Title<PNG:Title', '-XMP-dc:Creator<PNG:Author',
-                '-XMP-dc:Description<PNG:Description', '-XMP-dc:Rights<PNG:Copyright',
-                '-XMP-xmp:CreatorTool<PNG:Software',
-            ))
-        args.extend(('-IPTC:all', '-XMP:all', '-Comment'))
-        if settings:
-            config = ['-config', str(Path(__file__).with_name('exiftool_restorenate.config'))]
-            args.append('--XMP-restorenate:Settings')
+    config = ['-config', str(Path(__file__).with_name('exiftool_restorenate.config'))] if settings else []
     args.extend((
         *('--' + tag for tag in INVALIDATED_TAGS),
         '-IFD0:Orientation#=1', '-ExifIFD:ColorSpace#=1',
@@ -147,13 +136,23 @@ def copy_metadata(exiftool, source, destination, size, settings=None):
                      if not line.startswith('Warning: No writable tags set from '))
 
 
-def commit_result(temp, folder, stem, labels):
-    encoded_stem = stem.encode('utf-8')
+def numbered_stem(stem):
+    encoded = stem.encode('utf-8')
     digest = sha256(stem.casefold().encode('utf-8')).hexdigest()
-    # Leave room for the sequence, both model labels and the extension.
-    if len(encoded_stem) > 200:
-        stem = encoded_stem[:188].decode('utf-8', errors='ignore') + '-' + digest[:10]
+    if len(encoded) > 200:
+        stem = encoded[:188].decode('utf-8', errors='ignore') + '-' + digest[:10]
+    return stem, digest
 
+
+def result_labels(source, result):
+    stem, _ = numbered_stem(source.stem)
+    match = re.fullmatch(rf'{re.escape(stem)}_[0-9]{{2,}}((?:_[a-z0-9.-]+){{0,2}})',
+                         result.stem, flags=re.IGNORECASE)
+    return tuple(match[1][1:].split('_')) if match and match[1] else ()
+
+
+def commit_result(temp, folder, stem, labels):
+    stem, digest = numbered_stem(stem)
     extensions = {suffix for _, suffix in FORMATS.values()}
     pattern = re.compile(rf'{re.escape(stem.casefold())}_([0-9]{{2,}})(?:_[a-z0-9.-]+){{0,2}}')
 
@@ -193,12 +192,14 @@ def commit_result(temp, folder, stem, labels):
 
 
 def save_result(image, source, folder, output_format, dpi, exiftool,
-                *, settings=None, graph=None, definitions=None, labels=()):
+                *, settings=None, graph=None, definitions=None, labels=(), comfy_info=None):
     encoding, suffix = FORMATS[output_format]
     if encoding == 'PNG':
         png_info = PngImagePlugin.PngInfo()
-        for key, value in png_metadata(settings or {}, graph, definitions or {}, source.name).items():
-            png_info.add_text(key, value)
+        info = png_metadata(settings or {}, graph, definitions or {}, source.name) if comfy_info is None else comfy_info
+        for key in ('prompt', 'workflow'):
+            if isinstance(info.get(key), str):
+                png_info.add_text(key, info[key])
         # Pillow otherwise reuses a source profile or transparency from image.info.
         options = {'pnginfo': png_info, 'icc_profile': None, 'transparency': None}
     else:

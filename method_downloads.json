@@ -172,6 +172,21 @@
       "source_path": "RealESRGAN_x4plus.safetensors"
     },
     {
+      "path": "models/upscale_models/RealESRGAN_x4plus_anime_6B.pth",
+      "size": 17938799,
+      "sha256": "f872d837d3c90ed2e05227bed711af5671a6fd1c9f7d7e91c911a61f155e99da",
+      "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth"
+    },
+    {
+      "path": "models/upscale_models/4x-AnimeSharp.safetensors",
+      "size": 33467822,
+      "sha256": "7fc60054d291579acac4fb537efd91c80611cbd281ef8b90f434048cc1313b39",
+      "url": "https://huggingface.co/Kim2091/AnimeSharp/resolve/7696d95ced82b0c1f2a41f6ac73336133f0a90e1/4x-AnimeSharp.safetensors?download=true",
+      "repo": "Kim2091/AnimeSharp",
+      "revision": "7696d95ced82b0c1f2a41f6ac73336133f0a90e1",
+      "source_path": "4x-AnimeSharp.safetensors"
+    },
+    {
       "path": "models/upscale_models/4x_foolhardy_Remacri.pth",
       "size": 67025055,
       "sha256": "e1a73bd89c2da1ae494774746398689048b5a892bd9653e146713f9df8bca86a",

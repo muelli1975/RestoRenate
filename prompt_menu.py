@@ -22,6 +22,8 @@ CATEGORIES = (
          'Gently reduce blur and recover clear edges while keeping the photo natural.'),
         ('Gesichtsdetails dezent wiederherstellen', 'Restore facial details gently',
          "Subtly restore facial detail and retain each person's features and expression."),
+        ('Druckraster und Moiré reduzieren', 'Reduce halftone patterns and moiré',
+         'Reduce visible halftone dots and moiré while preserving fine detail and natural texture.'),
     )),
     ('Farbe und Ton', 'Color and tone', (
         ('Natürlich kolorieren', 'Colorize naturally',
@@ -52,6 +54,14 @@ CATEGORIES = (
          'Give the scene cool evening light with subdued colors and soft shadows.'),
         ('Filmische Lichtstimmung', 'Cinematic lighting',
          'Use directional cinematic lighting with controlled highlights and soft falloff.'),
+        ('Seitliches Fensterlicht', 'Side window light',
+         'Light the subject with soft window light from one side and gentle shadow falloff.'),
+        ('Kantenlicht von hinten', 'Back rim light',
+         'Add a soft rim light from behind to separate the subject from the background.'),
+        ('Direkter Blitz', 'Direct flash',
+         'Light the scene with direct on-camera flash, crisp frontal illumination and natural hard shadows.'),
+        ('Warmes Lampenlicht und blaue Dämmerung', 'Warm lamplight and blue twilight',
+         'Combine warm lamplight with cool blue twilight and natural transitions between the two.'),
     )),
     ('Bildstil', 'Image style', (
         ('35-mm-Analogfilm', '35 mm film',
@@ -70,6 +80,12 @@ CATEGORIES = (
          'Render the scene as an oil painting with visible brushwork and layered color.'),
         ('Bleistiftzeichnung', 'Pencil drawing',
          'Render the image as a graphite pencil drawing with fine lines and cross-hatched shading.'),
+        ('Comicfigur', 'Comic book character',
+         'Redraw the main subject as a comic book character with bold ink outlines and vibrant colors.'),
+        ('Knetfigur', 'Clay figure',
+         'Recreate the main subject as a handmade stop-motion clay figure with rounded sculpted forms, a matte surface, and subtle fingerprints.'),
+        ('Zeichnung als Foto umsetzen', 'Turn a drawing into a photograph',
+         'Render the drawing as a realistic photograph. Preserve the composition, perspective, and subject proportions.'),
     )),
     ('Bildaufbau', 'Composition', (
         ('Enger Porträtausschnitt', 'Tight portrait crop',
@@ -93,6 +109,22 @@ CATEGORIES = (
         ('Hintergrund abdunkeln', 'Darken the background',
          'Darken the background gently while retaining its details and keeping the subject well lit.'),
     )),
+    ('Montage', 'Compositing', (
+        ('Position vorgeben', 'Specify placement',
+         'Place the inserted subject [position] and match its scale to the scene.'),
+        ('Kontaktschatten ergänzen', 'Add contact shadows',
+         'Add natural contact shadows where the subject touches the surrounding surfaces.'),
+        ('Farbpalette aus Bild 2 übernehmen', 'Use the palette from image 2',
+         'Use the color palette from image 2 while preserving the composition of image 1.'),
+    )),
+    ('Gezielte Bearbeitung', 'Targeted editing', (
+        ('Objekt gezielt entfernen', 'Remove a specific object',
+         'Remove [object] from [location]. Reconstruct the exposed area using the surrounding textures and lighting.'),
+        ('Objekt gezielt ersetzen', 'Replace a specific object',
+         'Replace [object] with [replacement]. Match the original position, perspective, lighting, and shadows.'),
+        ('Schriftzug ersetzen', 'Replace lettering',
+         'Replace “[old text]” with “[new text]”. Match the original font, size, color, and perspective.'),
+    )),
     ('Originaldetails erhalten', 'Preserve original details', (
         ('Gesichter und Ausdruck erhalten', 'Preserve faces and expressions',
          "Preserve each person's identity, facial features and expression."),
@@ -108,6 +140,8 @@ CATEGORIES = (
          'Retain the original film grain and photographic texture.'),
         ('Originalfarben erhalten', 'Preserve original colors',
          'Preserve the original color palette and tonal character of the photograph.'),
+        ('Pose und Proportionen beibehalten', 'Preserve pose and proportions',
+         'Preserve the subject’s pose and proportions.'),
     )),
 )
 

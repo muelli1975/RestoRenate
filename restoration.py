@@ -4,6 +4,7 @@ from __future__ import annotations
 import io
 import json
 from pathlib import Path
+from xml.etree import ElementTree
 import time
 import urllib.error
 import urllib.parse
@@ -19,8 +20,9 @@ except ImportError:
 
 from language import translate
 from export_metadata import APP_VERSION, output_graph, set_output_size
-from imaging import open_photo, prepare, save_result
+from imaging import open_photo, prepare, result_labels, save_result
 from photo_colors import Colorizer
+from looks import apply_look
 from sizes import (NO_RESCALE, limited_size, method_size, needs_enlargement, output_size,
                    restoration_canvas, restoration_size)
 from method_graphs import (
@@ -277,7 +279,7 @@ def processing_settings(record, model_name, graph):
             'prompt': record['prompt'], 'seed': record['seed'], 'sampling': sampling,
             'original_size': record['original_size'], 'working_size': record['working_size'],
             'working_crop': record.get('active_crop'), 'output_size': record['output_size'], 'upscaler': model_name,
-            **{key: record[key] for key in ('source_crop', 'source_rotation', 'second_image', 'second_rotation', 'second_size')
+            **{key: record[key] for key in ('source_crop', 'source_rotation', 'second_image', 'second_rotation', 'second_crop', 'second_size', 'luts')
                if key in record},
             **{key: record[key] for key in ('scratches', 'faces') if key in record}}
 
@@ -285,7 +287,8 @@ def processing_settings(record, model_name, graph):
 def restore(client, models, source, folder, output_format, exiftool, prompt, seed, status, cancelled, record,
             progress=lambda value: None, method=DEFAULT_METHOD, scratches=True, faces=False,
             staged_id=None, size_choice=(None, 2160), upscaler=None, definitions=None, colorizer=None,
-            source_crop=None, source_rotation=0, second_image=None, second_rotation=0):
+            source_crop=None, source_rotation=0, second_image=None, second_rotation=0,
+            second_crop=None, look=None):
     started = time.monotonic()
     timing = record['seconds_by_stage'] = {}
     status(translate('Bild wird vorbereitet …'))
@@ -307,6 +310,10 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         record['second_image'] = str(second_image)
         if second_rotation:
             record['second_rotation'] = second_rotation
+        if second_crop:
+            record['second_crop'] = second_crop.box
+    if look is not None and look.strength:
+        record['luts'] = [look.record()]
     if method == MICROSOFT:
         record.update(scratches=scratches, faces=faces)
 
@@ -323,10 +330,21 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
             labels.append('RealESRGAN-x2' if model_name == models.get('esrgan2') else 'RealESRGAN-x4')
         elif model_name:
             labels.append(UPSCALE_FILENAME_LABELS[upscaler])
-        status(translate('Bild wird gespeichert ({0} × {1} px) …', expected[0], expected[1]))
+        record.update(settings=settings, labels=labels)
         with (image.copy() if image.size == expected else image.resize(expected, Image.Resampling.LANCZOS)) as result:
-            return save_result(result, source, folder, output_format, dpi, exiftool,
-                               settings=settings, graph=graph, definitions=definitions, labels=labels)
+            if look is not None and look.strength:
+                progress(None)
+                status(translate('LUT wird angewendet …'))
+                with apply_look(result, look) as graded:
+                    return save(graded, settings, graph, labels)
+            return save(result, settings, graph, labels)
+
+    def save(result, settings, graph, labels):
+        if cancelled():
+            raise SetupCancelled(translate('Bearbeitung abgebrochen.'))
+        status(translate('Bild wird gespeichert ({0} × {1} px) …', expected[0], expected[1]))
+        return save_result(result, source, folder, output_format, dpi, exiftool,
+                           settings=settings, graph=graph, definitions=definitions, labels=labels)
 
     native = method in NATIVE_METHODS
     if native:
@@ -362,7 +380,7 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         with prepared:
             prepared.save(staged, 'PNG')
         if reference is not None:
-            second, _ = open_photo(second_image, rotation=second_rotation)
+            second, _ = open_photo(second_image, crop=second_crop, rotation=second_rotation)
             with second:
                 if method == FLUX2:
                     second_size = restoration_size(second.size, method)
@@ -417,3 +435,56 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         if descriptor is not None:
             relative = Path(descriptor.get('subfolder', '')) / descriptor['filename']
             contained(client.root / 'work/temp/temp', relative).unlink(missing_ok=True)
+
+
+
+def export_look_variant(source, base, crop, rotation, folder, output_format, exiftool, look, parent, record, cancelled):
+    """Apply one look to full-size source pixels and preserve their provenance."""
+    if cancelled():
+        raise SetupCancelled(translate('Bearbeitung abgebrochen.'))
+    labels = result_labels(source, base)
+    inherited = parent.get('settings')
+    if isinstance(inherited, dict):
+        settings = dict(inherited)
+    else:
+        settings = {key: parent[key] for key in ('method', 'models', 'prompt', 'seed', 'upscaler')
+                    if key in parent}
+    with Image.open(base) as original:
+        comfy_info = {key: original.info[key] for key in ('prompt', 'workflow')
+                      if original.format == 'PNG' and isinstance(original.info.get(key), str)}
+        if not settings and original.format in ('JPEG', 'TIFF'):
+            try:
+                packet = original.info.get('xmp')
+                if packet is None and original.format == 'TIFF':
+                    packet = original.tag_v2.get(700)
+                tag = '{urn:uuid:c36b8290-0ca0-42fd-9c7b-60831da61924}Settings'
+                if packet:
+                    for node in ElementTree.fromstring(packet).iter():
+                        value = node.text if node.tag == tag else node.get(tag)
+                        if value:
+                            saved = json.loads(value)
+                            if isinstance(saved, dict):
+                                settings = saved
+                            break
+            except (ElementTree.ParseError, TypeError, ValueError):
+                pass
+    history = settings.get('luts', parent.get('luts', []))
+    if not isinstance(history, list):
+        history = []
+    history = [*history, look.record()]
+    settings.update(version=APP_VERSION, luts=history, lut_source=base.name)
+    if crop:
+        record.update(source_crop=crop.box, original_size=crop.original_size)
+        settings['source_crop'] = crop.box
+    if rotation:
+        settings['source_rotation'] = record['source_rotation'] = rotation
+    is_input = base == source
+    image, dpi = open_photo(base, crop=crop if is_input else None, rotation=rotation if is_input else 0)
+    with image, apply_look(image, look) as graded:
+        if cancelled():
+            raise SetupCancelled(translate('Bearbeitung abgebrochen.'))
+        settings.setdefault('method', 'LUT')
+        settings['output_size'] = graded.size
+        record.update(luts=history, settings=settings, labels=labels, lut_source=str(base), output_size=graded.size)
+        return save_result(graded, source, folder, output_format, dpi, exiftool,
+                           settings=settings, labels=labels, comfy_info=comfy_info)

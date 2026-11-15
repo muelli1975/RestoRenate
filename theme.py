@@ -54,19 +54,8 @@ def apply_theme(window):
               arrowcolor=[('disabled', DISABLED)])
     for input_style in ('Input.TButton', 'Input.Primary.TButton', 'Input.TMenubutton'):
         style.configure(input_style, padding=(5, 2))
-    style.layout('RemoveReference.TButton', [
-        ('Button.border', {'sticky': 'nswe', 'children': [
-            ('Button.focus', {'sticky': 'nswe', 'children': [
-                ('Button.label', {'sticky': 'nswe'}),
-            ]}),
-        ]}),
-    ])
-    style.configure('RemoveReference.TButton', anchor='center', width=0, relief='flat',
-                    background=SECONDARY_BG, bordercolor=SECONDARY_BG,
-                    lightcolor=SECONDARY_BG, darkcolor=SECONDARY_BG)
-    icon_border = [('active', BORDER), ('!active', SECONDARY_BG)]
-    style.map('RemoveReference.TButton', bordercolor=icon_border, relief=[('!disabled', 'flat')],
-              lightcolor=icon_border, darkcolor=icon_border)
+    style.configure('Input.Help.TButton', foreground=GOLD_LIGHT, padding=(5, 2))
+    style.map('Input.Help.TButton', foreground=[('disabled', DISABLED), ('active', TEXT)])
     flat_menu_layout = [
         ('Menubutton.border', {'sticky': 'nswe', 'children': [
             ('Menubutton.padding', {'sticky': 'nswe', 'children': [
@@ -75,8 +64,6 @@ def apply_theme(window):
         ]}),
     ]
     style.layout('Prompt.TMenubutton', flat_menu_layout)
-    style.layout('Reference.TMenubutton', flat_menu_layout)
-    style.configure('Reference.TMenubutton', borderwidth=1, relief='raised', padding=(5, 2))
     style.configure('Prompt.TMenubutton', borderwidth=1, relief='raised', padding=(9, 2))
     style.map('Prompt.TMenubutton', bordercolor=[('active', GOLD)],
               darkcolor=[('active', GOLD)], lightcolor=[('active', GOLD)])

@@ -2,8 +2,8 @@ name: Build and test macOS Apple Silicon
 
 on:
   push:
-    branches: [unix-gpu-preview, output-folder-preview, main, reference-button-preview, transcora-focus-preview, input-directory-preview]
-    paths-ignore: ['.github/workflows/refresh-windows-v1.0.yml']
+    branches: [unix-gpu-preview, output-folder-preview, main, reference-button-preview, transcora-focus-preview, input-directory-preview, codex/restorenate-1.1]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -26,13 +26,13 @@ jobs:
           root='package/RestoRenate'
           mkdir dist
           bash scripts/package_unix.sh "$root"
-          ditto -c -k --keepParent "$root" dist/RestoRenate_macOS_AppleSilicon_Preview.zip
-          (cd dist && shasum -a 256 RestoRenate_macOS_AppleSilicon_Preview.zip > SHA256SUMS.txt)
+          ditto -c -k --keepParent "$root" dist/RestoRenate_1.1_macOS_AppleSilicon.zip
+          (cd dist && shasum -a 256 RestoRenate_1.1_macOS_AppleSilicon.zip > SHA256SUMS.txt)
       - name: Run the extracted package on Apple Silicon
         shell: bash
         run: |
           set -euo pipefail
-          ditto -x -k dist/RestoRenate_macOS_AppleSilicon_Preview.zip fresh
+          ditto -x -k dist/RestoRenate_1.1_macOS_AppleSilicon.zip fresh
           mv fresh/RestoRenate "fresh/RestoRenate portable"
           root="$PWD/fresh/RestoRenate portable"
           codesign --verify --strict "$root/RestoRenate.app"
@@ -50,6 +50,7 @@ jobs:
           kill "$app"
           wait "$app" || true
           trap - EXIT
+          "$root/runtime/python/bin/python3.12" tests/lut_controls.py "$root"
           "$root/runtime/python/bin/python3.12" tests/unix_smoke.py "$root"
       - name: Verify that an initialized package can be moved
         shell: bash
@@ -61,7 +62,7 @@ jobs:
           "$root/backend/macos-mps/venv/bin/python" -I -c 'from pathlib import Path; import sys, torch; assert Path(sys.base_prefix) == Path(sys.argv[1]) / "runtime/python"' "$root"
       - uses: actions/upload-artifact@v4
         with:
-          name: RestoRenate-macOS-AppleSilicon-Preview
+          name: RestoRenate-macOS-AppleSilicon
           path: dist/*
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
@@ -70,39 +71,3 @@ jobs:
           name: macos-diagnostics
           path: fresh/RestoRenate*/logs/*.log
           if-no-files-found: ignore
-
-  publish:
-    needs: macos
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: RestoRenate-macOS-AppleSilicon-Preview
-      - name: Publish macOS release
-        shell: bash
-        run: |
-          set -euo pipefail
-          sha256sum -c SHA256SUMS.txt
-          # Keep the published tag and filename so existing download URLs still work.
-          tag=v1.0-macos-preview
-          file=RestoRenate_macOS_AppleSilicon_Preview.zip
-          asset_label='RestoRenate_1.0_macOS_AppleSilicon.zip'
-          title='RestoRenate 1.0 for macOS (Apple Silicon)'
-          notes='Portable release for macOS 15 or newer on Apple Silicon. Extract the ZIP and open RestoRenate.app from its folder. Python, Tk and ExifTool are included. GitHub Actions checks Apple Metal upscaling.'
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$tag" "$file#$asset_label" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
-          else
-            gh release create "$tag" "$file#$asset_label" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --latest=false --title "$title" \
-              --notes "$notes"
-          fi
-          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest=false \
-            --title "$title" --notes "$notes"
-          actual=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$file\") | .digest")
-          test "$actual" = "sha256:$(cut -d' ' -f1 SHA256SUMS.txt)"
-          test "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq .isPrerelease)" = false

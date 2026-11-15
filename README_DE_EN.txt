@@ -1,4 +1,4 @@
-RestoRenate 1.0
+RestoRenate 1.1
 Windows x64 · Portable
 
 DEUTSCH
@@ -137,6 +137,8 @@ Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
 Zielgröße an. Für Restaurierung und „Nur hochskalieren“ sind 2160 px Bildhöhe
 und Nomos2 HQ MoSR 4× voreingestellt.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
+Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
+gedacht. Beide Modelle werden bei Bedarf heruntergeladen.
 
 Die Vorschau zeigt die gespeicherte Datei. Zum Vergleichen die Trennlinie
 ziehen. Das Mausrad zoomt, die rechte Maustaste verschiebt die Ansicht.
@@ -313,6 +315,8 @@ input image. AI upscaling applies when enlarging the image. Real-ESRGAN
 selects its 2× or 4× model. Lanczos resizes to the exact output dimensions.
 Restoration and "Upscale only" default to 2160 px height and Nomos2 HQ MoSR 4×.
 4× FaceUpDAT is designed for portraits with clean source images.
+Real-ESRGAN Anime 4× and AnimeSharp 4× are intended for drawings and illustrations.
+Both models are downloaded on demand.
 
 The preview uses the saved file. Drag the divider to compare. Use the wheel
 to zoom and drag with the right mouse button to pan. “100 %” or Ctrl+1 shows
@@ -360,3 +364,11 @@ removes these links after confirmation. The exported images stay on disk.
 Technical logs rotate at 2 MiB and are cleaned up at startup after 30 days.
 logs/backend.log also records the CPU thread count. Set
 RESTORENATE_CPU_THREADS to use a fixed thread count for comparisons.
+
+## Neu in 1.1
+
+Bild 2 kann unabhängig beschnitten und gedreht werden. Den Ausgabeausschnitt bestimmt Bild 1. Zwei Montage-Presets und zusätzliche Satzbausteine stehen im Prompt-Menü bereit.
+
+50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
+
+JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. Die Quellen und Lizenzen sind unter assets/luts/CREDITS.md dokumentiert.

@@ -12,7 +12,7 @@ import sys
 from threading import Event, Thread
 import time
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, font, messagebox, simpledialog, ttk
 import traceback
 
 from PIL import Image, ImageTk
@@ -26,6 +26,7 @@ from crop_dialog import edit_crops
 from export_metadata import APP_NAME, APP_VERSION, MAX_SEED, parse_seed, seed_from_metadata
 from imaging import EXTENSIONS, FORMATS, collect, exiftool_executable, open_photo, photo_size
 from local_backend import Backend, BackendStartError
+from look_controls import LookControls, open_controls
 from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINTS, LINUX, NVIDIA,
                             UNIX_RUNTIME, ComputeUnavailable, Setup, SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
@@ -42,7 +43,7 @@ from prompt_menu import PromptMenu
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
                    TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, checkbox,
                    set_control_state)
-from restoration import Client, restore, select_models
+from restoration import Client, export_look_variant, restore, select_models
 from technical_logs import TechnicalLog, prepare_technical_logs
 from titlebar import install_tk_titlebars, set_window_transitions_disabled
 
@@ -66,6 +67,14 @@ PRESETS = {
     'Restaurieren und kolorieren · Kurz': 'Colorize and restore this image.',
     'FLUX.2 [klein] 4B · Reparieren und kolorieren': (
         'repair and colorize the image. fix the cracks and fill in the missing areas.'
+    ),
+    'Motiv aus Bild 2 in Bild 1 einsetzen': (
+        'Use image 1 as the base. Insert the main subject from image 2 into image 1. '
+        'Preserve its recognizable features and match its scale, perspective, lighting, and shadows to the scene.'
+    ),
+    'Hintergrund aus Bild 2 übernehmen': (
+        'Keep the main subject, its pose, and the framing from image 1. Replace the background with the setting '
+        'from image 2. Blend edges, lighting, and shadows naturally.'
     ),
     'Porträt im Abendlicht': (
         'A photorealistic golden-hour portrait of the subject, shot on an 85mm f/1.4 lens, '
@@ -96,7 +105,7 @@ SETTINGS = ROOT / 'settings' / 'settings.json'
 JOBS_LOG = ROOT / 'logs' / 'jobs.jsonl'
 FILE_TYPES = [('Bilddateien', ' '.join('*' + ext for ext in sorted(EXTENSIONS))), ('Alle Dateien', '*')]
 ROTATION_CHOICES = (('90° links', -1), ('90° rechts', 1), ('180°', 2), ('Drehung zurücksetzen', None))
-REFERENCE_PREVIEW_SIZE = (144, 82)
+REFERENCE_PREVIEW_SIZE = (152, 104)
 
 
 def read_settings():
@@ -163,6 +172,39 @@ class LocalizedText(tk.StringVar):
             super().set(''.join(translate(*message) for message in self.messages))
 
 
+class FittedCaption(tk.Label):
+    """Fit one line to the allocated width while retaining the full value."""
+
+    def __init__(self, parent, textvariable, **options):
+        super().__init__(parent, width=1, **options)
+        self.source = textvariable
+        self.font = font.Font(root=self, font=self.cget('font'))
+        self.bind('<Configure>', self.refresh)
+        self.source.trace_add('write', self.refresh)
+
+    def refresh(self, *_args):
+        text = self.source.get()
+        width = max(0, self.winfo_width() - 4)
+        measure = self.font.measure
+        if measure(text) > width:
+            if measure('…') > width:
+                text = ''
+            else:
+                lo, hi = 0, len(text)
+                while lo < hi:
+                    count = (lo + hi + 1) // 2
+                    right = count // 2
+                    candidate = text[:(count + 1) // 2] + '…' + (text[-right:] if right else '')
+                    if measure(candidate) <= width:
+                        lo = count
+                    else:
+                        hi = count - 1
+                right = lo // 2
+                text = text[:(lo + 1) // 2] + '…' + (text[-right:] if right else '')
+        if self.cget('text') != text:
+            self.configure(text=text)
+
+
 class Application:
     def __init__(self, window):
         self.window = window
@@ -205,9 +247,12 @@ class Application:
         self.rotations = {}
         self.second_image = None
         self.second_rotation = 0
+        self.second_crop = None
         self.second_thumbnail = None
         self.results = []
+        self.result_records = {}
         self.index = -1
+        self.last_result_index = -1
         self.status = LocalizedText()
         self.status.set_message('Bereit')
         self.setup_status = tk.StringVar()
@@ -254,6 +299,7 @@ class Application:
         self.prompt.bind('<<Modified>>', self.prompt_changed)
         self.window.bind('<Button-1>', self.leave_editor_on_click, add='+')
         self.window.bind('<Escape>', self.compare.leave_zoom)
+        self.window.bind('<F1>', lambda event: open_controls(self))
         self.window.bind('<Control-Key-0>', self.compare.fit)
         self.window.bind('<Control-Key-1>', lambda event: self.compare.full_size())
         self.window.bind('<Prior>', lambda event: self.browse_results(event, -1))
@@ -268,26 +314,34 @@ class Application:
 
     def build(self):
         apply_theme(self.window)
-        header = self.header = tk.Frame(self.window, bg=BG, padx=18, pady=5 if self.compact_window else 10)
+        header = tk.Frame(self.window, bg=BG, padx=18, pady=5 if self.compact_window else 10)
         header.pack(fill='x')
-        tk.Label(header, text=APP_NAME, bg=BG, fg=GOLD_LIGHT, font=('Segoe UI', 18, 'bold')).pack(side='left')
-        self.labelled(tk.Label, header, 'Bildrestaurierung und -bearbeitung', bg=BG, fg=MUTED, padx=12).pack(
-            side='left', pady=(6, 0),
+        self.header = header
+        header.columnconfigure(1, weight=1)
+        self.brand = tk.Frame(header, bg=BG)
+        self.brand.grid(row=0, column=0, sticky='w')
+        self.header_controls = tk.Frame(header, bg=BG)
+        self.header_controls.grid(row=0, column=2, sticky='e')
+        self.brand_title = tk.Label(self.brand, text=APP_NAME, bg=BG, fg=GOLD_LIGHT, font=('Segoe UI', 18, 'bold'))
+        self.brand_title.pack(side='left')
+        self.brand_subtitle = self.labelled(
+            tk.Label, self.brand, 'Bildrestaurierung und -bearbeitung', bg=BG, fg=MUTED, padx=12,
         )
+        self.brand_subtitle.pack(side='left', pady=(6, 0))
         menu_colors = dict(tearoff=False, background=SECONDARY_BG, foreground=INK,
                            activebackground=HOVER_BG, activeforeground=INK, disabledforeground=DISABLED)
-        self.language_button = ttk.Menubutton(header, text=LANGUAGE_LABELS[self.language])
+        self.language_button = ttk.Menubutton(self.header_controls, text=LANGUAGE_LABELS[self.language])
         languages = tk.Menu(self.language_button, **menu_colors)
         for code, label in LANGUAGE_LABELS.items():
             languages.add_command(label=label, command=lambda code=code: self.change_language(code))
         self.language_button.configure(menu=languages)
         self.language_button.pack(side='right', padx=(0, 4))
-        self.processing_button = ttk.Menubutton(header, text='Presets')
+        self.processing_button = ttk.Menubutton(self.header_controls, text='Presets')
         self.processing_menu = tk.Menu(self.processing_button, **menu_colors)
         self.processing_delete_menu = tk.Menu(self.processing_menu, **menu_colors)
         self.processing_button.configure(menu=self.processing_menu)
         self.processing_button.pack(side='right', padx=(0, 4))
-        self.compute_button = ttk.Menubutton(header)
+        self.compute_button = ttk.Menubutton(self.header_controls)
         self.update_compute_label()
         compute_menu = self.compute_menu = tk.Menu(self.compute_button, **menu_colors)
         for compute in COMPUTE_DEVICES:
@@ -295,7 +349,11 @@ class Application:
                                          command=self.choose_compute)
         self.compute_button.configure(menu=compute_menu)
         self.compute_button.pack(side='right', padx=(0, 4))
-        tk.Label(header, textvariable=self.setup_status, bg=BG, fg=MUTED, padx=10).pack(side='right')
+        self.setup_notice = tk.Label(header, textvariable=self.setup_status, bg=BG, fg=MUTED, padx=10)
+        self.setup_notice.grid(row=0, column=1, sticky='e')
+        header.bind('<Configure>', self.fit_setup_notice)
+        self.header_controls.bind('<Configure>', self.fit_setup_notice)
+        self.setup_status.trace_add('write', lambda *_: self.window.after_idle(self.fit_setup_notice))
         self.controls.extend((self.language_button, self.processing_button, self.compute_button))
         self.refresh_processing_menu()
 
@@ -303,7 +361,7 @@ class Application:
         body.pack(fill='both', expand=True)
         body.grid_columnconfigure(1, weight=1)
         body.grid_rowconfigure(0, weight=1)
-        settings_slot = tk.Frame(body, bg=PANEL, width=366)
+        settings_slot = tk.Frame(body, bg=PANEL, width=374)
         settings_slot.grid(row=0, column=0, sticky='ns', padx=(0, 10))
         settings_slot.pack_propagate(False)
         left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=12, pady=4 if self.compact_window else 10)
@@ -462,36 +520,30 @@ class Application:
 
         right = tk.Frame(body, bg=PANEL, padx=9, pady=8)
         right.grid(row=0, column=1, sticky='nsew')
-        top = tk.Frame(right, bg=PANEL)
+        top = self.compare_header = tk.Frame(right, bg=PANEL)
         top.pack(fill='x', pady=(0, 6))
-        self.labelled(tk.Label, top, 'Vorher', fg=MUTED, bg=PANEL).pack(side='left')
-        self.labelled(tk.Label, top, 'Nachher', fg=INK, bg=PANEL).pack(side='right')
+        top.columnconfigure(1, weight=1)
+        self.labelled(tk.Label, top, 'Vorher', fg=MUTED, bg=PANEL, width=1, anchor='w').grid(
+            row=0, column=0, sticky='ew',
+        )
+        self.after_heading = tk.Label(top, text=translate('Nachher'), fg=INK, bg=PANEL, width=1, anchor='e')
+        self.after_heading.grid(row=0, column=2, sticky='ew')
+        self.result_caption = FittedCaption(top, self.caption, fg=MUTED, bg=PANEL, anchor='center')
+        self.result_caption.grid(row=0, column=1, sticky='ew', padx=8)
+        self.fit_compare_headings()
         self.compare = Comparison(right)
         self.compare.pack(fill='both', expand=True)
-        navigation = tk.Frame(right, bg=PANEL)
-        navigation.pack(fill='x', pady=(6, 0))
-        self.labelled(ttk.Button, navigation, 'Ansicht einpassen', command=self.compare.fit).pack(side='right')
-        self.labelled(ttk.Button, navigation, '100 %', command=self.compare.full_size,
-                      width=-1, style='Input.TButton').pack(side='right', padx=(0, 4))
-        self.labelled(tk.Label, navigation, 'Ergebnisse', fg=INK, bg=PANEL).pack(side='left', padx=(0, 7))
-        self.prev_button = self.labelled(ttk.Button, navigation, 'Zurück', command=lambda: self.move(-1),
-                                        state='disabled', width=-1, style='Input.TButton')
-        self.prev_button.pack(side='left')
-        self.next_button = self.labelled(ttk.Button, navigation, 'Weiter', command=lambda: self.move(1),
-                                        state='disabled', width=-1, style='Input.TButton')
-        self.next_button.pack(side='left', padx=(4, 8))
-        tk.Label(navigation, textvariable=self.result_position, fg=MUTED, bg=PANEL).pack(side='left')
-        self.labelled(tk.Label, navigation, 'Mausrad zum Zoomen', fg=MUTED, bg=PANEL).pack(side='right', padx=(0, 5))
-        result_info = tk.Frame(right, bg=PANEL)
-        result_info.pack(fill='x', pady=(5, 0))
-        self.clear_history_button = self.labelled(
-            ttk.Button, result_info, 'Verlauf löschen …', command=self.clear_history, state='disabled',
-        )
-        self.clear_history_button.pack(side='right', padx=(8, 0))
+        result_info = self.result_actions = tk.Frame(right, bg=PANEL)
+        result_info.pack(fill='x', pady=(6, 0))
+        result_info.columnconfigure(0, weight=1)
+        self.look_controls = LookControls(self, result_info, menu_colors)
+        self.look_controls.frame.grid(row=0, column=0, sticky='ew')
         self.reuse_result_button = self.labelled(ttk.Button, result_info, 'Ergebnis weiterbearbeiten',
-                                              command=self.reuse_result, state='disabled')
-        self.reuse_result_button.pack(side='right', padx=(8, 0))
-        tk.Label(result_info, textvariable=self.caption, fg=MUTED, bg=PANEL, anchor='w').pack(side='left', fill='x', expand=True)
+                                                command=self.reuse_result, state='disabled', style='Input.TButton')
+        self.reuse_result_button.grid(row=0, column=1, sticky='e', padx=(8, 0))
+        self.compact_result_actions = False
+        result_info.bind('<Configure>', self.fit_result_actions)
+        self.build_result_navigation(right)
 
         if self.compact_window:
             for control in left.grid_slaves():
@@ -502,6 +554,8 @@ class Application:
         footer.pack(fill='x', padx=14, pady=(3, 3) if self.compact_window else (9, 8))
         job_info = tk.Frame(footer, bg=PANEL)
         job_info.pack(fill='x')
+        self.labelled(ttk.Button, job_info, 'F1 · Bedienhilfe', command=lambda: open_controls(self),
+                      style='Input.Help.TButton').pack(side='left', padx=(0, 9))
         tk.Label(job_info, textvariable=self.elapsed, fg=MUTED, bg=PANEL, anchor='e').pack(side='right')
         tk.Label(job_info, textvariable=self.device, fg=MUTED, bg=PANEL).pack(side='right', padx=(10, 13))
         tk.Label(job_info, textvariable=self.status, fg=INK, bg=PANEL, anchor='w').pack(
@@ -529,6 +583,68 @@ class Application:
         if height != previous_height:
             self.window.minsize(width, height)
 
+    def fit_setup_notice(self, _event=None):
+        available = self.header.winfo_width() - 2 * self.header.winfo_pixels(self.header['padx'])
+        title = self.brand_title.winfo_reqwidth()
+        subtitle = self.brand_subtitle.winfo_reqwidth()
+        controls = self.header_controls.winfo_reqwidth()
+        stacked_brand = available < title + subtitle + controls
+        side = 'top' if stacked_brand else 'left'
+        if self.brand_subtitle.pack_info()['side'] != side:
+            self.brand_title.pack_configure(side=side, anchor='w')
+            self.brand_subtitle.pack_configure(side=side, anchor='w', pady=(0 if stacked_brand else 6, 0))
+        required = (max(title, subtitle) if stacked_brand else title + subtitle) + controls + self.setup_notice.winfo_reqwidth()
+        compact = available < required
+        if self.setup_notice.grid_info()['row'] != int(compact):
+            self.setup_notice.grid_configure(row=int(compact), column=0 if compact else 1,
+                                             columnspan=3 if compact else 1)
+
+    def fit_compare_headings(self):
+        measure = self.result_caption.font.measure
+        width = max(measure(translate(heading)) for heading in ('Vorher', 'Nachher', 'LUT-Vorschau')) + 4
+        self.compare_header.columnconfigure(0, minsize=width)
+        self.compare_header.columnconfigure(2, minsize=width)
+
+    def build_result_navigation(self, right):
+        navigation = self.result_navigation = tk.Frame(right, bg=PANEL)
+        navigation.pack(fill='x', pady=(5, 0))
+        navigation.columnconfigure(0, weight=1)
+        browsing = self.browse_controls = tk.Frame(navigation, bg=PANEL)
+        browsing.grid(row=0, column=0, sticky='w')
+        self.input_view_button = self.labelled(ttk.Button, browsing, 'Eingabe', command=self.show_original,
+                                               width=-1, style='Input.TButton')
+        self.input_view_button.pack(side='left', padx=(0, 4))
+        self.result_view_button = self.labelled(ttk.Button, browsing, 'Ergebnisse', command=self.show_last_result,
+                                                width=-1, style='Input.TButton')
+        self.result_view_button.pack(side='left', padx=(0, 7))
+        self.prev_button = ttk.Button(browsing, text='←', command=lambda: self.move(-1),
+                                      width=-2, style='Input.TButton')
+        self.prev_button.pack(side='left')
+        self.next_button = ttk.Button(browsing, text='→', command=lambda: self.move(1),
+                                      width=-2, style='Input.TButton')
+        self.next_button.pack(side='left', padx=(4, 0))
+        tk.Label(browsing, textvariable=self.result_position, fg=MUTED, bg=PANEL, width=7, anchor='w').pack(
+            side='left', padx=(6, 0),
+        )
+        tools = self.preview_tools = tk.Frame(navigation, bg=PANEL)
+        tools.grid(row=0, column=1, sticky='e')
+        self.clear_history_button = self.labelled(
+            ttk.Button, tools, 'Verlauf löschen …', command=self.clear_history, width=-1, style='Input.TButton',
+        )
+        self.clear_history_button.pack(side='left', padx=(0, 6))
+        self.labelled(ttk.Button, tools, '100 %', command=self.compare.full_size,
+                      width=-1, style='Input.TButton').pack(side='left', padx=(0, 4))
+        self.labelled(ttk.Button, tools, 'Ansicht einpassen', command=self.compare.fit,
+                      width=-1).pack(side='left')
+        navigation.bind('<Configure>', self.fit_result_navigation)
+
+    def fit_result_navigation(self, _event=None):
+        needed = self.browse_controls.winfo_reqwidth() + self.preview_tools.winfo_reqwidth() + 4
+        compact = self.result_navigation.winfo_width() < needed
+        if self.preview_tools.grid_info()['row'] != int(compact):
+            self.preview_tools.grid_configure(row=int(compact), column=0 if compact else 1,
+                                              columnspan=2 if compact else 1, pady=(4 if compact else 0, 0))
+
     def build_second_image(self, parent, menu_colors):
         width, height = REFERENCE_PREVIEW_SIZE
         self.second_row = tk.Frame(parent, bg=SECONDARY_BG, height=height + 8)
@@ -539,26 +655,23 @@ class Application:
         self.second_preview_item = self.second_preview.create_image(width / 2 + 1, height / 2 + 1)
         details = tk.Frame(self.second_row, bg=SECONDARY_BG)
         details.pack(side='left', fill='both', expand=True, pady=4, padx=(0, 6))
-        self.labelled(tk.Label, details, 'Zweites Bild', bg=SECONDARY_BG, fg=INK, anchor='w').pack(
-            fill='x', padx=(0, 27),
-        )
-        self.reference_remove_icon = tk.PhotoImage(
-            master=self.second_row, file=ROOT / 'assets/dismiss-circle.png',
-        )
-        self.remove_second_button = self.labelled(
-            ttk.Button, self.second_row, 'Zweites Bild entfernen', image=self.reference_remove_icon,
-            compound='image', command=self.clear_second_image, style='RemoveReference.TButton',
-        )
+        self.labelled(tk.Label, details, 'Bild 2', bg=SECONDARY_BG, fg=INK, anchor='w').pack(fill='x')
         self.second_name = tk.Label(details, bg=SECONDARY_BG, fg=MUTED, anchor='w', width=1)
         self.second_name.pack(fill='x', expand=True)
         actions = tk.Frame(details, bg=SECONDARY_BG)
         actions.pack(fill='x')
-        actions.columnconfigure(0, weight=1)
+        actions.columnconfigure((0, 1), weight=1, uniform="reference")
         self.second_button = ttk.Button(actions, command=self.choose_second_image, width=-1, style='Input.TButton')
         self.second_button.grid(row=0, column=0, sticky='ew')
-        self.second_rotate_button = self.labelled(ttk.Menubutton, actions, 'Drehen ▾', width=-1,
-                                                  style='Reference.TMenubutton')
-        self.second_rotate_button.grid(row=0, column=1, padx=(4, 0), sticky='w')
+        self.remove_second_button = self.labelled(ttk.Button, actions, 'Entfernen',
+                                                   command=self.clear_second_image, width=-1, style='Input.TButton')
+        self.remove_second_button.grid(row=0, column=1, sticky='ew', padx=(4, 0))
+        self.second_crop_button = self.labelled(ttk.Button, actions, 'Beschnitt …',
+                                               command=self.edit_second_crop, width=-1, style='Input.TButton')
+        self.second_crop_button.grid(row=1, column=0, sticky='ew', pady=(3, 0))
+        self.second_rotate_button = self.labelled(ttk.Menubutton, actions, 'Drehen', width=-1,
+                                                  style='Input.TMenubutton')
+        self.second_rotate_button.grid(row=1, column=1, padx=(4, 0), pady=(3, 0), sticky='ew')
         self.second_rotation_menu = tk.Menu(self.second_rotate_button, **menu_colors)
         for label, turns in ROTATION_CHOICES:
             self.second_rotation_menu.add_command(label=translate(label),
@@ -712,13 +825,17 @@ class Application:
             setup = Setup(ROOT, **options, compute=self.active_compute)
         return setup
 
-    def approve_setup(self, setup, upscaler):
-        method = self.current_method
-        download_bytes = setup.remaining_download_bytes()
-        transfer = (translate('Noch etwa {0} Download.', format_download_size(download_bytes)) if download_bytes
-                    else translate('Vorhandene Dateien werden geprüft.'))
-        if UNIX_RUNTIME and setup.comfy and not setup.runtime_ready():
-            transfer = translate('ComfyUI und Python-Pakete werden eingerichtet.') + (' ' + transfer if download_bytes else '')
+    def approve_setup(self, setup, upscaler, downloads, setup_runtime):
+        method = setup.method
+        download_bytes = sum(downloads.values())
+        details = []
+        if download_bytes:
+            details.append(translate('Noch etwa {0} Download.', format_download_size(download_bytes)))
+            details.extend(f'{Path(path).name} · {format_download_size(amount)}'
+                           for path, amount in downloads.items() if amount)
+        if setup_runtime:
+            details.append(translate('ComfyUI und Python-Pakete werden eingerichtet.' if setup.comfy
+                                     else 'Python-Laufzeit für die Kolorierung wird eingerichtet.'))
         upscaler_names = ''
         if upscaler in UPSCALE_LICENSES:
             upscaler_names = f'{upscaler}: {UPSCALE_LICENSES[upscaler]}.\n'
@@ -729,26 +846,37 @@ class Application:
         backend_device = translate('Berechnung: {0}.\n', device)
         if setup.compute == CPU and method not in NO_PROMPT:
             backend_device += translate('Dieses Verfahren kann auf der CPU viel Zeit und Arbeitsspeicher benötigen.\n')
-        face_license = translate('Gesichtspunkte (iBUG 300-W): nichtkommerziell.\n') if method == MICROSOFT and self.faces.get() else ''
+        face_license = translate('Gesichtspunkte (iBUG 300-W): nichtkommerziell.\n') if setup.faces else ''
         return messagebox.askyesno(
-            translate('Modelle einrichten'),
+            translate('Downloads und Einrichtung' if download_bytes else 'Laufzeit einrichten'),
             translate(
-                '{0}\n\n{1}{2} Lizenz für das Verfahren: {3}.\n{4}{5}{6}\nJetzt einrichten?',
-                translate(METHODS[method]), backend_device, transfer, translate(LICENSES[method]),
+                '{0}\n\n{1}\n\n{2}Lizenz für das Verfahren: {3}.\n{4}{5}{6}\nJetzt einrichten?',
+                translate(METHODS[method]), '\n'.join(details), backend_device, translate(LICENSES[method]),
                 face_license, upscaler_names, backend_license,
             ),
             parent=self.window,
         )
 
+    def confirm_additional_download(self, name, amount):
+        answer = Queue(maxsize=1)
+        self.events.put(('approve_download', (name, amount, answer)))
+        while not self.cancelled.is_set():
+            try:
+                return answer.get(timeout=.1)
+            except Empty:
+                pass
+        return False
+
     def preload_clicked(self):
         if self.action or self.closing:
             return
-        requests = choose_preloads(self.window, ROOT, self.active_compute, self.current_method,
-                                   self.effective_upscaler(), self.faces.get(), self.supports_nunchaku())
-        if requests:
-            self.start_worker('preload', self.preload, requests, self.active_compute)
+        selected = choose_preloads(self.window, ROOT, self.active_compute, self.current_method,
+                                  self.effective_upscaler(), self.faces.get(), self.supports_nunchaku())
+        if selected:
+            requests, downloads = selected
+            self.start_worker('preload', self.preload, requests, self.active_compute, downloads)
 
-    def preload(self, requests, compute):
+    def preload(self, requests, compute, downloads):
         completed = 0
         failures = []
         backend_closed = False
@@ -760,7 +888,8 @@ class Application:
                 try:
                     setup = Setup(ROOT, notify=self.notify_setup, transfer=self.show_transfer,
                                   cancelled=self.cancelled.is_set, method=method, faces=faces,
-                                  upscaler=upscaler, compute=compute)
+                                  upscaler=upscaler, compute=compute, download_limits=downloads,
+                                  confirm_download=self.confirm_additional_download)
                     self.notify_setup(label)
                     if setup.comfy and not backend_closed and not setup.ready():
                         self.backend.close()
@@ -821,6 +950,7 @@ class Application:
         self.automatic_output.set(str(source_folder / 'output'))
         self.results = self.saved_results(sources)
         self.index = len(self.results) - 1
+        self.look_controls.reset_preset()
         if self.index >= 0:
             if before is not None:
                 before.close()
@@ -830,6 +960,7 @@ class Application:
         self.check_ready()
 
     def show_input(self, before):
+        self.look_controls.clear()
         self.compare.show(before, reset_divider=True)
         path = Path(self.input_value.get())
         if path.is_dir():
@@ -889,10 +1020,10 @@ class Application:
         except (OSError, ValueError, SyntaxError) as exc:
             messagebox.showerror(title, str(exc), parent=self.window)
 
-    def set_second_image(self, path, *, rotation=0):
+    def set_second_image(self, path, *, rotation=0, crop=None):
         if not path.is_file() or path.suffix.lower() not in EXTENSIONS:
             raise ValueError(translate('Bitte ein unterstütztes Bild auswählen.'))
-        image, _ = open_photo(path, rotation=rotation)
+        image, _ = open_photo(path, crop=crop, rotation=rotation)
         with image:
             scale = min(width / edge for width, edge in zip(REFERENCE_PREVIEW_SIZE, image.size))
             size = tuple(max(1, round(edge * scale)) for edge in image.size)
@@ -900,12 +1031,14 @@ class Application:
                 thumbnail = ImageTk.PhotoImage(preview, master=self.window)
         self.second_image = path
         self.second_rotation = rotation
+        self.second_crop = crop
         self.second_thumbnail = thumbnail
         self.update_second_image()
 
     def clear_second_image(self):
         self.second_image = None
         self.second_rotation = 0
+        self.second_crop = None
         self.second_thumbnail = None
         self.update_second_image()
 
@@ -915,10 +1048,23 @@ class Application:
         rotation = 0 if turns is None else (self.second_rotation + turns) % 4
         if rotation == self.second_rotation:
             return
+        crop = self.second_crop.rotated(rotation - self.second_rotation) if self.second_crop else None
         try:
-            self.set_second_image(self.second_image, rotation=rotation)
+            self.set_second_image(self.second_image, rotation=rotation, crop=crop)
         except (OSError, ValueError, SyntaxError) as exc:
             messagebox.showerror(translate('Drehen'), str(exc), parent=self.window)
+
+    def edit_second_crop(self):
+        path = self.second_image
+        if self.action or path is None:
+            return
+        crops = {path: self.second_crop} if self.second_crop else {}
+        result = edit_crops(self.window, (path,), crops, path, rotations={path: self.second_rotation})
+        if result is not None:
+            try:
+                self.set_second_image(path, rotation=self.second_rotation, crop=result[1].get(path))
+            except (OSError, ValueError, SyntaxError) as exc:
+                messagebox.showerror(translate('Beschnitt …'), str(exc), parent=self.window)
 
     def update_second_image(self):
         if self.current_method not in TWO_IMAGE_METHODS:
@@ -927,17 +1073,16 @@ class Application:
         if not self.second_row.winfo_manager():
             self.second_row.pack(fill='x', pady=(4, 0))
         path = self.second_image
-        self.second_button.configure(text=translate('Ersetzen …' if path else 'Hinzufügen …'),
+        self.second_button.configure(text=translate('Bild …'),
                                      state='normal' if self.sources and not self.action else 'disabled')
         self.second_name.configure(text=path.name if path else translate('Kein Bild ausgewählt'))
         self.second_preview.itemconfigure(self.second_preview_item, image=self.second_thumbnail or '')
         self.second_rotate_button.configure(state='normal' if path and not self.action else 'disabled')
-        if path:
-            if not self.remove_second_button.winfo_manager():
-                self.remove_second_button.place(relx=1, x=-7, y=5, width=28, height=26, anchor='ne')
-            self.remove_second_button.configure(state='disabled' if self.action else 'normal')
-        else:
-            self.remove_second_button.place_forget()
+        self.remove_second_button.configure(state='normal' if path and not self.action else 'disabled')
+        self.second_crop_button.configure(
+            state='normal' if path and not self.action else 'disabled',
+            style='Input.Primary.TButton' if self.second_crop else 'Input.TButton',
+        )
 
     def refresh_input_preview(self):
         self.index = -1
@@ -982,6 +1127,7 @@ class Application:
                                  parent=self.window)
             return
         self.results.clear()
+        self.last_result_index = -1
         if self.sources and self.index >= 0:
             self.refresh_input_preview()
         else:
@@ -992,6 +1138,7 @@ class Application:
     def saved_results(self, sources):
         source_set = set(sources)
         recorded = {}
+        self.result_records.clear()
         try:
             with JOBS_LOG.open(encoding='utf-8', errors='replace') as log:
                 for line in log:
@@ -1010,7 +1157,9 @@ class Application:
                     turn = entry.get('source_rotation', 0)
                     if type(turn) is not int or not 0 <= turn <= 3:
                         turn = 0
-                    recorded[output] = Path(source), CropRegion.from_record(entry), turn
+                    if Path(source) in source_set and output.is_absolute():
+                        recorded[output] = Path(source), CropRegion.from_record(entry), turn
+                        self.result_records[output] = entry
         except OSError:
             pass
         results = []
@@ -1020,6 +1169,8 @@ class Application:
             try:
                 if output.is_file():
                     results.append((source, output, crop, turn))
+                else:
+                    self.result_records.pop(output, None)
             except OSError:
                 continue
         return results
@@ -1355,7 +1506,8 @@ class Application:
                     language=self.language,
                     processing_presets=self.processing_presets,
                     variants=str(self.variant_count), scaling=self.scaling,
-                    scratches=self.scratches.get(), faces=self.faces.get())
+                    scratches=self.scratches.get(), faces=self.faces.get(),
+                    lut={'strength': self.look_controls.look().strength})
         stage = SETTINGS.with_suffix('.tmp')
         stage.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
         stage.replace(SETTINGS)
@@ -1402,28 +1554,85 @@ class Application:
         setup = self.setup_for_job(upscaler)
         if setup is None:
             return
-        ready = setup.ready()
-        if not ready and not self.approve_setup(setup, upscaler):
-            return
         variants = 1 if no_prompt else self.variant_count
         second_image = self.second_image if self.current_method in TWO_IMAGE_METHODS else None
         second_rotation = self.second_rotation if second_image is not None else 0
         job = (tuple(self.sources), folder, self.output_format.get(), prompt, seed, variants,
-               self.scratches.get(), size_choice, self.crops.copy(), self.rotations.copy(), second_image, second_rotation)
-        self.save_settings()
-        self.launch('run' if ready else 'run_setup', job, upscaler=upscaler)
+               self.scratches.get(), size_choice, self.crops.copy(), self.rotations.copy(), second_image, second_rotation,
+               self.second_crop if second_image is not None else None, self.look_controls.armed())
+        self.launch(job, upscaler=upscaler, setup=setup)
 
-    def launch(self, action, job, *, upscaler):
-        self.start_worker(action, self.work, self.current_method, self.faces.get(), job, upscaler)
+    def create_lut_variant(self):
+        if self.action or not self.look_controls.available:
+            return
+        look = self.look_controls.armed()
+        if look is None:
+            return
+        output = self.automatic_output if self.output_in_source.get() else self.custom_output
+        if not output.get().strip():
+            messagebox.showinfo(translate('Ausgabeordner'), translate('Bitte einen Ausgabeordner auswählen.'), parent=self.window)
+            return
+        folder = Path(output.get().strip()).expanduser().resolve()
+        if folder == Path(self.input_value.get()).resolve():
+            messagebox.showinfo(translate('Ausgabeordner'), translate('Bitte einen separaten Ausgabeordner wählen.'), parent=self.window)
+            return
+        if self.index >= 0:
+            source, result, crop, rotation = self.results[self.index]
+        else:
+            source = self.preview_source
+            result = None
+            crop, rotation = self.crops.get(source), self.rotations.get(source, 0)
+        base = result or source
+        parent = self.result_records.get(base, {})
+        self.start_worker('lut', self.work_lut, source, base, crop, rotation, folder, self.output_format.get(), look, parent)
+
+    def work_lut(self, source, base, crop, rotation, folder, output_format, look, parent):
+        record = {'source': str(source), 'format': output_format, 'device': 'CPU',
+                  'utc': datetime.now(timezone.utc).isoformat(), 'method': 'LUT'}
+        ok = False
+        try:
+            self.events.put(('device', ('{0}', 'CPU')))
+            self.events.put(('image_started', time.monotonic()))
+            exiftool = None if output_format == 'PNG' else exiftool_executable(ROOT)
+            output, warning = export_look_variant(
+                source, base, crop, rotation, folder, output_format, exiftool, look, parent,
+                record, self.cancelled.is_set,
+            )
+            record.update(status='ok', output=str(output), metadata_warnings=warning or '')
+            JOBS_LOG.parent.mkdir(parents=True, exist_ok=True)
+            with JOBS_LOG.open('a', encoding='utf-8') as log:
+                log.write(json.dumps(record, ensure_ascii=False) + '\n')
+            self.events.put(('result', (source, output, None, crop, rotation, record)))
+            self.events.put(('done', [('LUT-Variante gespeichert.',)] if not warning else
+                             [('LUT-Variante gespeichert.',), (' · {0} mit Metadatenhinweisen', 1)]))
+            ok = True
+        except SetupCancelled as exc:
+            self.events.put(('done', str(exc)))
+        except Exception as exc:
+            TechnicalLog(ROOT / 'logs/application.log').write(traceback.format_exc() + '\n')
+            self.events.put(('error', str(exc)))
+        finally:
+            self.events.put(('idle', (ok, None)))
+
+    def launch(self, job, *, upscaler, setup):
+        ready = setup.ready()
+        downloads = {} if ready else setup.remaining_downloads()
+        setup_runtime = not ready and setup.runtime_needs_setup()
+        if (setup_runtime or any(downloads.values())) and not self.approve_setup(setup, upscaler, downloads, setup_runtime):
+            return
+        self.save_settings()
+        self.start_worker('run' if ready else 'run_setup', self.work, setup.method,
+                          setup.faces, job, upscaler, downloads)
 
     def start_worker(self, action, target, *args):
         self.action = action
+        self.saved_during_job = False
         self.cancelled.clear()
         self.stop_after.clear()
         self.progress_bar.set(None)
         self.elapsed.set('')
         self.device.set('')
-        self.status.set_message('Modelldateien werden geprüft …')
+        self.status.set_message('LUT wird angewendet …' if action == 'lut' else 'Modelldateien werden geprüft …')
         self.busy(True)
         Thread(target=target, args=args, daemon=True).start()
 
@@ -1460,7 +1669,7 @@ class Application:
     def show_transfer(self, name, current, total, phase):
         self.events.put(('transfer', (name, current, total, phase)))
 
-    def work(self, method, faces, job, upscaler=None):
+    def work(self, method, faces, job, upscaler, downloads):
         upscaler = resolve_upscaler(method, upscaler)
         finished = False
         retry_on_cpu = None
@@ -1471,7 +1680,8 @@ class Application:
         try:
             setup = Setup(ROOT, notify=self.notify_setup, transfer=self.show_transfer,
                           cancelled=self.cancelled.is_set, method=method, faces=faces,
-                          upscaler=upscaler, compute=self.active_compute)
+                          upscaler=upscaler, compute=self.active_compute, download_limits=downloads,
+                          confirm_download=self.confirm_additional_download)
             paths = setup.ensure()
             if self.cancelled.is_set():
                 raise SetupCancelled(translate('Bearbeitung abgebrochen.'))
@@ -1483,7 +1693,7 @@ class Application:
                 self.events.put(('done', (('Vor dem ersten Bild beendet.',),)))
                 return
             (sources, folder, output_format, prompt, fixed_seed, variants, scratches, size_choice,
-             crops, rotations, second_image, second_rotation) = job
+             crops, rotations, second_image, second_rotation, second_crop, look) = job
             exiftool = None if output_format == 'PNG' else exiftool_executable(ROOT)
             client, definitions, models, device, colorizer = None, {}, {}, 'CPU', None
             if uses_comfy(method, upscaler):
@@ -1539,12 +1749,12 @@ class Application:
                             staged_id=staged_id,
                             size_choice=size_choice, upscaler=upscaler, definitions=definitions, colorizer=colorizer,
                             source_crop=crop, source_rotation=rotation, second_image=second_image,
-                            second_rotation=second_rotation,
+                            second_rotation=second_rotation, second_crop=second_crop, look=look,
                         )
                         record.update(status='ok', output=str(output), metadata_warnings=warning or '')
                         completed += 1
                         warnings += int(bool(warning))
-                        self.events.put(('result', (source, output, seed, crop, rotation)))
+                        self.events.put(('result', (source, output, seed, crop, rotation, record)))
                     except SetupCancelled:
                         record.update(status='cancelled')
                         raise
@@ -1594,6 +1804,15 @@ class Application:
                     name, current, total, phase = value
                     self.progress_bar.set(100 * current / total)
                     self.status.set(f'{phase} · {current / 1e9:.2f} / {total / 1e9:.2f} GB · {name}')
+                elif kind == 'approve_download':
+                    name, amount, answer = value
+                    accepted = not self.cancelled.is_set() and not self.closing and messagebox.askyesno(
+                        translate('Zusätzlicher Download'),
+                        translate('{0}\n\nDownload erforderlich ({1}). Jetzt herunterladen?',
+                                  name, format_download_size(amount)),
+                        default=messagebox.NO, parent=self.window,
+                    )
+                    answer.put(accepted)
                 elif kind == 'begin':
                     self.action = 'run'
                     self.progress_bar.set(None)
@@ -1609,10 +1828,12 @@ class Application:
                     self.progress_bar.set(100)
                     self.update_elapsed()
                     self.image_started = None
-                    source, output, seed, crop, rotation = value
+                    source, output, seed, crop, rotation, record = value
+                    self.saved_during_job = True
+                    self.result_records[output] = record
                     if seed is not None:
                         self.seed = seed
-                    follow_latest = self.index < 0 or self.index == len(self.results) - 1
+                    follow_latest = self.action == 'lut' or self.index < 0 or self.index == len(self.results) - 1
                     self.results.append((source, output, crop, rotation))
                     if follow_latest:
                         self.index = len(self.results) - 1
@@ -1640,6 +1861,8 @@ class Application:
                                                parent=self.window)
                 elif kind == 'idle':
                     finished, retry_on_cpu = value
+                    if self.saved_during_job:
+                        self.look_controls.enabled.set(False)
                     self.action = None
                     self.last_file_error = None
                     self.check_ready()
@@ -1652,8 +1875,9 @@ class Application:
                         reason, job, upscaler = retry_on_cpu
                         if self.offer_cpu_fallback(reason):
                             self.check_ready()
-                            action = 'run' if self.ready else 'run_setup'
-                            self.launch(action, job, upscaler=upscaler)
+                            setup = self.setup_for_job(upscaler)
+                            if setup is not None:
+                                self.launch(job, upscaler=upscaler, setup=setup)
                     if finished and not self.cancelled.is_set():
                         self.play_ready_sound()
         except Empty:
@@ -1687,8 +1911,18 @@ class Application:
 
     def move(self, step):
         next_index = self.index + step
-        if 0 <= next_index < len(self.results):
+        if self.index >= 0 and 0 <= next_index < len(self.results):
             self.index = next_index
+            self.show_result()
+
+    def show_original(self):
+        if self.index >= 0:
+            self.preview_source = self.results[self.index][0]
+            self.refresh_input_preview()
+
+    def show_last_result(self):
+        if self.index < 0 and self.results:
+            self.index = self.last_result_index
             self.show_result()
 
     def reuse_result(self):
@@ -1696,6 +1930,8 @@ class Application:
             self.pick_sources(self.results[self.index][1], remember_input=False)
 
     def show_result(self, *, reset_divider=False):
+        self.last_result_index = self.index
+        self.look_controls.clear(reset_armed=not self.action)
         source, output, crop, rotation = self.results[self.index]
         before = None
         after = None
@@ -1712,10 +1948,17 @@ class Application:
         self.navigation()
 
     def navigation(self):
-        self.result_position.set(f'{self.index + 1}/{len(self.results)}')
+        showing_result = self.index >= 0
+        position = f'{self.index + 1}/{len(self.results)}' if showing_result else ''
+        self.result_position.set(position)
+        self.input_view_button.configure(state='normal' if self.sources else 'disabled',
+                                         style='Input.TButton' if showing_result else 'Input.Primary.TButton')
+        self.result_view_button.configure(state='normal' if self.results else 'disabled',
+                                          style='Input.Primary.TButton' if showing_result else 'Input.TButton')
         self.prev_button.configure(state='normal' if self.index > 0 else 'disabled')
-        self.next_button.configure(state='normal' if self.index + 1 < len(self.results) else 'disabled')
-        can_reuse = self.action is None and 0 <= self.index < len(self.results)
+        self.next_button.configure(state='normal' if showing_result and self.index + 1 < len(self.results)
+                                   else 'disabled')
+        can_reuse = self.action is None and showing_result
         self.reuse_result_button.configure(state='normal' if can_reuse else 'disabled')
         self.clear_history_button.configure(state='normal' if not self.action and JOBS_LOG.is_file() else 'disabled')
         self.crop_button.configure(
@@ -1724,6 +1967,20 @@ class Application:
         )
         self.rotate_button.configure(state='normal' if self.sources and not self.action else 'disabled')
         self.update_second_image()
+        self.look_controls.update_image(self.compare.before_image is not None,
+                                        self.compare.after_image is not None, showing_result=showing_result,
+                                        busy=bool(self.action))
+
+    def fit_result_actions(self, _event=None):
+        needed = self.look_controls.frame.winfo_reqwidth() + self.reuse_result_button.winfo_reqwidth() + 8
+        compact = self.result_actions.winfo_width() < needed
+        if compact == self.compact_result_actions:
+            return
+        self.compact_result_actions = compact
+        self.reuse_result_button.grid_configure(row=int(compact), column=0 if compact else 1,
+                                                columnspan=2 if compact else 1,
+                                                padx=(0, 0) if compact else (8, 0),
+                                                pady=(4, 0) if compact else (0, 0))
 
     def change_language(self, language):
         if language == self.language or self.action or self.closing:
@@ -1739,6 +1996,7 @@ class Application:
             self.rotation_menu.entryconfigure(index, label=translate(label))
             self.second_rotation_menu.entryconfigure(index, label=translate(label))
         self.prompt_menu.set_language(self.language)
+        self.look_controls.localize()
         self.update_compute_label()
         self.update_setup_status()
         self.method_ids = self.available_method_ids()
@@ -1753,7 +2011,10 @@ class Application:
         self.inactive_upscaler.set(translate('Aus'))
         self.update_size_controls()
         self.update_seed()
-        self.update_second_image()
+        self.navigation()
+        self.fit_compare_headings()
+        self.window.after_idle(self.fit_result_navigation)
+        self.window.after_idle(self.fit_result_actions)
         for label in (self.status, self.caption, self.elapsed, self.device):
             label.refresh()
         self.compare.schedule()

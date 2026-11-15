@@ -115,7 +115,8 @@ def remove_readonly(function, path, error):
 
 class Setup:
     def __init__(self, root=ROOT, notify=print, transfer=None, cancelled=lambda: False,
-                 method=DEFAULT_METHOD, faces=False, upscaler=None, compute=DEFAULT_COMPUTE):
+                 method=DEFAULT_METHOD, faces=False, upscaler=None, compute=DEFAULT_COMPUTE,
+                 download_limits=None, confirm_download=None):
         self.root = Path(root).resolve()
         code = CODE if self.root == ROOT else self.root
         self.manifest_bytes = (code / 'download_manifest.json').read_bytes()
@@ -152,6 +153,8 @@ class Setup:
         if self.color_runtime:
             self.models.extend(self.color_runtime)
         self.notify, self.transfer, self.cancelled = notify, transfer, cancelled
+        self.download_limits = {} if download_limits is None else download_limits
+        self.confirm_download = confirm_download
         self.state_path = self.root / 'runtime/download_receipts.json'
         try:
             self.state = json.loads(self.state_path.read_text())
@@ -168,6 +171,15 @@ class Setup:
     def check(self):
         if self.cancelled():
             raise SetupCancelled(translate('Einrichtung abgebrochen. Teil-Downloads bleiben erhalten.'))
+
+    def check_download(self, spec, amount):
+        self.check()
+        path = spec['path']
+        if self.confirm_download is not None and amount > self.download_limits.get(path, 0):
+            if not self.confirm_download(Path(path).name, amount):
+                raise SetupCancelled(translate('Download abgebrochen.'))
+            self.download_limits[path] = amount
+            self.check()
 
     def persist(self):
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
@@ -212,17 +224,30 @@ class Setup:
                     tick = now
         return sha, count
 
-    def adopt_runtime_archive(self, spec):
+    def install_verified_file(self, source, target, spec):
+        self.check()
+        backup = None
+        if target.is_file():
+            backup = target.with_name(target.name + '.invalid-' + str(time.time_ns()))
+            target.replace(backup)
+        try:
+            source.replace(target)
+        except OSError:
+            if backup is not None and not target.exists():
+                backup.replace(target)
+            raise
+        self.mark(spec)
+
+    def adopt_runtime_archive(self, spec, *, replace_invalid=False):
         target = contained(self.root, spec['path'])
         filename = Path(urllib.parse.urlsplit(spec['url']).path).name
         if filename == target.name:
             return
         source = target.with_name(filename)
-        if not target.exists() and source.is_file() and source.stat().st_size == spec['size']:
+        if (replace_invalid or not target.exists()) and source.is_file() and source.stat().st_size == spec['size']:
             digest, count = self.digest(source, spec)
             if count == spec['size'] and digest.hexdigest() == spec['sha256']:
-                source.replace(target)
-                self.mark(spec)
+                self.install_verified_file(source, target, spec)
                 target.with_name(target.name + '.part').unlink(missing_ok=True)
                 self.notify(translate('Manuell geladenes ComfyUI-Archiv geprüft und übernommen.'))
             else:
@@ -261,6 +286,8 @@ class Setup:
                     raise OSError(translate('Server bestätigt den fortgesetzten Download nicht.'))
                 end = last + 1
             elif status == 200:
+                if offset:
+                    self.check_download(spec, size)
                 end = size
                 offset, sha = 0, hashlib.sha256()
             else:
@@ -296,10 +323,8 @@ class Setup:
             if target.stat().st_size == spec['size'] and self.digest(target, spec)[0].hexdigest() == spec['sha256']:
                 self.mark(spec)
                 return target
-            # Preserve an invalid user-provided file instead of silently accepting it.
-            target.replace(target.with_name(target.name + '.invalid-' + str(time.time_ns())))
         if spec == self.runtime:
-            self.adopt_runtime_archive(spec)
+            self.adopt_runtime_archive(spec, replace_invalid=True)
             if self.valid(spec):
                 return target
         part = target.with_name(target.name + '.part')
@@ -308,8 +333,13 @@ class Setup:
             if part.exists() and part.stat().st_size > spec['size']:
                 part.unlink()
             sha, offset = self.digest(part, spec) if part.exists() else (hashlib.sha256(), 0)
-            self.notify(translate('{0} wird heruntergeladen …', target.name))
-            self.progress(spec, offset, translate('Download läuft'))
+            if offset == spec['size'] and sha.hexdigest() != spec['sha256']:
+                part.unlink()
+                sha, offset = hashlib.sha256(), 0
+            if offset < spec['size']:
+                self.check_download(spec, spec['size'] - offset)
+                self.notify(translate('{0} wird heruntergeladen …', target.name))
+                self.progress(spec, offset, translate('Download läuft'))
             try:
                 while offset < spec['size']:
                     self.check()
@@ -322,10 +352,8 @@ class Setup:
                 if disk_size != spec['size'] or disk_sha.hexdigest() != spec['sha256']:
                     part.unlink()
                     raise OSError(translate('Gespeicherte Datei ist beschädigt. Download wird wiederholt.'))
-                self.check()
-                part.replace(target)
-                self.mark(spec)
-                self.progress(spec, offset, translate('Download läuft'))
+                self.install_verified_file(part, target, spec)
+                self.progress(spec, offset, translate('Prüfen'))
                 return target
             except SetupCancelled:
                 raise
@@ -409,8 +437,8 @@ class Setup:
                 if local.is_file() and local.stat().st_size == spec['size']:
                     continue
             part = target.with_name(target.name + '.part')
-            existing = min(part.stat().st_size, spec['size']) if part.is_file() else 0
-            remaining[spec['path']] = spec['size'] - existing
+            existing = part.stat().st_size if part.is_file() else 0
+            remaining[spec['path']] = spec['size'] - existing if existing <= spec['size'] else spec['size']
         return remaining
 
     def setup_status(self):
@@ -431,6 +459,18 @@ class Setup:
 
     def color_ready(self):
         return not self.color_runtime or (self.color_runtime_path / 'onnxruntime/__init__.py').is_file()
+
+    def runtime_needs_setup(self):
+        if not self.color_ready():
+            return True
+        if not self.comfy:
+            return False
+        paths = self.paths()
+        return (not paths or not self.runtime_ready()
+                or self.backend_state.get('dependencies_signature') != self.signature
+                or (self.method in GGUF_METHODS and not self.gguf_ready(paths[1]))
+                or (bool(self.nunchaku_runtime) and not nunchaku_ready(self, paths[1]))
+                or (self.method == MICROSOFT and not self.microsoft_dependencies_ready()))
 
     def gguf_ready(self, comfy):
         return (self.backend_state.get('gguf_setup') == GGUF_SETUP and

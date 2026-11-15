@@ -2,8 +2,8 @@ name: Build and test Linux x64
 
 on:
   push:
-    branches: [linux-preview, unix-gpu-preview, output-folder-preview, main, reference-button-preview, transcora-focus-preview, input-directory-preview]
-    paths-ignore: ['.github/workflows/refresh-windows-v1.0.yml']
+    branches: [linux-preview, unix-gpu-preview, output-folder-preview, main, reference-button-preview, transcora-focus-preview, input-directory-preview, codex/restorenate-1.1]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -30,14 +30,14 @@ jobs:
           root='package/RestoRenate'
           mkdir dist
           bash scripts/package_unix.sh "$root"
-          tar -C package -czf dist/RestoRenate_Linux_x64_Preview.tar.gz RestoRenate
-          (cd dist && sha256sum RestoRenate_Linux_x64_Preview.tar.gz > SHA256SUMS.txt)
+          tar -C package -czf dist/RestoRenate_1.1_Linux_x64.tar.gz RestoRenate
+          (cd dist && sha256sum RestoRenate_1.1_Linux_x64.tar.gz > SHA256SUMS.txt)
       - name: Run the extracted package on Ubuntu
         shell: bash
         run: |
           set -euo pipefail
           mkdir fresh
-          tar -C fresh -xzf dist/RestoRenate_Linux_x64_Preview.tar.gz
+          tar -C fresh -xzf dist/RestoRenate_1.1_Linux_x64.tar.gz
           mv fresh/RestoRenate "fresh/RestoRenate portable"
           root="$PWD/fresh/RestoRenate portable"
           xvfb-run -a bash -e -c '
@@ -53,6 +53,7 @@ jobs:
             sleep 2
             kill -0 "$app"
           ' _ "$root"
+          xvfb-run -a "$root/runtime/python/bin/python3.12" tests/lut_controls.py "$root"
           xvfb-run -a "$root/runtime/python/bin/python3.12" tests/unix_smoke.py "$root"
       - name: Verify that an initialized package can be moved
         shell: bash
@@ -67,7 +68,7 @@ jobs:
         run: tail -n 50 fresh/RestoRenate*/logs/*.log || true
       - uses: actions/upload-artifact@v4
         with:
-          name: RestoRenate-Linux-x64-Preview
+          name: RestoRenate-Linux-x64
           path: dist/*
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
@@ -85,12 +86,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: RestoRenate-Linux-x64-Preview
+          name: RestoRenate-Linux-x64
       - name: Verify the ROCm package and the GPU check
         shell: bash
         run: |
           set -euo pipefail
-          tar -xzf RestoRenate_Linux_x64_Preview.tar.gz
+          tar -xzf RestoRenate_1.1_Linux_x64.tar.gz
           "RestoRenate/runtime/python/bin/python3.12" tests/linux_rocm_smoke.py "$PWD/RestoRenate"
       - name: Print setup diagnostics
         if: failure()
@@ -101,39 +102,3 @@ jobs:
           name: rocm-diagnostics
           path: RestoRenate/logs/*.log
           if-no-files-found: ignore
-
-  publish:
-    needs: [linux, rocm]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: RestoRenate-Linux-x64-Preview
-      - name: Publish Linux release
-        shell: bash
-        run: |
-          set -euo pipefail
-          sha256sum -c SHA256SUMS.txt
-          # Keep the published tag and filename so existing download URLs still work.
-          tag=v1.0-linux-preview
-          file=RestoRenate_Linux_x64_Preview.tar.gz
-          asset_label='RestoRenate_1.0_Linux_x64.tar.gz'
-          title='RestoRenate 1.0 for Linux (Ubuntu 24.04 x64)'
-          notes='Portable release for Ubuntu 24.04 x86-64. Extract the archive and run ./Start.sh in a graphical desktop session. Python, Tk and ExifTool are included. GitHub Actions checks CPU processing and ROCm setup. NVIDIA and AMD GPU inference remain experimental.'
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$tag" "$file#$asset_label" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
-          else
-            gh release create "$tag" "$file#$asset_label" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --latest=false --title "$title" \
-              --notes "$notes"
-          fi
-          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest=false \
-            --title "$title" --notes "$notes"
-          actual=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$file\") | .digest")
-          test "$actual" = "sha256:$(cut -d' ' -f1 SHA256SUMS.txt)"
-          test "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq .isPrerelease)" = false

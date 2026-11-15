@@ -1,10 +1,18 @@
-# RestoRenate 1.0
+# RestoRenate 1.1
 
-[Windows download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [macOS download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-macos-preview) · [Deutsch](README_DE.md) · [Detailed guide](README_DE_EN.txt)
+[Windows 1.0 download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0) · [Linux 1.0 download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-linux-preview) · [macOS 1.0 download](https://github.com/muelli1975/RestoRenate/releases/tag/v1.0-macos-preview) · [Deutsch](README_DE.md) · [Detailed guide](README_DE_EN.txt)
 
 RestoRenate is a local desktop tool for restoring, colorizing and upscaling photos. With text prompts and supported models, it can also edit an image or use a second photo as a reference. The interface is available in English and German.
 
 The app asks before downloading missing models and the processing runtime. After setup, image processing runs locally and offline.
+
+## New in 1.1
+
+Crop and rotate the second reference independently. The primary image and its crop determine the output aspect ratio. The prompt menu adds two compositing presets and reusable edit instructions.
+
+Choose from 50 StereoFine LUTs. Use **C** to inspect the look on the right, hold **C** with the left/right arrows to choose a look, and use up/down to change strength. Enable **Apply LUT** to include the look in the next model run. **Create LUT variant** exports the selected input or result as a new numbered file without running a model. Press **F1** for controls.
+
+JPEG and TIFF retain compatible original EXIF and store RestoRenate settings in XMP. PNG uses ComfyUI's prompt and workflow metadata. For the bundled LUTs, see [sources and licenses](assets/luts/CREDITS.md).
 
 ## Before and after
 
@@ -39,7 +47,7 @@ By default, results go into `output` next to the selected image or inside the se
 
 - **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
 - **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.
-- **Upscaling:** Nomos2 HQ MoSR is the default for restoration and upscaling. The selection also includes Lanczos, UltraSharp V2 Lite, Real-ESRGAN and FaceUpDAT for portraits.
+- **Upscaling:** Nomos2 HQ MoSR is the default for restoration and upscaling. The selection also includes Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT for portraits, and Real-ESRGAN Anime 4× and AnimeSharp 4× for drawings and illustrations.
 - **Export:** PNG, JPEG quality 95 with 4:4:4 chroma and TIFF with LZW compression. JPEG and TIFF copy compatible source metadata. PNG stores a ComfyUI workflow when applicable.
 
 ## Source and builds

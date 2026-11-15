@@ -38,6 +38,10 @@ def preload_label(method, upscaler):
 
 
 def format_download_size(size):
+    if size < 1000:
+        return translate('{0} Byte', size)
+    if size < 1e6:
+        return f'{size / 1e3:.1f} kB'
     return f'{size / 1e6:.1f} MB' if size < 1e9 else f'{size / 1e9:.1f} GB'
 
 
@@ -169,12 +173,13 @@ class PreloadDialog(tk.Toplevel):
                 method, faces, upscaler = request
                 setup = Setup(self.root, method=method, faces=faces, upscaler=upscaler, compute=self.compute)
                 pending = setup.remaining_downloads()
-                info = (setup.runtime['path'] if setup.runtime else None, bool(setup.runtime_ready())) if setup.comfy else None
+                info = (setup.runtime['path'] if setup.runtime else None, not setup.runtime_needs_setup()) if setup.comfy else None
                 self.downloads[request] = pending, info
             pending, info = self.downloads[request]
             remaining.update(pending)
-            if info is not None:
+            if info is not None and (runtime is None or not info[1]):
                 runtime = info
+        self.quoted_downloads = remaining
         runtime_status = ''
         if runtime is not None:
             path, ready = runtime
@@ -198,7 +203,7 @@ class PreloadDialog(tk.Toplevel):
     def apply(self):
         selected = self.selection()
         if selected:
-            self.result = selected
+            self.result = selected, self.quoted_downloads
             self.destroy()
 
 

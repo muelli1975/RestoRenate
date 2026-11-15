@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 APP_NAME = 'RestoRenate'
-APP_VERSION = '1.0'
+APP_VERSION = '1.1'
 MAX_SEED = 2**64 - 1
 PRIMITIVES = {'INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO', 'COMFY_DYNAMICCOMBO_V3'}
 
@@ -139,7 +139,8 @@ def editor_graph(graph, settings):
     rotation = settings.get('source_rotation', 0)
     second_size = settings.get('second_size')
     second_rotation = settings.get('second_rotation', 0)
-    if not (source_crop or working_crop or rotation or second_size or second_rotation):
+    second_crop = settings.get('second_crop')
+    if not (source_crop or working_crop or rotation or second_size or second_rotation or second_crop):
         return graph
     prepared = {}
     result = ['4', 0]
@@ -178,6 +179,12 @@ def editor_graph(graph, settings):
                 'image': reference, 'rotation': f'{second_rotation * 90} degrees',
             }}
             reference = ['95', 0]
+        if second_crop:
+            x, y, right, bottom = second_crop
+            prepared['96'] = {'class_type': 'ImageCrop', 'inputs': {
+                'image': reference, 'x': x, 'y': y, 'width': right - x, 'height': bottom - y,
+            }}
+            reference = ['96', 0]
         if second_size:
             prepared['94'] = {'class_type': 'ImageScale', 'inputs': {
                 'image': reference, 'upscale_method': 'lanczos',

@@ -34,6 +34,13 @@ try:
     window.geometry('950x720')
     gui.pick_sources(image_path)
     check_reference_controls(gui, image_path)
+    gui.set_second_image(image_path)
+    window.lift()
+    window.update()
+    row = gui.second_row
+    left, top = row.winfo_rootx(), row.winfo_rooty()
+    with ImageGrab.grab((left, top, left + row.winfo_width(), top + row.winfo_height())) as screenshot:
+        screenshot.save(root.parent / 'reference-controls.png')
     for combo in (gui.method_widget, gui.upscale_options):
         popup = str(window.tk.call('ttk::combobox::PopdownWindow', str(combo)))
         assert window.tk.call(popup + '.f.sb', 'cget', '-style') == ''
@@ -42,30 +49,10 @@ try:
     assert style.lookup('Vertical.TScrollbar', 'troughcolor') == app.SECONDARY_BG
     assert style.lookup('Vertical.TScrollbar', 'arrowcolor') == app.MUTED
     assert style.lookup('Vertical.TScrollbar', 'background', ('active',)) == app.HOVER_BG
-    gui.set_second_image(image_path)
-    window.lift()
-    window.update()
-    row = gui.second_row
-    left, top = row.winfo_rootx(), row.winfo_rooty()
-    with ImageGrab.grab((left, top, left + row.winfo_width(), top + row.winfo_height())) as screenshot:
-        screenshot.save(root.parent / 'reference-controls.png')
-        remove = gui.remove_second_button
-        x, y = remove.winfo_rootx() - left, remove.winfo_rooty() - top
-        width, height = remove.winfo_width(), remove.winfo_height()
-        def is_red(dx, dy):
-            red, green, blue = screenshot.getpixel((x + dx, y + dy))[:3]
-            return red >= 195 and red > max(green, blue) + 70
-
-        pixels = [(dx, dy) for dy in range(height) for dx in range(width) if is_red(dx, dy)]
-        assert pixels, 'The rendered button has no red cross.'
-        center_x = (min(dx for dx, _ in pixels) + max(dx for dx, _ in pixels)) / 2
-        center_y = (min(dy for _, dy in pixels) + max(dy for _, dy in pixels)) / 2
-        assert abs(center_x - (width - 1) / 2) <= 1, (center_x, width, pixels)
-        assert abs(center_y - (height - 1) / 2) <= 1, (center_y, height, pixels)
     check_field_focus(gui, native_focus)
 finally:
     window.destroy()
 
-print('Windows model default, field focus and red remove control passed.')
+print('Windows model default, field focus, reference controls and dropdown styles passed.')
 
 check_output_destination()

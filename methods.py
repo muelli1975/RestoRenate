@@ -35,6 +35,8 @@ ULTRASHARP_ORIGINAL = 'UltraSharp 4×'
 ULTRASHARP = 'UltraSharp V2'
 ULTRASHARP_LITE = 'UltraSharp V2 Lite'
 REALESRGAN = 'Real-ESRGAN'
+REALESRGAN_ANIME = 'Real-ESRGAN Anime 4×'
+ANIMESHARP = 'AnimeSharp 4×'
 REMACRI = 'Remacri 4×'
 REALWEBPHOTO = 'RealWebPhoto v4'
 SIAX = 'NMKD Siax 4×'
@@ -42,13 +44,15 @@ NOMOS2_HQ = 'Nomos2 HQ MoSR 4×'
 FACEUP_DAT = '4× FaceUpDAT'
 SWINIR_S = 'SwinIR-S 4×'
 LANCZOS = 'Lanczos'
-UPSCALERS = (ULTRASHARP_ORIGINAL, ULTRASHARP, ULTRASHARP_LITE, REALESRGAN,
+UPSCALERS = (ULTRASHARP_ORIGINAL, ULTRASHARP, ULTRASHARP_LITE, REALESRGAN, REALESRGAN_ANIME, ANIMESHARP,
              REMACRI, REALWEBPHOTO, SIAX, NOMOS2_HQ, FACEUP_DAT, SWINIR_S, LANCZOS)
 UPSCALE_LICENSES = {
     ULTRASHARP_ORIGINAL: 'CC BY-NC-SA 4.0',
     ULTRASHARP: 'CC BY-NC-SA 4.0',
     ULTRASHARP_LITE: 'CC BY-NC-SA 4.0',
     REALESRGAN: 'BSD 3-Clause',
+    REALESRGAN_ANIME: 'BSD 3-Clause',
+    ANIMESHARP: 'CC BY-NC-SA 4.0',
     REMACRI: 'CC BY-NC-SA 4.0',
     REALWEBPHOTO: 'CC BY 4.0',
     SIAX: 'WTFPL',
@@ -97,6 +101,8 @@ UPSCALE_FILENAME_LABELS = {
     ULTRASHARP_ORIGINAL: 'UltraSharp-4x',
     ULTRASHARP: 'UltraSharp-V2',
     ULTRASHARP_LITE: 'UltraSharp-V2-Lite',
+    REALESRGAN_ANIME: 'RealESRGAN-Anime-4x',
+    ANIMESHARP: 'AnimeSharp-4x',
     REMACRI: 'Remacri',
     REALWEBPHOTO: 'RealWebPhoto-v4',
     SIAX: 'Siax',
@@ -126,6 +132,8 @@ UPSCALE_FILES = {
     ULTRASHARP: {'upscale': UPSCALE},
     ULTRASHARP_LITE: {'upscale_lite': UPSCALE_LITE},
     REALESRGAN: {'esrgan2': ESRGAN2, 'esrgan4': ESRGAN4},
+    REALESRGAN_ANIME: {'upscale': ('UpscaleModelLoader', 'model_name', 'RealESRGAN_x4plus_anime_6B.pth')},
+    ANIMESHARP: {'upscale': ('UpscaleModelLoader', 'model_name', '4x-AnimeSharp.safetensors')},
     REMACRI: {'upscale': ('UpscaleModelLoader', 'model_name', '4x_foolhardy_Remacri.pth')},
     REALWEBPHOTO: {'upscale': ('UpscaleModelLoader', 'model_name', '4xRealWebPhoto_v4_dat2.safetensors')},
     SIAX: {'upscale': ('UpscaleModelLoader', 'model_name', '4x_NMKD-Siax_200k.pth')},

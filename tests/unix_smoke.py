@@ -16,12 +16,13 @@ sys.path.insert(0, str(root / '_internal'))
 import app
 from imaging import exiftool_executable, save_result
 from local_backend import Backend
-from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALING, resolve_upscaler
+from methods import (ANIMESHARP, DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, REALESRGAN_ANIME, ULTRASHARP_LITE,
+                     UPSCALING, resolve_upscaler)
 from photo_colors import Colorizer
 from portable_setup import CPU, MACOS, MPS, UNIX_RUNTIME, Setup
 from preload_models import PreloadDialog
 from restoration import Client, restore, select_models
-from sizes import DOUBLE_SIZE, NO_RESCALE
+from sizes import DOUBLE_SIZE, NO_RESCALE, QUADRUPLE_SIZE
 from field_focus import check_field_focus, field_focus_maps
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
@@ -82,15 +83,25 @@ def test_upscaling(source, folder):
         client = Client(backend.start(paths, method=UPSCALING), root)
         device = client.json('/system_stats')['devices'][0]
         assert device['type'] == compute, device
-        definitions = client.json('/object_info')
-        models = select_models(definitions, UPSCALING)
-        assert models['upscale'] == '4xNomos2_hq_mosr.safetensors', models
-        output, warning = restore(client, models, source, folder, 'PNG', None, '', None, print, lambda: False,
-                                  record(UPSCALING, models), method=UPSCALING,
-                                  size_choice=(DOUBLE_SIZE, 0), definitions=definitions)
-        assert not warning
-        with Image.open(output) as result:
-            assert result.size == (128, 80) and 'workflow' in result.info
+        for upscaler, model_file, size, dimensions, filename_label in (
+            (None, '4xNomos2_hq_mosr.safetensors', DOUBLE_SIZE, (128, 80), 'Nomos2-MoSR'),
+            (REALESRGAN_ANIME, 'RealESRGAN_x4plus_anime_6B.pth', QUADRUPLE_SIZE, (256, 160), 'RealESRGAN-Anime-4x'),
+            (ANIMESHARP, '4x-AnimeSharp.safetensors', QUADRUPLE_SIZE, (256, 160), 'AnimeSharp-4x'),
+        ):
+            if upscaler is not None:
+                Setup(root, method=UPSCALING, upscaler=upscaler, compute=compute).ensure()
+            definitions = client.json('/object_info')
+            models = select_models(definitions, UPSCALING, upscaler)
+            assert models['upscale'] == model_file, models
+            output, warning = restore(client, models, source, folder, 'PNG', None, '', None, print, lambda: False,
+                                      record(UPSCALING, models), method=UPSCALING, upscaler=upscaler,
+                                      size_choice=(size, 0), definitions=definitions)
+            assert not warning and output.stem.endswith('_' + filename_label)
+            with Image.open(output) as result:
+                assert result.size == dimensions and 'workflow' in result.info
+                graph = json.loads(result.info['prompt'])
+                assert any(node['class_type'] == 'UpscaleModelLoader' and node['inputs']['model_name'] == model_file
+                           for node in graph.values()), graph
     finally:
         backend.close()
 
@@ -135,4 +146,4 @@ if __name__ == '__main__':
     test_metadata(source, folder / 'output')
     test_colorization(source, folder / 'output')
     test_upscaling(source, folder / 'output')
-    print(f'GUI, real ExifTool JPEG/TIFF export, DDColor Tiny and Nomos2 HQ MoSR on {MPS if MACOS else CPU} passed.')
+    print(f'GUI, ExifTool, DDColor Tiny, Nomos2 HQ MoSR and both anime upscalers on {MPS if MACOS else CPU} passed.')

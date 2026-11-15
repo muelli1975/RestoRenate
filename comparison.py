@@ -2,6 +2,7 @@
 import tkinter as tk
 
 from PIL import Image, ImageDraw, ImageFilter, ImageTk
+from looks import apply_look
 
 from language import translate
 from theme import APP_BG, MUTED, PREVIEW_BG, TEXT
@@ -42,6 +43,8 @@ class Comparison(tk.Canvas):
         super().__init__(parent, bg=PREVIEW_BG, highlightthickness=0, takefocus=True)
         self.before_image = self.after_image = self.rendered = None
         self.handle = ImageTk.PhotoImage(slider_handle(), master=self)
+        self.look_basis = self.look = None
+        self.detail_state = None
         self.fraction = 0.5
         self.zoom = 1.0
         self.pixel_size = False
@@ -71,6 +74,11 @@ class Comparison(tk.Canvas):
         if keep_view:
             left, top, width, height = self.geometry()
         self.view_key = view_key
+        self.detail_state = None
+        self.look_basis = self.look = None
+        for old in (self.before_image, self.after_image):
+            if old is not None and old is not before and old is not after:
+                old.close()
         self.before_image, self.after_image = before, after
         if reset_divider:
             self.fraction = 0.5
@@ -87,6 +95,21 @@ class Comparison(tk.Canvas):
         )
         self.cancel_fit_notice()
         self.schedule()
+
+    def preview_look(self, basis, look):
+        if basis is not self.look_basis or look != self.look:
+            self.look_basis, self.look = basis, look
+            self.schedule()
+
+    def hold_detail(self):
+        self.detail_state = self.zoom, self.pixel_size, self.pan
+        self.full_size()
+
+    def release_detail(self):
+        if self.detail_state is not None:
+            self.zoom, self.pixel_size, self.pan = self.detail_state
+            self.detail_state = None
+            self.schedule()
 
     def fit(self, event=None, *, notice_ms=2000):
         self.pixel_size = False
@@ -141,15 +164,15 @@ class Comparison(tk.Canvas):
         return round((cw - width) / 2 + px), round((ch - height) / 2 + py), width, height
 
     def divide(self, event):
-        if self.after_image is not None:
-            self.focus_set()
+        self.focus_set()
+        if self.look_basis is not None or self.after_image is not None:
             x, _, width, _ = self.geometry()
             self.fraction = max(0.0, min(1.0, (event.x - x) / width))
             self.schedule()
 
     def hover(self, event):
         cursor = ''
-        if self.after_image is not None:
+        if self.look_basis is not None or self.after_image is not None:
             x, y, width, height = self.geometry()
             canvas_width, canvas_height = self.winfo_width(), self.winfo_height()
             left, top = max(x, 0), max(y, 0)
@@ -165,7 +188,7 @@ class Comparison(tk.Canvas):
             self.configure(cursor=cursor)
 
     def nudge(self, delta):
-        if self.after_image is not None:
+        if self.look_basis is not None or self.after_image is not None:
             self.fraction = max(0.0, min(1.0, self.fraction + delta))
             self.schedule()
         return 'break'
@@ -220,14 +243,20 @@ class Comparison(tk.Canvas):
         if right <= left or bottom <= top:
             return
         raster = Image.new('RGB', (right - left, bottom - top))
-        divider = round(x + self.fraction * width) if self.after_image is not None else None
+        right_image = self.look_basis if self.look_basis is not None else self.after_image
+        divider = round(x + self.fraction * width) if right_image is not None else None
         split = right if divider is None else min(right, max(left, divider))
-        for photo, a, b in ((self.before_image, left, split), (self.after_image, split, right)):
+        for photo, a, b, shaded in ((self.before_image, left, split, False), (right_image, split, right, self.look is not None)):
             if photo is None or b <= a:
                 continue
             box = ((a - x) * photo.width / width, (top - y) * photo.height / height,
                    (b - x) * photo.width / width, (bottom - y) * photo.height / height)
-            raster.paste(photo.resize((b - a, bottom - top), Image.Resampling.LANCZOS, box=box), (a - left, 0))
+            with photo.resize((b - a, bottom - top), Image.Resampling.LANCZOS, box=box) as sample:
+                if shaded:
+                    with apply_look(sample, self.look) as graded:
+                        raster.paste(graded, (a - left, 0))
+                else:
+                    raster.paste(sample, (a - left, 0))
         if divider is not None and left <= divider <= right:
             local_x = min(divider, right - 1) - left
             rule = ImageDraw.Draw(raster, 'RGBA')
