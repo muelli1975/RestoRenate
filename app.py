@@ -27,6 +27,7 @@ from export_metadata import APP_NAME, APP_VERSION, MAX_SEED, parse_seed, seed_fr
 from imaging import EXTENSIONS, FORMATS, collect, exiftool_executable, open_photo, photo_size
 from local_backend import Backend, BackendStartError
 from look_controls import LookControls, open_controls
+from looks import Look, catalog
 from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINTS, LINUX, NVIDIA,
                             UNIX_RUNTIME, ComputeUnavailable, Setup, SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
@@ -106,6 +107,7 @@ JOBS_LOG = ROOT / 'logs' / 'jobs.jsonl'
 FILE_TYPES = [('Bilddateien', ' '.join('*' + ext for ext in sorted(EXTENSIONS))), ('Alle Dateien', '*')]
 ROTATION_CHOICES = (('90° links', -1), ('90° rechts', 1), ('180°', 2), ('Drehung zurücksetzen', None))
 REFERENCE_PREVIEW_SIZE = (152, 104)
+MIN_WINDOW_WIDTH = 950
 
 
 def read_settings():
@@ -214,7 +216,7 @@ class Application:
         self.window.geometry('1130x860')
         self.compact_window = min(window.maxsize()[1], window.winfo_screenheight()) < 860
         self.minimum_size_job = None
-        self.window.minsize(950, 720)
+        self.window.minsize(MIN_WINDOW_WIDTH, 720)
         self.window.configure(bg=BG)
         self.window.protocol('WM_DELETE_WINDOW', self.close)
         install_tk_titlebars(window)
@@ -357,12 +359,14 @@ class Application:
         self.controls.extend((self.language_button, self.processing_button, self.compute_button))
         self.refresh_processing_menu()
 
-        body = tk.Frame(self.window, bg=BG, padx=14)
+        settings_width, panel_gap, body_padding, preview_padding = 374, 10, 14, 9
+        self.preview_width_offset = settings_width + panel_gap + 2 * (body_padding + preview_padding)
+        body = tk.Frame(self.window, bg=BG, padx=body_padding)
         body.pack(fill='both', expand=True)
         body.grid_columnconfigure(1, weight=1)
         body.grid_rowconfigure(0, weight=1)
-        settings_slot = tk.Frame(body, bg=PANEL, width=374)
-        settings_slot.grid(row=0, column=0, sticky='ns', padx=(0, 10))
+        settings_slot = tk.Frame(body, bg=PANEL, width=settings_width)
+        settings_slot.grid(row=0, column=0, sticky='ns', padx=(0, panel_gap))
         settings_slot.pack_propagate(False)
         left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=12, pady=4 if self.compact_window else 10)
         left.pack(fill='both', expand=True)
@@ -518,7 +522,7 @@ class Application:
         self.stop_button.pack(side='right')
         self.update_seed()
 
-        right = tk.Frame(body, bg=PANEL, padx=9, pady=8)
+        right = tk.Frame(body, bg=PANEL, padx=preview_padding, pady=8)
         right.grid(row=0, column=1, sticky='nsew')
         top = self.compare_header = tk.Frame(right, bg=PANEL)
         top.pack(fill='x', pady=(0, 6))
@@ -533,16 +537,8 @@ class Application:
         self.fit_compare_headings()
         self.compare = Comparison(right)
         self.compare.pack(fill='both', expand=True)
-        result_info = self.result_actions = tk.Frame(right, bg=PANEL)
-        result_info.pack(fill='x', pady=(6, 0))
-        result_info.columnconfigure(0, weight=1)
-        self.look_controls = LookControls(self, result_info, menu_colors)
-        self.look_controls.frame.grid(row=0, column=0, sticky='ew')
-        self.reuse_result_button = self.labelled(ttk.Button, result_info, 'Ergebnis weiterbearbeiten',
-                                                command=self.reuse_result, state='disabled', style='Input.TButton')
-        self.reuse_result_button.grid(row=0, column=1, sticky='e', padx=(8, 0))
-        self.compact_result_actions = False
-        result_info.bind('<Configure>', self.fit_result_actions)
+        self.look_controls = LookControls(self, right, menu_colors)
+        self.look_controls.frame.pack(fill='x', pady=(6, 0))
         self.build_result_navigation(right)
 
         if self.compact_window:
@@ -563,7 +559,7 @@ class Application:
         )
         self.progress_bar = ProgressTrack(footer, PANEL, GOLD, BORDER)
         self.progress_bar.pack(fill='x', pady=(4, 0))
-        for section in (header, left, footer):
+        for section in (header, left, footer, self.look_controls.frame):
             section.bind('<Configure>', self.schedule_window_minimum, add='+')
 
     def schedule_window_minimum(self, *_args):
@@ -582,9 +578,11 @@ class Application:
         footer_gap = sum(self.window.winfo_pixels(value) for value in padding)
         content_height = sum(section.winfo_reqheight()
                              for section in (self.header, self.settings_panel, self.footer))
-        width, previous_height = self.window.minsize()
+        preview_width = max(part.winfo_reqwidth() for part in
+                            (self.look_controls.frame, self.browse_controls, self.preview_tools))
+        width = max(MIN_WINDOW_WIDTH, self.preview_width_offset + preview_width)
         height = max(720, content_height + footer_gap)
-        if height != previous_height:
+        if (width, height) != self.window.minsize():
             self.window.minsize(width, height)
 
     def fit_setup_notice(self, _event=None):
@@ -630,6 +628,9 @@ class Application:
         tk.Label(browsing, textvariable=self.result_position, fg=MUTED, bg=PANEL, width=7, anchor='w').pack(
             side='left', padx=(6, 0),
         )
+        self.reuse_result_button = self.labelled(ttk.Button, browsing, 'Ergebnis weiterbearbeiten',
+                                                command=self.reuse_result, state='disabled', style='Input.TButton')
+        self.reuse_result_button.pack(side='left', padx=(4, 0))
         tools = self.preview_tools = tk.Frame(navigation, bg=PANEL)
         tools.grid(row=0, column=1, sticky='e')
         self.clear_history_button = self.labelled(
@@ -954,7 +955,7 @@ class Application:
         self.automatic_output.set(str(source_folder / 'output'))
         self.results = self.saved_results(sources)
         self.index = len(self.results) - 1
-        self.look_controls.reset_preset()
+        self.look_controls.load_input(use_kept=remember_input)
         if self.index >= 0:
             if before is not None:
                 before.close()
@@ -964,7 +965,6 @@ class Application:
         self.check_ready()
 
     def show_input(self, before):
-        self.look_controls.clear()
         self.compare.show(before, reset_divider=True)
         path = Path(self.input_value.get())
         if path.is_dir():
@@ -1088,7 +1088,7 @@ class Application:
             style='Input.Primary.TButton' if self.second_crop else 'Input.TButton',
         )
 
-    def refresh_input_preview(self):
+    def refresh_input_preview(self, *, look=None):
         self.index = -1
         source = self.preview_source
         try:
@@ -1098,6 +1098,7 @@ class Application:
             self.status.set_message('Vorschau für {0}: {1}', source.name, exc)
         self.preview_size = before.size if before is not None else None
         self.update_dimensions()
+        self.look_controls.set_look(look)
         self.show_input(before)
         return before is not None
 
@@ -1440,6 +1441,8 @@ class Application:
                                 parent=self.window)
             return
         preset.update(size=size, side_pixels=side_pixels, upscaler=self.upscaler.get())
+        if look := self.look_controls.armed():
+            preset['lut'] = look.record()
         if method == MICROSOFT:
             preset.update(scratches=self.scratches.get(), faces=self.faces.get())
 
@@ -1473,6 +1476,18 @@ class Application:
         fmt = preset.get('format')
         if isinstance(fmt, str) and fmt in FORMATS:
             self.output_format.set(fmt)
+        look = None
+        saved_look = preset.get('lut')
+        if isinstance(saved_look, dict):
+            key, strength = saved_look.get('id'), saved_look.get('strength')
+            if isinstance(key, str) and key in catalog() and type(strength) is int and 1 <= strength <= 100:
+                look = Look(key, strength)
+        if look is not None and self.index >= 0:
+            self.show_original()
+        self.look_controls.set_look(look)
+        if look is not None:
+            self.look_controls.update_kept_look()
+        self.look_controls.refresh()
         self.load_scaling(preset)
         if method == MICROSOFT:
             self.scratches.set(preset.get('scratches', True) is True)
@@ -1922,7 +1937,7 @@ class Application:
     def show_original(self):
         if self.index >= 0:
             self.preview_source = self.results[self.index][0]
-            self.refresh_input_preview()
+            self.refresh_input_preview(look=self.look_controls.kept_look)
 
     def show_last_result(self):
         if self.index < 0 and self.results:
@@ -1975,17 +1990,6 @@ class Application:
                                         self.compare.after_image is not None, showing_result=showing_result,
                                         busy=bool(self.action))
 
-    def fit_result_actions(self, _event=None):
-        needed = self.look_controls.frame.winfo_reqwidth() + self.reuse_result_button.winfo_reqwidth() + 8
-        compact = self.result_actions.winfo_width() < needed
-        if compact == self.compact_result_actions:
-            return
-        self.compact_result_actions = compact
-        self.reuse_result_button.grid_configure(row=int(compact), column=0 if compact else 1,
-                                                columnspan=2 if compact else 1,
-                                                padx=(0, 0) if compact else (8, 0),
-                                                pady=(4, 0) if compact else (0, 0))
-
     def change_language(self, language):
         if language == self.language or self.action or self.closing:
             return
@@ -2018,7 +2022,7 @@ class Application:
         self.navigation()
         self.fit_compare_headings()
         self.window.after_idle(self.fit_result_navigation)
-        self.window.after_idle(self.fit_result_actions)
+        self.schedule_window_minimum()
         for label in (self.status, self.caption, self.elapsed, self.device):
             label.refresh()
         self.compare.schedule()

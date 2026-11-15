@@ -41,6 +41,10 @@ ENGLISH = {
     'Hintergrund aus Bild 2 übernehmen': 'Use the background from image 2',
     'Bild 2': 'Image 2',
     'LUT anwenden': 'Apply LUT',
+    'Beibehalten': 'Keep',
+    'LUT und Stärke für weitere Bilder übernehmen.': 'Keep the LUT and strength for subsequent images.',
+    '„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.':
+        '“Keep” reactivates the LUT at the same strength when you open the next input image.',
     'LUT-Vorschau': 'LUT preview',
     'Variante mit LUT erstellen': 'Create LUT variant',
     'Eingabebild': 'Input image',

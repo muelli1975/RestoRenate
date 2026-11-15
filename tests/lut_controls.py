@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 import time
 import tkinter as tk
 from tkinter import ttk
+from unittest.mock import patch
 
 from PIL import Image
 
@@ -112,8 +113,9 @@ def test_gui(root):
             assert window.winfo_height() >= window.minsize()[1]
             assert pane.winfo_height() >= pane.winfo_reqheight()
             assert gui.setup_notice.winfo_width() >= gui.setup_notice.winfo_reqwidth()
-            assert gui.compare.winfo_rooty() + gui.compare.winfo_height() <= gui.result_actions.winfo_rooty()
-            assert gui.result_actions.winfo_rooty() + gui.result_actions.winfo_height() <= gui.result_navigation.winfo_rooty()
+            lut_row = gui.look_controls.frame
+            assert gui.compare.winfo_rooty() + gui.compare.winfo_height() <= lut_row.winfo_rooty()
+            assert lut_row.winfo_rooty() + lut_row.winfo_height() <= gui.result_navigation.winfo_rooty()
             for widget in (gui.prompt, gui.seed_entry, gui.start_button, gui.stop_button):
                 assert widget.winfo_ismapped()
                 assert widget.winfo_height() >= widget.winfo_reqheight()
@@ -231,13 +233,10 @@ def test_gui(root):
         assert gui.result_caption.font.measure(visible) <= gui.result_caption.winfo_width()
         window.geometry('1130x750')
         window.update()
-        available = gui.result_actions.winfo_width()
-        needed = controls.frame.winfo_reqwidth() + gui.reuse_result_button.winfo_reqwidth() + 8
-        assert gui.reuse_result_button.grid_info()['row'] == int(available < needed)
-        if available >= needed:
-            assert controls.save_button.winfo_rootx() < gui.reuse_result_button.winfo_rootx()
-        else:
-            assert controls.save_button.winfo_rooty() < gui.reuse_result_button.winfo_rooty()
+        assert gui.reuse_result_button.master is gui.browse_controls
+        assert gui.reuse_result_button.winfo_rootx() > gui.next_button.winfo_rootx()
+        assert controls.keep_check.winfo_rootx() > controls.check.winfo_rootx()
+        assert controls.keep_check.winfo_rootx() < controls.choose.winfo_rootx()
 
         probe = ttk.Menubutton(window, style=controls.choose.cget('style'))
         for language in ('de', 'en'):
@@ -245,8 +244,10 @@ def test_gui(root):
             for width in (950, 1600):
                 window.geometry(f'{width}x750')
                 window.update()
-                bounds = (controls.choose.winfo_width(), gui.reuse_result_button.grid_info()['row'])
+                bounds = controls.choose.winfo_width(), gui.preview_tools.grid_info()['row']
                 picker = controls.choose.master
+                assert controls.frame.winfo_width() >= controls.frame.winfo_reqwidth()
+                assert gui.browse_controls.winfo_width() >= gui.browse_controls.winfo_reqwidth()
                 assert abs((controls.choose.winfo_width() - picker.winfo_reqwidth())
                            - (controls.slider.winfo_width() - controls.slider.winfo_reqwidth())) <= 1
                 for key, entry in catalog().items():
@@ -260,7 +261,7 @@ def test_gui(root):
                     if free >= 2 * name_extra:
                         assert controls.choose.winfo_width() >= probe.winfo_reqwidth()
                     assert controls.choose.cget('text') == probe.cget('text')
-                    assert (controls.choose.winfo_width(), gui.reuse_result_button.grid_info()['row']) == bounds
+                    assert (controls.choose.winfo_width(), gui.preview_tools.grid_info()['row']) == bounds
         probe.destroy()
 
         controls.select(other_look)
@@ -272,6 +273,64 @@ def test_gui(root):
         gui.pick_sources(new_source)
         assert gui.index == -1 and controls.key == first_look
         assert controls.look().strength == 95 and not controls.enabled.get()
+
+        gui.pick_sources(source)
+        gui.input_view_button.invoke()
+        controls.check.toggle()
+        controls.select(other_look)
+        controls.set_strength(35)
+        controls.keep_check.toggle()
+        assert controls.kept_look == Look(other_look, 35)
+        gui.result_view_button.invoke()
+        assert controls.keep.get() and not controls.enabled.get() and gui.compare.look_basis is None
+        controls.check.toggle()
+        controls.select(first_look)
+        controls.set_strength(80)
+        assert controls.kept_look == Look(other_look, 35)
+        gui.reuse_result_button.invoke()
+        assert gui.index == -1 and controls.keep.get() and not controls.enabled.get()
+        gui.pick_sources(new_source)
+        assert controls.armed() == Look(other_look, 35)
+        assert gui.compare.look_basis is gui.compare.before_image
+
+        gui.seed_value.set('')
+        with patch.object(app.simpledialog, 'askstring', return_value='Series look'):
+            gui.save_processing_preset()
+        assert gui.processing_presets['Series look']['lut'] == Look(other_look, 35).record()
+        assert app.read_settings()['lut'] == {'strength': 35}
+        controls.keep_check.toggle()
+        gui.load_processing_preset('Standard')
+        assert not controls.keep.get() and controls.armed() is None
+        gui.load_processing_preset('Series look')
+        assert controls.armed() == Look(other_look, 35) and not controls.keep.get()
+        gui.pick_sources(source)
+        assert gui.index >= 0 and controls.armed() is None and controls.key == first_look
+        gui.load_processing_preset('Series look')
+        assert gui.index == -1 and controls.armed() == Look(other_look, 35)
+        assert gui.compare.look_basis is gui.compare.before_image
+
+        batch = root / 'batch'
+        batch.mkdir()
+        for name, color in (('one.png', '#704924'), ('two.png', '#476429')):
+            with Image.new('RGB', (32, 24), color) as image:
+                image.save(batch / name)
+        gui.pick_sources(batch)
+        gui.load_processing_preset('Series look')
+        gui.method.set(app.translate(app.METHODS[UPSCALING]))
+        gui.choose_method()
+        gui.size.set(app.translate(DOUBLE_SIZE))
+        gui.upscaler.set(LANCZOS)
+        gui.start_clicked()
+        deadline = time.monotonic() + 8
+        while gui.action and time.monotonic() < deadline:
+            window.update()
+            time.sleep(.025)
+        assert gui.action is None and len(gui.results) == 2 and not controls.enabled.get()
+        for image_path, output, *_ in gui.results:
+            with Image.open(image_path) as image, Image.open(output) as result:
+                with image.resize(result.size, Image.Resampling.LANCZOS) as scaled:
+                    with apply_look(scaled, Look(other_look, 35)) as expected:
+                        assert result.size == (64, 48) and result.tobytes() == expected.tobytes()
     finally:
         window.destroy()
 

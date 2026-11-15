@@ -6,7 +6,7 @@ import customtkinter as ctk
 
 from language import translate
 from looks import Look, catalog
-from theme import BORDER, DISABLED, GOLD, GOLD_LIGHT, PANEL_BG, SECONDARY_BG, TEXT, checkbox, set_control_state
+from theme import BORDER, DISABLED, GOLD, GOLD_LIGHT, PANEL_BG, SECONDARY_BG, TEXT, attach_tooltip, checkbox, set_control_state
 
 SECTIONS = {
     'film': 'Farbfilm & Kameralooks', 'monochrome': 'Schwarzweiß & Tonung',
@@ -20,6 +20,8 @@ class LookControls:
         self.app = app
         self.view = app.compare
         self.enabled = tk.BooleanVar(master=parent, value=False)
+        self.keep = tk.BooleanVar(master=parent, value=False)
+        self.kept_look = None
         pref = app.config.get('lut')
         pref = pref if isinstance(pref, dict) else {}
         self.first_key = self.key = next(iter(catalog()))
@@ -35,14 +37,17 @@ class LookControls:
         self.wheel_remainder = 0
         self.resetting_slider = False
         row = self.frame = tk.Frame(parent, bg=PANEL_BG)
-        row.columnconfigure(1, weight=1)
         row.columnconfigure(2, weight=1)
+        row.columnconfigure(3, weight=1)
         self.check = app.labelled(checkbox, row, 'LUT anwenden', variable=self.enabled, command=self.toggle_changed)
         self.check.grid(row=0, column=0, sticky='w', padx=(0, 5))
+        self.keep_check = app.labelled(checkbox, row, 'Beibehalten', variable=self.keep, command=self.toggle_keep)
+        self.keep_check.grid(row=0, column=1, sticky='w', padx=(0, 5))
+        attach_tooltip(self.keep_check, lambda: translate('LUT und Stärke für weitere Bilder übernehmen.'))
         self.menu_colors = menu_colors
         # Keep the field's minimum size independent of the selected preset.
         picker = tk.Frame(row, bg=PANEL_BG)
-        picker.grid(row=0, column=1, sticky='ew', padx=(0, 6))
+        picker.grid(row=0, column=2, sticky='ew', padx=(0, 6))
         self.choose = ttk.Menubutton(picker, width=11, style='Input.TMenubutton')
         picker.configure(width=self.choose.winfo_reqwidth(), height=self.choose.winfo_reqheight())
         picker.pack_propagate(False)
@@ -54,13 +59,13 @@ class LookControls:
                                     variable=self.strength, command=self.set_strength, bg_color=PANEL_BG,
                                     fg_color=BORDER, progress_color=GOLD,
                                     button_color=GOLD_LIGHT, button_hover_color=GOLD_LIGHT)
-        self.slider.grid(row=0, column=2, sticky='ew')
+        self.slider.grid(row=0, column=3, sticky='ew')
         self.value = ctk.CTkLabel(row, width=36, height=20, fg_color=PANEL_BG, anchor='e',
                                   text_color=TEXT, font=('Segoe UI', 13))
-        self.value.grid(row=0, column=3, padx=(2, 6))
+        self.value.grid(row=0, column=4, padx=(2, 6))
         self.save_button = app.labelled(ttk.Button, row, 'Variante mit LUT erstellen',
                                        command=app.create_lut_variant, style='Input.TButton')
-        self.save_button.grid(row=0, column=4, sticky='e')
+        self.save_button.grid(row=0, column=5, sticky='e')
         self.slider.bind('<Double-Button-1>', self.begin_slider_reset)
         self.slider.bind('<ButtonRelease-1>', self.finish_slider_reset)
         self.slider.bind('<MouseWheel>', self.wheel)
@@ -115,8 +120,23 @@ class LookControls:
         if reset_armed:
             self.enabled.set(False)
 
-    def reset_preset(self):
+    def load_input(self, *, use_kept):
         self.key = self.first_key
+        self.set_look(self.kept_look if use_kept else None)
+
+    def set_look(self, look):
+        self.clear()
+        if look is not None:
+            self.key = look.key
+            self.strength.set(look.strength)
+            self.enabled.set(True)
+
+    def toggle_keep(self):
+        self.kept_look = self.look() if self.keep.get() else None
+
+    def update_kept_look(self):
+        if self.keep.get() and not self.result:
+            self.kept_look = self.look()
 
     def toggle_changed(self):
         self.hover = self.hover_menu = None
@@ -139,11 +159,13 @@ class LookControls:
     def select(self, key):
         self.key = key
         self.hover = self.hover_menu = None
+        self.update_kept_look()
         self.refresh()
 
     def set_strength(self, value):
         if self.available and self.enabled.get():
             self.strength.set(round(float(value)))
+            self.update_kept_look()
             self.refresh()
 
     def step(self, amount):
@@ -255,6 +277,7 @@ class LookControls:
         active = self.available and self.enabled.get()
         state = 'normal' if active else 'disabled'
         set_control_state(self.check, 'normal' if self.available else 'disabled')
+        set_control_state(self.keep_check, 'normal' if self.available else 'disabled')
         self.choose.configure(state=state, text=self.label(catalog()[self.key]))
         self.slider.configure(state=state, progress_color=GOLD if active else BORDER,
                               button_color=GOLD_LIGHT if active else DISABLED,
@@ -292,6 +315,10 @@ def open_controls(app):
     )):
         tk.Label(body, text=key, fg=GOLD_LIGHT, bg=SECONDARY_BG).grid(row=row, column=0, sticky='w', padx=(0, 14), pady=2)
         tk.Label(body, text=translate(description), fg=TEXT, bg=SECONDARY_BG).grid(row=row, column=1, sticky='w', pady=2)
+    tk.Label(body, text=translate('„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.'),
+             fg=TEXT, bg=SECONDARY_BG, justify='left', wraplength=380).grid(
+                 row=row + 1, column=0, columnspan=2, sticky='w', pady=(8, 0),
+             )
     ttk.Button(dialog, text=translate('Schließen'), command=dialog.destroy).pack(pady=(0, 12))
     dialog.bind('<Escape>', lambda _event: dialog.destroy())
     dialog.bind('<F1>', lambda _event: dialog.destroy())
