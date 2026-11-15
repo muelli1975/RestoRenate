@@ -574,7 +574,11 @@ class Application:
         # A procedure change can resize the grid's request without resizing its frame.
         self.window.update_idletasks()
         self.minimum_size_job = None
-        padding = self.window.tk.splitlist(self.footer.pack_info()['pady'])
+        padding = self.footer.pack_info()['pady']
+        if isinstance(padding, int):
+            padding = (padding, padding)
+        else:
+            padding = self.window.tk.splitlist(padding)
         footer_gap = sum(self.window.winfo_pixels(value) for value in padding)
         content_height = sum(section.winfo_reqheight()
                              for section in (self.header, self.settings_panel, self.footer))

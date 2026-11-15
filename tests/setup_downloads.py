@@ -12,6 +12,7 @@ from portable_setup import COMFY_CONSTRAINTS, Setup, SetupCancelled, UNIX_RUNTIM
 
 
 def check_downloads(root):
+    root = root.resolve()
     original = b'sample model with known bytes'
     spec = {
         'path': 'models/test/model.bin',

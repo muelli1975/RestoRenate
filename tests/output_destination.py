@@ -44,9 +44,10 @@ def check_output_destination():
                 assert gui.output_mode.cget('text') == 'Use a subfolder inside the input folder'
 
                 gui.setup_for_job = Mock(return_value=Mock(ready=lambda: True))
-                gui.launch = Mock()
+                gui.start_worker = Mock()
                 gui.start_clicked()
-                assert gui.launch.call_args.args[1][1] == second / 'output'
+                _, _, _, _, job, *_ = gui.start_worker.call_args.args
+                assert job[1] == second / 'output'
 
                 with patch.object(app.filedialog, 'askdirectory', return_value=str(custom)):
                     gui.choose_output()
@@ -63,7 +64,8 @@ def check_output_destination():
                     assert dialog.call_args.kwargs['initialdir'] == str(second)
                 assert gui.output_entry.get() == str(custom)
                 gui.start_clicked()
-                sources, target, output_format, *_ = gui.launch.call_args.args[1]
+                _, _, _, _, job, *_ = gui.start_worker.call_args.args
+                sources, target, output_format, *_ = job
                 assert target == custom
                 with Image.open(sources[0]) as image:
                     output, _ = save_result(image, sources[0], target, output_format, None, None)
