@@ -27,7 +27,7 @@ from export_metadata import editor_graph
 from imaging import exiftool_executable
 from looks import Look, apply_look, catalog
 from methods import (COLORIZATION_NAMES, DDCOLOR, DDCOLOR_ARTISTIC, DDCOLOR_PAPER, DDCOLOR_TINY,
-                     DEOLDIFY_STABLE, LANCZOS, MICROSOFT, UPSCALING)
+                     DEOLDIFY_STABLE, FIBO2_TURBO, LANCZOS, MICROSOFT, UPSCALING)
 from portable_paths import CODE
 from portable_setup import COMFY_CONSTRAINTS, UNIX_RUNTIME
 from preload_models import PreloadDialog
@@ -335,7 +335,8 @@ def test_gui(root):
         app.JOBS_LOG = root / 'jobs.jsonl'
         source = root / 'scene.png'
         first_look, other_look, *_ = catalog()
-        app.SETTINGS.write_text(json.dumps({'lut': {'id': other_look, 'strength': 100}}), encoding='utf-8')
+        app.SETTINGS.write_text(json.dumps({'method': FIBO2_TURBO, 'lut': {'id': other_look, 'strength': 100}}),
+                                encoding='utf-8')
         gui = app.Application(window)
         assert gui.look_controls.look().key == first_look
         assert window.title() == f'{app.APP_NAME} – {app.APP_VERSION}'

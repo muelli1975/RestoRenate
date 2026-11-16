@@ -102,10 +102,11 @@ Verfahren und Hardware
   „Ohne Nachskalierung“ ist voreingestellt.
 
 Unter „Berechnung“ NVIDIA, CPU oder AMD (ROCm) wählen. Ein Wechsel gilt
-nach einem Neustart. Bei einem NVIDIA-Startfehler bietet die App für geeignete
-Verfahren einen CPU-Wechsel für diese Sitzung an. Für CPU-Bearbeitung eignen
-sich besonders Microsoft · Bringing Old Photos Back to Life, die Kolorierung
-und Lanczos. Bei den Edit-Modellen stehen Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B
+nach einem Neustart. Die App merkt sich Verfahren und Skalierung getrennt für
+CPU und GPU. Der CPU-Standard ist Microsoft · Bringing Old Photos Back to Life
+mit „Ohne Nachskalierung“. Bei einem NVIDIA-Startfehler bietet die App für
+geeignete Verfahren an, denselben Auftrag in dieser Sitzung auf der CPU
+fortzusetzen. Bei den Edit-Modellen stehen Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B
 und die beiden Qwen-Lightning-Varianten mit je vier Schritten zur Wahl.
 Auch diese Modelle können auf der CPU sehr lange laufen
 und viel Arbeitsspeicher beanspruchen. Auch KI-Upscaling benötigt Rechenzeit.
@@ -134,8 +135,9 @@ verwenden eine eingegebene Seitenlänge. Die App hält das Seitenverhältnis.
 „Ohne Nachskalierung“ speichert in Arbeitsauflösung. „Nur hochskalieren“
 arbeitet mit dem Eingabebild. KI-Upscaling wird beim Vergrößern verwendet.
 Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
-Zielgröße an. Für Restaurierung und „Nur hochskalieren“ sind 2160 px Bildhöhe
-und Nomos2 HQ MoSR 4× voreingestellt.
+Zielgröße an. Die GPU-Voreinstellung für Restaurierung ist Fibo 2.0 Edit Turbo
+mit 2160 px Bildhöhe und Nomos2 HQ MoSR 4×. „Nur hochskalieren“ verwendet
+standardmäßig ebenfalls diese Zielgröße und diesen Upscaler.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
 Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
 gedacht. Beide Modelle werden bei Bedarf heruntergeladen.
@@ -286,10 +288,11 @@ Methods and hardware
   “No resizing” is the default.
 
 Use “Compute” to choose NVIDIA, CPU or AMD (ROCm). The change takes effect
-after restarting. If NVIDIA fails to start, the app offers a switch to CPU
-for the current session when the method allows it. Microsoft · Bringing Old
-Photos Back to Life, colorization and Lanczos are the practical CPU starting
-points. Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B and the two Qwen Lightning
+after restarting. The app remembers the method and scaling settings separately
+for CPU and GPU. The CPU default is Microsoft · Bringing Old Photos Back to Life
+with “No resizing”. If NVIDIA fails to start, the app offers to continue the
+same job on the CPU for this session when the method supports it.
+Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B and the two Qwen Lightning
 variants are the four-step edit models available in CPU mode. They can take
 a long time and use substantial RAM. AI upscaling also takes processing time. Suitability for 8 GB of
 VRAM depends on the model, the image and available GPU and system memory.
@@ -315,7 +318,8 @@ edge” use the entered side length. RestoRenate preserves the aspect ratio.
 “No resizing” exports at the working size. “Upscale only” starts with the
 input image. AI upscaling applies when enlarging the image. Real-ESRGAN
 selects its 2× or 4× model. Lanczos resizes to the exact output dimensions.
-Restoration and "Upscale only" default to 2160 px height and Nomos2 HQ MoSR 4×.
+The GPU restoration default is Fibo 2.0 Edit Turbo with a height of 2160 px
+and Nomos2 HQ MoSR 4×. “Upscale only” defaults to the same height and upscaler.
 4× FaceUpDAT is designed for portraits with clean source images.
 Real-ESRGAN Anime 4× and AnimeSharp 4× are intended for drawings and illustrations.
 Both models are downloaded on demand.

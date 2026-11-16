@@ -1,4 +1,5 @@
 """Check the new model plans, edit graphs, and the packaged controls."""
+from contextlib import contextmanager
 import json
 from pathlib import Path
 import sys
@@ -13,9 +14,11 @@ root = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).reso
 sys.path.insert(0, str(root / '_internal' if (root / '_internal').is_dir() else root))
 
 from export_metadata import editable_workflow, seed_from_metadata
-from methods import FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, UPSCALERS, UPSCALING, available_methods, model_files
-from portable_setup import MACOS, MPS, NVIDIA, Setup
+from methods import (DDCOLOR_TINY, FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ,
+                     UPSCALERS, UPSCALING, available_methods, model_files)
+from portable_setup import CPU, MACOS, MPS, NVIDIA, Setup
 from restoration import restoration_graph
+from sizes import DOUBLE_SIZE, FULL_HD, NO_RESCALE, ULTRA_HD
 from theme import GOLD
 
 
@@ -148,6 +151,76 @@ def check_layout(source, language):
         window.destroy()
 
 
+def check_compute_settings(directory):
+    import app
+
+    @contextmanager
+    def launch():
+        gui = app.Application(tk.Tk())
+        try:
+            yield gui
+        finally:
+            gui.destroy_window()
+
+    def switch(gui, compute):
+        gui.compute.set(compute)
+        gui.choose_compute()
+
+    def select(gui, method, size, upscaler):
+        gui.method.set(app.translate(METHODS[method]))
+        gui.choose_method()
+        gui.size.set(app.translate(size))
+        gui.upscaler.set(upscaler)
+        assert gui.save_settings()
+
+    def selected(gui):
+        return gui.current_method, gui.size_choice(), gui.effective_upscaler()
+
+    settings = directory / 'compute-settings.json'
+    gpu = MPS if MACOS else NVIDIA
+    cpu_standard = (MICROSOFT, NO_RESCALE, LANCZOS)
+    gpu_standard = (FIBO2_TURBO, ULTRA_HD, NOMOS2_HQ)
+    with patch.object(app, 'SETTINGS', settings), patch.object(app.messagebox, 'showinfo'):
+        settings.write_text(json.dumps({'compute': CPU}), encoding='utf-8')
+        with launch() as gui:
+            assert selected(gui) == cpu_standard
+            assert gui.upscale_options.instate(['disabled'])
+            select(gui, DDCOLOR_TINY, DOUBLE_SIZE, LANCZOS)
+            gui.load_processing_preset('Standard')
+            assert selected(gui) == cpu_standard
+            switch(gui, gpu)
+            assert gui.active_compute == CPU and selected(gui) == cpu_standard
+            gui.save_settings()
+        with launch() as gui:
+            assert gui.active_compute == gpu and selected(gui) == gpu_standard
+
+        # A settings file from 1.1 belongs to the device it was saved with.
+        settings.write_text(json.dumps({'compute': gpu, 'method': FLUX2,
+                                        'scaling': {'restoration': {'size': FULL_HD, 'upscaler': LANCZOS}}}),
+                            encoding='utf-8')
+        gpu_saved = (FLUX2, FULL_HD, LANCZOS)
+        cpu_saved = (DDCOLOR_TINY, DOUBLE_SIZE, LANCZOS)
+        with launch() as gui:
+            assert selected(gui) == gpu_saved
+            switch(gui, CPU)
+        with launch() as gui:
+            assert selected(gui) == cpu_standard
+            select(gui, *cpu_saved)
+            switch(gui, gpu)
+        with launch() as gui:
+            assert selected(gui) == gpu_saved
+            with patch.object(app.messagebox, 'askyesno', return_value=True):
+                assert gui.offer_cpu_fallback('GPU test')
+            assert gui.active_compute == CPU and selected(gui) == gpu_saved
+            select(gui, FIBO2_TURBO, NO_RESCALE, LANCZOS)
+        with launch() as gui:
+            assert gui.active_compute == gpu and selected(gui) == gpu_saved
+            switch(gui, CPU)
+        with launch() as gui:
+            assert selected(gui) == cpu_saved
+    print('CPU/GPU defaults, settings migration, restart switching and temporary fallback passed.')
+
+
 if __name__ == '__main__':
     check_graphs()
     with TemporaryDirectory() as directory:
@@ -156,3 +229,4 @@ if __name__ == '__main__':
             image.save(source)
         for language in ('de', 'en'):
             check_layout(source, language)
+        check_compute_settings(Path(directory))

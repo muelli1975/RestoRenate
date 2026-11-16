@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tkinter as tk
 from tkinter import ttk
+from unittest.mock import patch
 from xml.etree import ElementTree
 
 from PIL import Image
@@ -16,8 +17,8 @@ sys.path.insert(0, str(root / '_internal'))
 import app
 from imaging import exiftool_executable, save_result
 from local_backend import Backend
-from methods import (ANIMESHARP, DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, REALESRGAN_ANIME, ULTRASHARP_LITE,
-                     UPSCALING, resolve_upscaler)
+from methods import (ANIMESHARP, DDCOLOR_TINY, FIBO2_TURBO, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ,
+                     REALESRGAN_ANIME, ULTRASHARP_LITE, UPSCALING, resolve_upscaler)
 from photo_colors import Colorizer
 from portable_setup import CPU, MACOS, MPS, UNIX_RUNTIME, Setup
 from preload_models import PreloadDialog
@@ -39,6 +40,11 @@ def test_gui(source):
         ttk.Style(window).theme_use('clam')
         native_focus = field_focus_maps(window)
         gui = app.Application(window)
+        if gui.active_compute == CPU:
+            assert gui.current_method == MICROSOFT and gui.size_choice() == NO_RESCALE
+        with patch.object(gui, 'save_settings'):
+            gui.method.set(app.translate(METHODS[FIBO2_TURBO]))
+            gui.choose_method()
         window.geometry('950x720')
         check_field_focus(gui, native_focus)
         gui.pick_sources(source)

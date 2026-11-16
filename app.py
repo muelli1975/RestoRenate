@@ -103,6 +103,9 @@ BUILTIN_PROCESSING_PRESETS = {
         'size': ULTRA_HD, 'upscaler': resolve_upscaler(DEFAULT_METHOD),
     },
 }
+CPU_PROCESSING_PRESETS = {
+    'Standard': {'method': MICROSOFT, 'size': NO_RESCALE, 'upscaler': LANCZOS},
+}
 SETTINGS = ROOT / 'settings' / 'settings.json'
 JOBS_LOG = ROOT / 'logs' / 'jobs.jsonl'
 FILE_TYPES = [('Bilddateien', ' '.join('*' + ext for ext in sorted(EXTENSIONS))), ('Alle Dateien', '*')]
@@ -155,6 +158,17 @@ def read_processing_presets(saved):
             if isinstance(name, str) and name.strip() and name not in BUILTIN_PROCESSING_PRESETS
             and isinstance(preset, dict) and isinstance(preset.get('method'), str)
             and preset['method'] in METHODS}
+
+
+def processing_mode(compute):
+    return CPU if compute == CPU else 'gpu'
+
+
+def read_processing_by_compute(settings, compute):
+    saved = settings.get('processing_by_compute')
+    if not isinstance(saved, dict):
+        return {processing_mode(compute): {'method': settings.get('method'), 'scaling': settings.get('scaling')}}
+    return {mode: saved[mode] for mode in (CPU, 'gpu') if isinstance(saved.get(mode), dict)}
 
 
 def processing_device(method, device, colorizer_method):
@@ -237,9 +251,12 @@ class Application:
         self.startup_compute = self.active_compute = selected_compute
         self.verified_compute = None
         self.compute = tk.StringVar(value=selected_compute)
-        previous_method = self.config.get('method')
+        self.processing_by_compute = read_processing_by_compute(self.config, selected_compute)
+        processing = self.processing_by_compute.get(processing_mode(selected_compute), {})
+        previous_method = processing.get('method')
         self.method_ids = self.available_method_ids()
-        self.current_method = previous_method if previous_method in self.method_ids.values() else DEFAULT_METHOD
+        default_method = self.builtin_processing_presets()['Standard']['method']
+        self.current_method = previous_method if previous_method in self.method_ids.values() else default_method
         self.method = tk.StringVar(value=translate(METHODS[self.current_method]))
         self.scratches = tk.BooleanVar(value=bool(self.config.get('scratches', True)))
         self.faces = tk.BooleanVar(value=bool(self.config.get('faces', False)))
@@ -290,7 +307,7 @@ class Application:
         if not isinstance(fmt, str) or fmt not in FORMATS:
             fmt = 'PNG'
         self.output_format = tk.StringVar(value=fmt)
-        saved_scales = self.config.get('scaling')
+        saved_scales = processing.get('scaling')
         self.scaling = {}
         if isinstance(saved_scales, dict):
             self.scaling = {key: saved_scales[key] for key in ('restoration', 'colorization', UPSCALING)
@@ -873,6 +890,7 @@ class Application:
             return False
         if self.preload_installing:
             return False
+        self.remember_compute_processing()
         self.backend.close()
         self.backend.compute = CPU
         self.active_compute = CPU
@@ -1417,9 +1435,20 @@ class Application:
             size=self.size_choice(), side_pixels=self.side_pixels.get(), upscaler=self.upscaler.get(),
         )
 
+    def remember_compute_processing(self):
+        self.remember_scaling()
+        # A session-only CPU fallback keeps the job's options in memory.
+        if self.active_compute == self.startup_compute:
+            self.processing_by_compute[processing_mode(self.active_compute)] = dict(
+                method=self.current_method, scaling=self.scaling.copy(),
+            )
+
     def load_scaling(self, preset=None):
         method = self.current_method
-        values = self.scaling.get(self.scaling_group(), {}) if preset is None else preset
+        values = self.scaling.get(self.scaling_group()) if preset is None else preset
+        if values is None:
+            standard = self.builtin_processing_presets()['Standard']
+            values = standard if method == standard['method'] else {}
         self.size.set(translate(method_size(method, values.get('size'))))
         self.side_pixels.set(str(values.get('side_pixels') or 2160))
         self.upscaler.set(resolve_upscaler(method, values.get('upscaler')))
@@ -1578,13 +1607,17 @@ class Application:
         if self.save_settings() and self.action is None:
             self.status.set_message('Prompt „{0}“ gespeichert.', name)
 
+    def builtin_processing_presets(self):
+        return CPU_PROCESSING_PRESETS if self.active_compute == CPU else BUILTIN_PROCESSING_PRESETS
+
     def refresh_processing_menu(self):
         self.processing_menu.delete(0, 'end')
         self.processing_delete_menu.delete(0, 'end')
         available = set(self.method_ids.values())
-        for name, preset in {**BUILTIN_PROCESSING_PRESETS, **self.processing_presets}.items():
+        builtin = self.builtin_processing_presets()
+        for name, preset in {**builtin, **self.processing_presets}.items():
             self.processing_menu.add_command(
-                label=translate(name) if name in BUILTIN_PROCESSING_PRESETS else name,
+                label=translate(name) if name in builtin else name,
                 command=lambda key=name: self.load_processing_preset(key),
                 state='normal' if preset['method'] in available else 'disabled',
             )
@@ -1652,7 +1685,7 @@ class Application:
     def load_processing_preset(self, name):
         if self.action:
             return
-        preset = BUILTIN_PROCESSING_PRESETS.get(name) or self.processing_presets.get(name)
+        preset = self.builtin_processing_presets().get(name) or self.processing_presets.get(name)
         if preset is None or preset['method'] not in self.method_ids.values():
             return
         self.remember_prompt()
@@ -1704,14 +1737,14 @@ class Application:
 
     def save_settings(self):
         self.remember_prompt()
-        self.remember_scaling()
+        self.remember_compute_processing()
         data = dict(input_folder=self.input_folder, output_in_source=self.output_in_source.get(),
                     custom_output=self.custom_output.get().strip(),
                     format=self.output_format.get(), seed=self.seed, compute=self.compute.get(),
-                    method=self.current_method, prompt_draft=self.draft, presets=self.custom,
+                    processing_by_compute=self.processing_by_compute, prompt_draft=self.draft, presets=self.custom,
                     language=self.language,
                     processing_presets=self.processing_presets,
-                    variants=str(self.variant_count), scaling=self.scaling,
+                    variants=str(self.variant_count),
                     scratches=self.scratches.get(), faces=self.faces.get(),
                     lut={'strength': self.look_controls.look().strength}, **self.microsoft_colorization_settings())
         stage = SETTINGS.with_suffix('.tmp')
