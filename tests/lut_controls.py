@@ -432,8 +432,9 @@ def test_gui(root):
         _, cinema_entry = menu.categories[cinema]
         assert menu.entrycget(film_entry, 'image') == film.entrycget(film_index, 'image') == str(menu.check)
         assert menu.entrycget(cinema_entry, 'image') == cinema.entrycget(cinema_index, 'image') == str(menu.blank)
-        cinema.activate(cinema_index)
-        cinema.event_generate('<<MenuSelect>>')
+        # Native menus differ in how they dispatch synthetic events while closed.
+        with patch.object(cinema, 'index', return_value=0):
+            controls.highlight(cinema, [('classic_cinema', catalog()['classic_cinema'])])
         assert controls.hover == 'classic_cinema'
         assert controls.look().key != 'classic_cinema' and menu.entrycget(film_entry, 'image') == str(menu.check)
         cinema.invoke(cinema_index)
