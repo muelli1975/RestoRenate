@@ -5,7 +5,6 @@ FIBO2_TURBO = 'fibo2-edit-turbo'
 DEFAULT_METHOD = FIBO2_TURBO
 FLUX2 = 'flux2-klein'
 FLUX3 = 'flux3-klein'
-BOOGU = 'boogu-edit-turbo'
 FLUX_METHODS = (FLUX2, FLUX3)
 QWEN2509_NUNCHAKU = 'qwen2509-nunchaku'
 QWEN2509_LIGHTNING_4 = 'qwen2509-lightning-4'
@@ -67,7 +66,6 @@ METHODS = {
     FIBO2_TURBO: 'Fibo 2.0 Edit Turbo',
     FLUX2: 'FLUX.2 [klein] 4B',
     FLUX3: 'FLUX 3 Image Klein · INT8',
-    BOOGU: 'Boogu 0.1 Edit-Turbo · INT8',
     QWEN2509_NUNCHAKU: 'Qwen Image Edit 2509 · Nunchaku INT4',
     QWEN2509_LIGHTNING_4: 'Qwen Image Edit 2509 · Lightning (4 Schritte)',
     QWEN2509_BASE: 'Qwen Image Edit 2509',
@@ -89,7 +87,6 @@ METHOD_FILENAME_LABELS = {
     FIBO2_TURBO: 'Fibo-2.0',
     FLUX2: 'FLUX2-4B',
     FLUX3: 'FLUX3-Klein',
-    BOOGU: 'Boogu-Edit-Turbo',
     QWEN2509_NUNCHAKU: 'Qwen-2509-Nunchaku',
     QWEN2509_LIGHTNING_4: 'Qwen-2509-4step',
     QWEN2509_BASE: 'Qwen-2509',
@@ -122,7 +119,6 @@ LICENSES = {
     FIBO2_TURBO: 'CC BY-NC 4.0 · nicht kommerziell',
     FLUX2: 'Apache 2.0',
     FLUX3: 'FLUX Kommunity License v1.0',
-    BOOGU: 'Apache 2.0',
     **dict.fromkeys((*QWEN_METHODS, *FIRERED_METHODS), 'Apache 2.0'),
     MICROSOFT: 'MIT-Code',
     UPSCALING: 'siehe gewähltes Modell',
@@ -182,11 +178,6 @@ MODEL_FILES = {
         'text': QWEN3VL_4B,
         'vae': FLUX_VAE,
         'prompt_upsampler': ('CLIPLoader', 'clip_name', 'qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors'),
-    },
-    BOOGU: {
-        'diffusion': ('UNETLoader', 'unet_name', 'boogu_image_edit_turbo_hotfix_1k_20260708_int8_convrot.safetensors'),
-        'text': ('CLIPLoader', 'clip_name', 'qwen3vl_8b_fp8_scaled.safetensors'),
-        'vae': ('VAELoader', 'vae_name', 'flux1_vae_bf16.safetensors'),
     },
     FIBO2_TURBO: {
         'diffusion': ('UNETLoader', 'unet_name', 'fibo2_edit_turbo_int8_convrot.safetensors'),

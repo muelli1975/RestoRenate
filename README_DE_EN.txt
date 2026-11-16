@@ -372,13 +372,11 @@ RESTORENATE_CPU_THREADS to use a fixed thread count for comparisons.
 ## Neu in 1.2 Test / New in 1.2 Test
 
 FLUX 3 Image Klein INT8 arbeitet in 16 Schritten mit einem lokalen
-Prompt-Umschreiber. Boogu 0.1 Edit-Turbo verwendet den 1K-Hotfix für ein Bild
-und vier Schritte. Beide Modelle sind über „Modelle vorab laden …“ in den
-GPU-Modi verfügbar. Hinweise zu Download und Lizenzen stehen in README_DE.md.
+Prompt-Umschreiber. Das Modell ist in den GPU-Modi über „Modelle vorab laden …“
+verfügbar. Hinweise zu Download und Lizenz stehen in README_DE.md.
 
-FLUX 3 Image Klein INT8 uses 16 steps and a local prompt upsampler.
-Boogu 0.1 Edit-Turbo uses the single-image 1K hotfix and four steps.
-Both models are available under “Download models …” in GPU modes. See
+FLUX 3 Image Klein INT8 uses 16 steps and a local prompt upsampler. It is
+available under “Download models …” in GPU modes. See
 README.md for download and license details.
 
 ## Neu in 1.1

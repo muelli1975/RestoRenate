@@ -198,29 +198,3 @@ def flux3_graph(models, filename, size, prompt, seed, *, second_image=None):
         seed=seed, steps=16, cfg=1.0, sampler_name='euler', scheduler='simple', denoise=1.0)
     add(10, 'VAEDecode', samples=['9', 0], vae=['3', 0])
     return graph
-
-
-def boogu_graph(models, filename, size, prompt, seed):
-    width, height = size
-    graph = {}
-
-    def add(number, kind, **inputs):
-        graph[str(number)] = {'class_type': kind, 'inputs': inputs}
-
-    add(1, 'UNETLoader', unet_name=models['diffusion'], weight_dtype='default')
-    add(2, 'CLIPLoader', clip_name=models['text'], type='boogu', device='default')
-    add(3, 'VAELoader', vae_name=models['vae'])
-    add(4, 'LoadImage', image=filename)
-    add(6, 'TextEncodeBooguEdit', clip=['2', 0], vae=['3', 0], prompt=prompt, negative_prompt='',
-        **{'images.image_1': ['4', 0]})
-    add(16, 'EmptyLatentImage', width=width, height=height, batch_size=1)
-    # Boogu's 1K edit hotfix uses DMD prediction and fresh noise at each step.
-    # ComfyUI's FLOW model reverses its timestep, so use LCM at the complementary sigmas.
-    add(17, 'ManualSigmas', sigmas='1, 0.75, 0.5, 0.25, 0')
-    add(18, 'KSamplerSelect', sampler_name='lcm')
-    add(19, 'RandomNoise', noise_seed=seed)
-    add(20, 'CFGGuider', model=['1', 0], positive=['6', 0], negative=['6', 1], cfg=1.0)
-    add(9, 'SamplerCustomAdvanced', noise=['19', 0], guider=['20', 0], sampler=['18', 0],
-        sigmas=['17', 0], latent_image=['16', 0])
-    add(10, 'VAEDecode', samples=['9', 0], vae=['3', 0])
-    return graph

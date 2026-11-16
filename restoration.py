@@ -27,9 +27,9 @@ from sizes import (NO_RESCALE, limited_size, method_size, needs_enlargement, out
                    restoration_canvas, restoration_size)
 from method_graphs import (
     RESULT_NODE, append_export, append_upscale,
-    boogu_graph, fibo2_graph, flux2_graph, flux3_graph, microsoft_graph, qwen_graph, standalone_upscale_graph,
+    fibo2_graph, flux2_graph, flux3_graph, microsoft_graph, qwen_graph, standalone_upscale_graph,
 )
-from methods import (BOOGU, COLORIZATION_METHODS, DEFAULT_METHOD, FIBO2_TURBO, FIRERED_METHODS, FLUX2, FLUX3,
+from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, FIBO2_TURBO, FIRERED_METHODS, FLUX2, FLUX3,
                      FLUX_METHODS, LANCZOS,
                      METHOD_FILENAME_LABELS, MICROSOFT, NATIVE_METHODS, NUNCHAKU_LOADER, QWEN_METHODS, REALESRGAN,
                      UPSCALE_FILENAME_LABELS, UPSCALE_FILES, UPSCALE_SCALES,
@@ -47,7 +47,6 @@ PHASES = {
     'ModelSamplingAuraFlow': 'Bearbeitung wird vorbereitet',
     'TextEncodeQwenImageEditPlus': 'Bild und Prompt werden verarbeitet',
     'TextEncodeFibo2': 'Bild und Prompt werden verarbeitet',
-    'TextEncodeBooguEdit': 'Bild und Prompt werden verarbeitet',
     'TextGenerateV2': 'Prompt wird erweitert',
     'ReferenceMultiLatent': 'Bild wird kodiert',
     'CLIPTextEncode': 'Prompt wird verarbeitet',
@@ -265,10 +264,6 @@ def restoration_graph(method, models, name, size, crop, prompt, seed, scratches,
         graph = flux2_graph(models, name, size, prompt, seed, second_image=second_image)
     elif method == FLUX3:
         graph = flux3_graph(models, name, size, prompt, seed, second_image=second_image)
-    elif method == BOOGU:
-        if second_image is not None:
-            raise ValueError(translate('Dieses Verfahren verarbeitet nur ein Bild.'))
-        graph = boogu_graph(models, name, size, prompt, seed)
     elif method in (*QWEN_METHODS, *FIRERED_METHODS):
         graph = qwen_graph(models, name, prompt, seed, method, second_image=second_image)
     else:
@@ -280,7 +275,7 @@ def processing_settings(record, model_name, graph):
     sampling = []
     for node in (graph or {}).values():
         kind, inputs = node['class_type'], node['inputs']
-        if kind in ('KSampler', 'Flux2Scheduler', 'CFGGuider', 'KSamplerSelect', 'ManualSigmas'):
+        if kind in ('KSampler', 'Flux2Scheduler', 'CFGGuider', 'KSamplerSelect'):
             sampling.append({'node': kind, **{key: value for key, value in inputs.items()
                              if isinstance(value, (int, float, str, bool))}})
     used_models = {key: name for key, name in record['models'].items()

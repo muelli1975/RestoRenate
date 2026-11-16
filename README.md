@@ -35,9 +35,7 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 
 ## New in 1.2 Test
 
-**FLUX 3 Image Klein · INT8** edits photos in 16 steps with a local prompt upsampler and can use a second photo. The optional download uses the KoalaNation mirror without a Hugging Face account. RestoRenate checks the weights against the original SHA-256 hashes and reuses Fibo's text encoder and the shared FLUX VAE. The FLUX Kommunity License applies.
-
-**Boogu 0.1 Edit-Turbo · INT8** uses the 1K hotfix and four sampling steps for single-image editing. The model is available under Apache 2.0. Both test models are offered in GPU modes.
+**FLUX 3 Image Klein · INT8** edits photos in 16 steps with a local prompt upsampler and can use a second photo. It is available in GPU modes. The optional download uses the KoalaNation mirror without a Hugging Face account. RestoRenate checks the weights against the original SHA-256 hashes and reuses Fibo's text encoder and the shared FLUX VAE. The FLUX Kommunity License applies.
 
 ## New in 1.1
 
@@ -51,7 +49,7 @@ JPEG and TIFF retain compatible original EXIF and store RestoRenate settings in 
 
 By default, results go into `output` next to the selected image or inside the selected input folder. Choosing a new input updates the destination. **Browse …** switches to a custom folder and saves results directly there. The app remembers the mode and the custom path separately.
 
-- **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Boogu Edit-Turbo, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
+- **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
 - **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.
 - **Upscaling:** Nomos2 HQ MoSR is the default for restoration and upscaling. The selection also includes Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT for portraits, and Real-ESRGAN Anime 4× and AnimeSharp 4× for drawings and illustrations.
 - **Export:** PNG, JPEG quality 95 with 4:4:4 chroma and TIFF with LZW compression. JPEG and TIFF copy compatible source metadata. PNG stores a ComfyUI workflow when applicable.
