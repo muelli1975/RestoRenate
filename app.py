@@ -33,7 +33,7 @@ from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINT
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import PreloadProgress, choose_preloads, format_download_size, preload_label
 from methods import (COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
-                     METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
+                     METHODS, METHOD_MENU_SECTIONS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
                      TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
                      available_methods, resolve_upscaler, uses_comfy)
 from sizes import (CUSTOM_SIZES, MAX_SIDE, NO_RESCALE, SIZE_CHOICES, ULTRA_HD, method_size,
@@ -468,9 +468,14 @@ class Application:
         self.preload_button = ttk.Button(left, text=translate('Modelle vorab laden …'),
                                          command=self.preload_clicked, style='Input.TButton')
         self.preload_button.grid(row=8, column=0, sticky='e', pady=(6, 2))
-        self.method_widget = ttk.Combobox(left, textvariable=self.method, values=list(self.method_ids), state='readonly')
+        self.method_widget = ttk.Menubutton(left, textvariable=self.method, style='Method.Input.TMenubutton',
+                                            takefocus=True)
         self.method_widget.grid(row=9, column=0, sticky='ew')
-        self.method_widget.bind('<<ComboboxSelected>>', self.choose_method)
+        self.method_menu_colors = dict(menu_colors, disabledforeground=MUTED, selectcolor=GOLD_LIGHT)
+        self.method_menu = tk.Menu(self.method_widget, **self.method_menu_colors)
+        self.method_widget.configure(menu=self.method_menu)
+        self.controls.append(self.method_widget)
+        self.refresh_method_menu()
         self.prompt_heading = tk.StringVar(value='Prompt')
         self.prompt_heading_widget = tk.Label(left, textvariable=self.prompt_heading, bg=PANEL, fg=INK, anchor='w',
                                               font=('Segoe UI', 10, 'bold'))
@@ -825,6 +830,32 @@ class Application:
         methods = available_methods(self.supports_nunchaku(), cpu=self.active_compute == CPU)
         return {translate(METHODS[method]): method for method in methods}
 
+    def add_method_option(self, menu, method):
+        value = translate(METHODS[method])
+        menu.add_radiobutton(label=COLORIZATION_NAMES.get(method, value), value=value,
+                             variable=self.method, command=self.choose_method)
+
+    def refresh_method_menu(self):
+        menu = self.method_menu
+        menu.delete(0, 'end')
+        for submenu in menu.winfo_children():
+            submenu.destroy()
+        available = set(self.method_ids.values())
+        for heading, families in METHOD_MENU_SECTIONS:
+            menu.add_command(label=translate(heading), state='disabled')
+            for family, methods in families:
+                visible = [method for method in methods if method in available]
+                if not visible:
+                    continue
+                target = menu
+                if family is not None:
+                    target = tk.Menu(menu, **self.method_menu_colors)
+                    menu.add_cascade(label=family, menu=target)
+                for method in visible:
+                    self.add_method_option(target, method)
+            menu.add_separator()
+        self.add_method_option(menu, UPSCALING)
+
     def offer_cpu_fallback(self, reason):
         self.status.set(reason.splitlines()[0])
         if self.current_method not in CPU_METHODS:
@@ -848,7 +879,7 @@ class Application:
         self.active_compute = CPU
         self.update_compute_label()
         self.method_ids = self.available_method_ids()
-        self.method_widget.configure(values=list(self.method_ids))
+        self.refresh_method_menu()
         self.refresh_processing_menu()
         self.status.set_message('CPU für diese Sitzung aktiv')
         return True
@@ -1494,7 +1525,7 @@ class Application:
         self.prompt.insert('1.0', saved_prompt)
         self.prompt.edit_modified(False)
 
-    def choose_method(self, event=None):
+    def choose_method(self):
         self.remember_prompt()
         self.remember_scaling()
         self.current_method = self.method_ids[self.method.get()]
@@ -1834,8 +1865,7 @@ class Application:
         for control in self.controls:
             set_control_state(control, 'disabled' if value else 'normal')
         self.update_output_controls()
-        for control in (self.method_widget, self.size_widget):
-            control.configure(state='disabled' if value else 'readonly')
+        self.size_widget.configure(state='disabled' if value else 'readonly')
         self.update_microsoft_colorization()
         self.upscale_options.configure(state='disabled' if value or self.size_choice() == NO_RESCALE else 'readonly')
         self.format_widget.configure(state='disabled' if value else 'readonly')
@@ -2199,8 +2229,8 @@ class Application:
             self.preload_progress.localize()
         self.update_setup_status()
         self.method_ids = self.available_method_ids()
-        self.method_widget.configure(values=list(self.method_ids))
         self.method.set(translate(METHODS[self.current_method]))
+        self.refresh_method_menu()
         self.refresh_processing_menu()
         self.prompt_heading.set(translate('Restaurierung') if self.current_method == MICROSOFT else 'Prompt')
         self.preset_widget.configure(values=self.preset_names())

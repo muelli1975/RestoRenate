@@ -13,7 +13,7 @@ root = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).reso
 sys.path.insert(0, str(root / '_internal' if (root / '_internal').is_dir() else root))
 
 from export_metadata import editable_workflow, seed_from_metadata
-from methods import FIBO2_TURBO, FLUX3, LANCZOS, METHODS, available_methods, model_files
+from methods import FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, UPSCALERS, UPSCALING, available_methods, model_files
 from portable_setup import MACOS, MPS, NVIDIA, Setup
 from restoration import restoration_graph
 
@@ -83,6 +83,10 @@ def check_layout(source, language):
     import app
     from preload_models import PreloadDialog
 
+    def menu_labels(menu):
+        return [menu.entrycget(index, 'label') for index in range(menu.index('end') + 1)
+                if menu.type(index) != 'separator']
+
     window = tk.Tk()
     compute = MPS if MACOS else NVIDIA
     try:
@@ -91,21 +95,36 @@ def check_layout(source, language):
             gui = app.Application(window)
         with patch.object(gui, 'save_settings'):
             gui.pick_sources(source)
-            gui.method.set(METHODS[FLUX3])
-            gui.choose_method()
+            menu = gui.method_menu
+            headings = ('Bearbeiten', 'Kolorieren', 'Nur hochskalieren') if language == 'de' else ('Edit', 'Colorize', 'Upscale only')
+            assert menu_labels(menu) == [headings[0], METHODS[FIBO2_TURBO], 'FireRed', 'FLUX', METHODS[MICROSOFT],
+                                         'Qwen', headings[1], 'DDColor', 'DeOldify', headings[2]]
+            assert menu.entrycget(headings[0], 'state') == menu.entrycget(headings[1], 'state') == 'disabled'
+            assert menu.entrycget(headings[2], 'value') == app.translate(METHODS[UPSCALING])
+            assert tuple(gui.upscale_options.cget('values')) == UPSCALERS
+            flux = menu.nametowidget(menu.entrycget('FLUX', 'menu'))
+            assert [flux.entrycget(index, 'value') for index in range(flux.index('end') + 1)] == [METHODS[FLUX2], METHODS[FLUX3]]
+            flux.invoke(1)
+            assert gui.current_method == FLUX3
             window.update()
             assert gui.second_row.winfo_ismapped()
             minimum = window.minsize()
             for width, height in ((app.START_WINDOW_WIDTH, app.START_WINDOW_HEIGHT), minimum):
                 window.geometry(f'{width}x{height}')
                 window.update()
-                combo = gui.method_widget
-                chosen_font = ttk.Style(window).lookup('TCombobox', 'font') or 'TkDefaultFont'
+                button = gui.method_widget
+                chosen_font = ttk.Style(window).lookup(button.cget('style'), 'font') or 'TkDefaultFont'
                 text_width = font.Font(window, font=chosen_font).measure(METHODS[FLUX3])
-                assert combo.winfo_width() >= text_width + 28, (combo.winfo_width(), text_width)
-                assert gui.footer.winfo_ismapped() and combo.winfo_ismapped()
+                assert button.winfo_width() >= text_width + 28, (button.winfo_width(), text_width)
+                assert gui.footer.winfo_ismapped() and button.winfo_ismapped()
                 print(f'{language} {FLUX3}: {window.winfo_width()}x{window.winfo_height()}, '
-                      f'minimum {minimum}, method field {combo.winfo_width()} px.')
+                      f'minimum {minimum}, method field {button.winfo_width()}x{button.winfo_height()} px.')
+            menu.invoke(METHODS[FIBO2_TURBO])
+            with patch.object(app.messagebox, 'askyesno', return_value=True):
+                assert gui.offer_cpu_fallback('Test CPU fallback')
+            assert 'FireRed' not in menu_labels(menu)
+            flux = menu.nametowidget(menu.entrycget('FLUX', 'menu'))
+            assert flux.index('end') == 0 and flux.entrycget(0, 'value') == METHODS[FLUX2]
         dialog = PreloadDialog(window, root, compute, False)
         try:
             dialog.update_idletasks()

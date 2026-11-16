@@ -42,9 +42,8 @@ try:
     left, top = row.winfo_rootx(), row.winfo_rooty()
     with ImageGrab.grab((left, top, left + row.winfo_width(), top + row.winfo_height())) as screenshot:
         screenshot.save(root.parent / 'reference-controls.png')
-    for combo in (gui.method_widget, gui.upscale_options):
-        popup = str(window.tk.call('ttk::combobox::PopdownWindow', str(combo)))
-        assert window.tk.call(popup + '.f.sb', 'cget', '-style') == ''
+    popup = str(window.tk.call('ttk::combobox::PopdownWindow', str(gui.upscale_options)))
+    assert window.tk.call(popup + '.f.sb', 'cget', '-style') == ''
     style = ttk.Style(window)
     assert style.lookup('Vertical.TScrollbar', 'background') == app.BORDER
     assert style.lookup('Vertical.TScrollbar', 'troughcolor') == app.SECONDARY_BG
