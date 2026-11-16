@@ -339,7 +339,7 @@ class Setup:
             raise OSError(translate('Download unvollständig. Der nächste Versuch setzt ihn fort.'))
         return sha, offset
 
-    def download(self, spec):
+    def download(self, spec, *, local_only=False):
         self.check()
         target = contained(self.root, spec['path'])
         with DOWNLOAD_LOCKS_GUARD:
@@ -349,18 +349,20 @@ class Setup:
         try:
             self.check()
             self.state['files'] = self.read_receipts()['files']
-            return self.download_file(spec, target)
+            return self.download_file(spec, target, local_only=local_only)
         finally:
             lock.release()
 
-    def download_file(self, spec, target):
+    def download_file(self, spec, target, *, local_only=False):
         if self.valid(spec):
             return target
+        if file_size(target) == spec['size'] and self.digest(target, spec)[0].hexdigest() == spec['sha256']:
+            self.check()
+            self.mark(spec)
+            return target
+        if local_only:
+            return None
         target.parent.mkdir(parents=True, exist_ok=True)
-        if target.is_file():
-            if target.stat().st_size == spec['size'] and self.digest(target, spec)[0].hexdigest() == spec['sha256']:
-                self.mark(spec)
-                return target
         if spec == self.runtime:
             self.adopt_runtime_archive(spec, replace_invalid=True)
             if self.valid(spec):
@@ -663,8 +665,7 @@ class Setup:
         for spec in self.models:
             target = contained(self.root, spec['path'])
             if not self.valid(spec) and target.is_file() and target.stat().st_size == spec['size']:
-                if self.digest(target, spec)[0].hexdigest() == spec['sha256']:
-                    self.mark(spec)
+                self.download(spec, local_only=True)
         if self.ready():
             self.notify(translate('Modelldateien geprüft. Verfahren ist bereit.'))
             return self.paths()

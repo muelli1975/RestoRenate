@@ -895,6 +895,9 @@ class Application:
             self.preload_progress.show()
             return
         selected = choose_preloads(self.window, ROOT, self.active_compute, self.supports_nunchaku())
+        if self.closing:
+            return
+        self.check_ready()
         if selected:
             requests, downloads = selected
             self.preload_cancelled = Event()

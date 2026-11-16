@@ -1,4 +1,6 @@
 """Select portable model downloads before starting a restoration."""
+from queue import Empty, SimpleQueue
+from threading import Event, Thread
 import tkinter as tk
 from tkinter import ttk
 
@@ -7,7 +9,7 @@ from methods import (FIRERED_BASE, FIRERED_LIGHTNING, LANCZOS, LICENSES, METHODS
                      QWEN2509_BASE, QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU,
                      QWEN2511_BASE, QWEN2511_LIGHTNING_4, UPSCALE_LICENSES, UPSCALERS,
                      UPSCALING, available_methods)
-from portable_setup import CPU, NVIDIA, Setup, compute_label
+from portable_setup import CPU, NVIDIA, Setup, SetupCancelled, compute_label, contained, file_size
 from progress_track import ProgressTrack
 from theme import APP_BG, BORDER, GOLD, MUTED, PANEL_BG, TEXT, checkbox
 
@@ -46,6 +48,22 @@ def format_download_size(size):
     return f'{size / 1e6:.1f} MB' if size < 1e9 else f'{size / 1e9:.1f} GB'
 
 
+def verify_local_models(root, compute, models, cancelled, results):
+    verified = set()
+    try:
+        setup = Setup(root, compute=compute, notify=lambda _: None, cancelled=cancelled.is_set)
+        for path, spec in models.items():
+            try:
+                if setup.download(spec, local_only=True) is not None:
+                    verified.add(path)
+            except OSError:
+                continue
+    except SetupCancelled:
+        pass
+    finally:
+        results.put(verified)
+
+
 class PreloadDialog(tk.Toplevel):
     def __init__(self, parent, root, compute, supports_nunchaku):
         super().__init__(parent)
@@ -60,6 +78,11 @@ class PreloadDialog(tk.Toplevel):
         self.methods = {}
         self.lightning = {}
         self.upscalers = {}
+        self.local_models = {}
+        self.pending_checks = {}
+        self.verification_results = SimpleQueue()
+        self.verification_cancelled = Event()
+        self.verification_timer = None
 
         options = tk.Frame(self, bg=APP_BG, padx=14, pady=12)
         options.pack(fill='both', expand=True)
@@ -123,12 +146,33 @@ class PreloadDialog(tk.Toplevel):
         ttk.Button(actions, text=translate('Abbrechen'), command=self.destroy).pack(side='right', padx=6)
         self.bind('<Escape>', lambda event: self.destroy())
         self.bind('<Return>', lambda event: self.apply())
+        self.protocol('WM_DELETE_WINDOW', self.destroy)
+        if self.local_models:
+            self.verification_timer = self.after(75, self.poll_verification)
+            Thread(target=verify_local_models, daemon=True,
+                   args=(self.root, self.compute, self.local_models,
+                         self.verification_cancelled, self.verification_results)).start()
         self.update_total()
 
     def option(self, parent, label, license_label, *, request, base=None, indent=0, command=None):
         row = tk.Frame(parent, bg=PANEL_BG)
         row.pack(fill='x', padx=(indent, 0), pady=OPTION_SPACING)
-        value = tk.BooleanVar(self, self.model_available(request, base))
+        setup, _, _ = self.download_plan(request)
+        base_files = {spec['path'] for spec in self.download_plan(base)[0].models} if base else set()
+        models = [spec for spec in setup.models
+                  if spec['path'] not in base_files and not spec['path'].endswith('.whl')]
+        unverified = [spec for spec in models if not setup.valid(spec)]
+        value = tk.BooleanVar(self, bool(models) and not unverified)
+        complete = {spec['path']: spec for spec in unverified
+                    if file_size(contained(self.root, spec['path'])) == spec['size']}
+        self.local_models.update(complete)
+        if complete and len(complete) == len(unverified):
+            self.pending_checks[request] = value, complete.keys()
+
+            def keep_selection(*_):
+                self.pending_checks.pop(request, None)
+
+            value.trace_add('write', keep_selection)
         control = checkbox(row, label, value, command or self.update_total)
         control.pack(side='left')
         if license_label:
@@ -145,12 +189,25 @@ class PreloadDialog(tk.Toplevel):
             self.downloads[request] = setup, pending, runtime
         return self.downloads[request]
 
-    def model_available(self, request, base):
-        setup, _, _ = self.download_plan(request)
-        base_files = {spec['path'] for spec in self.download_plan(base)[0].models} if base else set()
-        models = [spec for spec in setup.models
-                  if spec['path'] not in base_files and not spec['path'].endswith('.whl')]
-        return bool(models) and all(setup.valid(spec) for spec in models)
+    def poll_verification(self):
+        try:
+            verified = self.verification_results.get_nowait()
+        except Empty:
+            self.verification_timer = self.after(75, self.poll_verification)
+            return
+        self.verification_timer = None
+        for value, paths in tuple(self.pending_checks.values()):
+            if paths <= verified:
+                value.set(True)
+        self.pending_checks.clear()
+        self.update_total()
+
+    def destroy(self):
+        self.verification_cancelled.set()
+        if self.verification_timer is not None:
+            self.after_cancel(self.verification_timer)
+            self.verification_timer = None
+        super().destroy()
 
     def update_microsoft(self):
         if not self.methods[MICROSOFT].get():
@@ -214,6 +271,9 @@ class PreloadDialog(tk.Toplevel):
             transfer = translate('Keine Auswahl')
         elif runtime is not None and runtime[0] is None and not runtime[1]:
             transfer = translate('Noch etwa {0} Modelldownload', format_download_size(remaining_bytes)) if remaining_bytes else translate('Keine Modelle herunterzuladen')
+        if self.verification_timer is not None:
+            checking = translate('Modelldateien werden geprüft …')
+            transfer = f'{transfer} · {checking}' if requests else checking
         self.total.set(translate('Berechnung: {0}', compute_label(self.compute)) + ' · ' + transfer)
         self.submit.configure(state='normal' if requests else 'disabled')
 

@@ -3,6 +3,7 @@ import json
 from hashlib import sha256
 import os
 from pathlib import Path
+from shutil import copy2
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -25,7 +26,9 @@ from crop import CropRegion
 from export_metadata import editor_graph
 from imaging import exiftool_executable
 from looks import Look, apply_look, catalog
-from methods import LANCZOS, MICROSOFT, UPSCALING
+from methods import DDCOLOR, DDCOLOR_ARTISTIC, DDCOLOR_PAPER, DDCOLOR_TINY, LANCZOS, MICROSOFT, UPSCALING
+from portable_paths import CODE
+from portable_setup import COMFY_CONSTRAINTS, UNIX_RUNTIME
 from preload_models import PreloadDialog
 from restoration import export_look_variant, restore
 from sizes import DOUBLE_SIZE
@@ -92,9 +95,9 @@ def test_metadata(root, exiftool):
 
 def check_preload(window, root):
     def setup(_root, *, method, faces, upscaler, compute):
-        files = [{'path': f'models/{method}/{upscaler}'}]
+        files = [{'path': f'models/{method}/{upscaler}', 'size': 10}]
         if method == MICROSOFT and faces:
-            files.append({'path': 'downloads/face_checkpoints.zip'})
+            files.append({'path': 'downloads/face_checkpoints.zip', 'size': 10})
         pending = {spec['path']: 10 for spec in files if not spec['path'].startswith('models/microsoft/')}
         return SimpleNamespace(
             models=files, comfy=False, remaining_downloads=lambda: pending,
@@ -122,6 +125,60 @@ def check_preload(window, root):
         assert dialog.faces.get() and dialog.selection()
     finally:
         dialog.destroy()
+
+
+def check_preload_verification(window, root, wait_for):
+    root.mkdir()
+    for name in ('download_manifest.json', 'method_downloads.json'):
+        copy2(CODE / name, root / name)
+    if UNIX_RUNTIME:
+        copy2(CODE / COMFY_CONSTRAINTS, root / COMFY_CONSTRAINTS)
+    (root / 'models').mkdir()
+    original = b'model test contents'
+    models = {}
+    for method in (DDCOLOR, DDCOLOR_ARTISTIC, DDCOLOR_PAPER, DDCOLOR_TINY):
+        path = f'models/{method}.onnx'
+        models[method] = {'path': path, 'size': len(original), 'sha256': sha256(original).hexdigest()}
+        file = root / path
+        if method == DDCOLOR_TINY:
+            file = file.with_suffix('.onnx.part')
+        file.write_bytes(b'x' * len(original) if method == DDCOLOR_PAPER else original)
+
+    allow_digest = Event()
+    digest = app.Setup.digest
+
+    def delayed_digest(setup, path, spec):
+        assert allow_digest.wait(8)
+        return digest(setup, path, spec)
+
+    def create_setup(*args, **kwargs):
+        setup = app.Setup(*args, **kwargs)
+        method = kwargs.get('method')
+        if method in models:
+            setup.models = [models[method]]
+        return setup
+
+    with (patch('preload_models.Setup', side_effect=create_setup),
+          patch.object(app.Setup, 'digest', delayed_digest),
+          patch.object(app.Setup, 'stream', side_effect=AssertionError('Unexpected download')) as stream):
+        dialog = PreloadDialog(window, root, app.CPU, False)
+        try:
+            assert dialog.verification_timer is not None
+            assert all(not dialog.methods[method].get() for method in models)
+            dialog.methods[DDCOLOR_ARTISTIC].set(True)
+            dialog.methods[DDCOLOR_ARTISTIC].set(False)
+            allow_digest.set()
+            wait_for(lambda: dialog.verification_timer is None)
+            assert dialog.methods[DDCOLOR].get()
+            assert all(not dialog.methods[method].get() for method in models if method != DDCOLOR)
+            setup = app.Setup(root, compute=app.CPU)
+            assert setup.valid(models[DDCOLOR]) and setup.valid(models[DDCOLOR_ARTISTIC])
+            assert not setup.valid(models[DDCOLOR_PAPER]) and not setup.valid(models[DDCOLOR_TINY])
+            assert (root / models[DDCOLOR_PAPER]['path']).read_bytes() == b'x' * len(original)
+            stream.assert_not_called()
+        finally:
+            allow_digest.set()
+            dialog.destroy()
 
 
 def check_background_preload(gui, wait_for):
@@ -222,6 +279,7 @@ def test_gui(root):
         assert window.title() == f'{app.APP_NAME} – {app.APP_VERSION}'
         window.update()
         check_preload(window, root)
+        check_preload_verification(window, root / 'model-verification', wait_for)
         check_background_preload(gui, wait_for)
         assert gui.preview_switch.cget('text') == app.translate('Ergebnisse')
         assert gui.preview_switch.instate(['disabled'])
