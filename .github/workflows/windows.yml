@@ -101,4 +101,4 @@ jobs:
           (cd dist && sha256sum RestoRenate_1.2_Windows_x64.zip > SHA256SUMS.txt)
           gh release create v1.2 dist/RestoRenate_1.2_Windows_x64.zip dist/SHA256SUMS.txt \
             --target "$GITHUB_SHA" --title 'RestoRenate 1.2' --latest \
-            --notes-file .github/release-notes/v1.2-windows.md
+            --notes-file .github/release-notes/v1.2.md
