@@ -25,7 +25,7 @@ import app
 from crop import CropRegion
 from edit_models import has_choice_mark
 from export_metadata import editor_graph
-from imaging import exiftool_executable
+from imaging import LEGACY_RESULT_STEM_BYTES, exiftool_executable, numbered_stem, result_labels, save_result
 from looks import Look, apply_look, catalog
 from methods import (COLORIZATION_NAMES, DDCOLOR, DDCOLOR_ARTISTIC, DDCOLOR_PAPER, DDCOLOR_TINY,
                      DEOLDIFY_STABLE, FIBO2_TURBO, LANCZOS, MICROSOFT, UPSCALING)
@@ -93,6 +93,28 @@ def test_metadata(root, exiftool):
         export_look_variant(source, saved, None, 0, root / 'output', fmt, exiftool,
                             look, {}, inherited, lambda: False)
         assert inherited['luts'] == [look.record(), look.record()], inherited
+
+
+def test_numbered_exports(root):
+    folder = root / 'numbered'
+    labels = ('Microsoft', 'DDColor-ModelScope', 'RealESRGAN-Anime-4x')
+    other = ('Microsoft', 'DeOldify-Stable', 'UltraSharp-V2-Lite')
+    source = root / ('é' * 100 + '.png')
+    legacy_stem, _ = numbered_stem(source.stem, LEGACY_RESULT_STEM_BYTES)
+    with Image.new('RGB', (32, 24), (155, 97, 44)) as image:
+        image.save(source)
+        folder.mkdir()
+        legacy = folder / f'{legacy_stem}_99_Microsoft_DDColor-Paper.png'
+        image.save(legacy)
+        assert result_labels(source, legacy) == ('Microsoft', 'DDColor-Paper')
+        first, _ = save_result(image, source, folder, 'PNG', None, None, labels=labels)
+        second, _ = save_result(image, source, folder, 'PNG', None, None, labels=other)
+    assert first.stem.endswith('_100_' + '_'.join(labels))
+    assert second.stem.endswith('_101_' + '_'.join(other))
+    assert result_labels(source, first) == labels and len(first.name.encode('utf-8')) <= 255
+    variant, _ = export_look_variant(source, first, None, 0, folder, 'PNG', None,
+                                     Look('portra160nc', 55), {}, {}, lambda: False)
+    assert variant.stem.endswith('_102_' + '_'.join(labels))
 
 
 def test_microsoft_colorization_export(root):
@@ -664,6 +686,7 @@ if __name__ == '__main__':
         directory = Path(temp)
         check_downloads(directory)
         test_export(directory)
+        test_numbered_exports(directory)
         test_microsoft_colorization_export(directory)
         exiftool = os.environ.get('RESTORENATE_TEST_EXIFTOOL') or exiftool_executable(app.ROOT)
         test_metadata(directory, exiftool)

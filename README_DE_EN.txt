@@ -1,4 +1,4 @@
-RestoRenate 1.2 Test
+RestoRenate 1.2
 Windows x64 · Portable
 
 DEUTSCH

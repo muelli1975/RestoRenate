@@ -38,12 +38,11 @@ class SelectionMenu(tk.Menu):
 
     def add_heading(self, label):
         options = dict(label=label, state='disabled', activebackground=self.cget('background'))
-        if self.windowing_system == 'x11':
-            self.add_command(font=('Helvetica', 9, 'bold'), **options)
-            return
         size = round(self.winfo_fpixels('9p'))
-        if self.windowing_system == 'win32':
-            self.add_command(bitmap=f'@{self.windows_heading_bitmap(label, size)}', compound='none', **options)
+        if self.windowing_system != 'aqua':
+            font_path = 'segoeuib.ttf' if self.windowing_system == 'win32' else 'DejaVuSans-Bold.ttf'
+            bitmap = self.heading_bitmap(label, size, font_path)
+            self.add_command(bitmap=f'@{bitmap}', compound='none', **options)
             return
         # Aqua uses system text colors. An image preserves the heading color.
         heading = self.draw_heading(label, size, '/System/Library/Fonts/Supplemental/Arial Bold.ttf', 'RGBA', GOLD)
@@ -64,15 +63,14 @@ class SelectionMenu(tk.Menu):
         ImageDraw.Draw(image).text((-left, 2 - top), label, font=font, fill=color, stroke_width=stroke)
         return image
 
-    def windows_heading_bitmap(self, label, size):
-        # A Tk bitmap uses disabledforeground directly. Windows embosses disabled
-        # text and stipples disabled PhotoImages, so neither draws a clean heading.
+    def heading_bitmap(self, label, size, font_path):
+        # A Tk bitmap uses disabledforeground directly and supplies its own font.
         key = label, size
         if key in self.heading_bitmaps:
             return self.heading_bitmaps[key]
         if self.heading_directory is None:
             self.heading_directory = TemporaryDirectory(prefix='restorenate-menu-')
-        bitmap = self.draw_heading(label, size, 'segoeuib.ttf', '1', 1)
+        bitmap = self.draw_heading(label, size, font_path, '1', 1)
         path = Path(self.heading_directory.name) / f'heading-{len(self.heading_bitmaps)}.xbm'
         bitmap.save(path)
         self.heading_bitmaps[key] = path

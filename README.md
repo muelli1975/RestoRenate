@@ -1,6 +1,6 @@
-# RestoRenate 1.2 Test
+# RestoRenate 1.2
 
-[Test downloads and SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2-test) · [Deutsch](README_DE.md) · [User guide](README_DE_EN.txt)
+[Windows 1.2 and SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2) · [macOS and Ubuntu 1.1](https://github.com/muelli1975/RestoRenate/releases/tag/v1.1) · [Deutsch](README_DE.md) · [User guide](README_DE_EN.txt)
 
 RestoRenate is a local desktop tool for restoring, colorizing and upscaling photos. With text prompts and supported models, it can also edit an image or use a second photo as a reference. The interface is available in English and German.
 
@@ -33,9 +33,11 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 3. Select **Start**. Use **Download models …** to prepare multiple methods in one pass. Optional Lightning LoRAs are listed beneath their base models.
 4. Compare the saved result with the before-and-after slider. The navigation shows **Result 1/3**, for example. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
 
-## New in 1.2 Test
+## New in 1.2
 
 **FLUX 3 Image Klein · INT8** edits photos in 16 steps with a local prompt upsampler and can use a second photo. It is available in GPU modes. The optional download uses the KoalaNation mirror without a Hugging Face account. RestoRenate checks the weights against the original SHA-256 hashes and reuses Fibo's text encoder and the shared FLUX VAE. The FLUX Kommunity License applies.
+
+Microsoft can colorize restored photos in the same run. CPU and GPU modes remember their method and scaling settings separately. The CPU default is Microsoft with no resizing. The model download dialog verifies existing files in the background when verification receipts are missing.
 
 ## New in 1.1
 
@@ -43,7 +45,7 @@ Crop and rotate the second reference independently. The primary image and its cr
 
 Choose from 50 StereoFine LUTs. Use **C** to inspect the look on the right. Hold **C** while pressing the left or right arrow to choose a look, or the up or down arrow to change the strength. Enable **Apply LUT** to include the look in the next model run. **Create LUT variant** exports the selected input or result as a new numbered file without running a model. Press **F1** for controls.
 
-JPEG and TIFF retain compatible original EXIF and store RestoRenate settings in XMP. PNG uses ComfyUI's prompt and workflow metadata. For the bundled LUTs, see [sources and licenses](assets/luts/CREDITS.md).
+JPEG and TIFF retain compatible original EXIF and store RestoRenate settings in XMP. PNG uses ComfyUI's prompt and workflow metadata. LUTs and the optional colorization after Microsoft restoration run outside the embedded workflow. For the bundled LUTs, see [sources and licenses](assets/luts/CREDITS.md).
 
 ## Models and output
 

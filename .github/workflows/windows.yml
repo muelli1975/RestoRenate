@@ -2,7 +2,7 @@ name: Build and test Windows x64
 
 on:
   push:
-    branches: [main, codex/restorenate-1.1, codex/restorenate-1.2-test]
+    branches: [main, codex/restorenate-1.1, codex/restorenate-1.2-test, release/v1.2-windows]
   pull_request:
   workflow_dispatch:
 
@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
+      RR_WINDOWS_ARCHIVE: ${{ github.ref == 'refs/heads/release/v1.2-windows' && 'RestoRenate_1.2_Windows_x64.zip' || 'RestoRenate_1.2_Test_Windows_x64.zip' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -32,7 +33,7 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $digest -notmatch '^sha256:[a-f0-9]{64}$') { throw 'Published Windows archive checksum is unavailable' }
           gh release download v1.0 --pattern 'RestoRenate_1.0_Windows_x64.zip' --dir original
           if ($LASTEXITCODE -ne 0) { throw 'Unable to download the Windows package' }
-          python scripts/repack_portable.py windows original/RestoRenate_1.0_Windows_x64.zip dist/RestoRenate_1.2_Test_Windows_x64.zip --smoke-dir dist/smoke --base-sha256 ($digest.Substring(7))
+          python scripts/repack_portable.py windows original/RestoRenate_1.0_Windows_x64.zip "dist/$env:RR_WINDOWS_ARCHIVE" --smoke-dir dist/smoke --base-sha256 ($digest.Substring(7))
       - name: Test the EXE from a fresh extraction
         shell: pwsh
         run: |
@@ -71,5 +72,29 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: RestoRenate-Windows-x64
-          path: dist/RestoRenate_1.2_Test_Windows_x64.zip
+          path: dist/${{ env.RR_WINDOWS_ARCHIVE }}
           if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v1.2-windows'
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: RestoRenate-Windows-x64
+          path: dist
+      - name: Publish the tested Windows release
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum RestoRenate_1.2_Windows_x64.zip > SHA256SUMS.txt)
+          gh release create v1.2 dist/RestoRenate_1.2_Windows_x64.zip dist/SHA256SUMS.txt \
+            --target "$GITHUB_SHA" --title 'RestoRenate 1.2' --latest \
+            --notes-file .github/release-notes/v1.2-windows.md

@@ -1,6 +1,6 @@
-# RestoRenate 1.2 Test
+# RestoRenate 1.2
 
-[Testdownloads und SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2-test) · [English](README.md) · [Anleitung](README_DE_EN.txt)
+[Windows 1.2 und SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2) · [macOS und Ubuntu 1.1](https://github.com/muelli1975/RestoRenate/releases/tag/v1.1) · [English](README.md) · [Anleitung](README_DE_EN.txt)
 
 RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner. Mit unterstützten Modellen lassen sich Bilder auch per Prompt bearbeiten oder anhand eines zweiten Fotos verändern. Die Oberfläche ist auf Deutsch und Englisch verfügbar.
 
@@ -33,9 +33,11 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 3. **Start** wählen. Über **Modelle vorab laden …** lassen sich mehrere Verfahren gemeinsam einrichten. Optionale Lightning-LoRAs stehen unter ihrem Basismodell.
 4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. Die Navigation zeigt beispielsweise **Ergebnis 1/3**. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild↑ / Bild↓** blättern durch die Ergebnisse.
 
-## Neu in 1.2 Test
+## Neu in 1.2
 
 **FLUX 3 Image Klein · INT8** bearbeitet Fotos in 16 Schritten mit einem lokalen Prompt-Umschreiber und unterstützt Bild 2. Das Modell steht in den GPU-Modi zur Auswahl. Der optionale Download vom KoalaNation-Spiegel funktioniert ohne Hugging-Face-Konto. RestoRenate prüft die SHA-256-Werte der Originaldateien und verwendet Fibos Textencoder sowie den gemeinsamen FLUX-Bilddecoder weiter. Es gilt die FLUX Kommunity License.
+
+Microsoft kann restaurierte Fotos im selben Durchlauf kolorieren. CPU und GPU merken sich ihre Verfahrens- und Skalierungseinstellungen getrennt. Im CPU-Modus ist Microsoft ohne Nachskalierung voreingestellt. Die Modellübersicht prüft vorhandene Dateien im Hintergrund, wenn Prüfbelege fehlen.
 
 ## Neu in 1.1
 
@@ -43,7 +45,7 @@ Bild 2 kann unabhängig beschnitten und gedreht werden. Bild 1 bestimmt mit sein
 
 50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
 
-JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. Die mitgelieferten LUTs sind in den [Quellen und Lizenzen](assets/luts/CREDITS.md) dokumentiert.
+JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. LUTs und die zusätzliche Kolorierung nach Microsoft laufen außerhalb des eingebetteten Workflows. Die mitgelieferten LUTs sind in den [Quellen und Lizenzen](assets/luts/CREDITS.md) dokumentiert.
 
 ## Modelle und Ausgabe
 

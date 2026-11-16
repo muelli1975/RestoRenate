@@ -136,25 +136,37 @@ def copy_metadata(exiftool, source, destination, size, settings=None):
                      if not line.startswith('Warning: No writable tags set from '))
 
 
-def numbered_stem(stem):
+RESULT_STEM_BYTES = 180  # Reserve space for the number, model labels and file extension.
+LEGACY_RESULT_STEM_BYTES = 200
+
+
+def numbered_stem(stem, max_bytes=RESULT_STEM_BYTES):
     encoded = stem.encode('utf-8')
     digest = sha256(stem.casefold().encode('utf-8')).hexdigest()
-    if len(encoded) > 200:
-        stem = encoded[:188].decode('utf-8', errors='ignore') + '-' + digest[:10]
+    if len(encoded) > max_bytes:
+        stem = encoded[:max_bytes - 12].decode('utf-8', errors='ignore') + '-' + digest[:10]
     return stem, digest
 
 
+def result_pattern(source_stem):
+    stems = dict.fromkeys(numbered_stem(source_stem, limit)[0].casefold()
+                         for limit in (RESULT_STEM_BYTES, LEGACY_RESULT_STEM_BYTES))
+    prefixes = '|'.join(re.escape(name) for name in stems)
+    return re.compile(rf'(?:{prefixes})_([0-9]{{2,}})((?:_[a-z0-9.-]+)*)')
+
+
 def result_labels(source, result):
-    stem, _ = numbered_stem(source.stem)
-    match = re.fullmatch(rf'{re.escape(stem)}_[0-9]{{2,}}((?:_[a-z0-9.-]+){{0,2}})',
-                         result.stem, flags=re.IGNORECASE)
-    return tuple(match[1][1:].split('_')) if match and match[1] else ()
+    match = result_pattern(source.stem).fullmatch(result.stem.casefold())
+    if match is None or not match[2]:
+        return ()
+    labels = result.stem[-len(match[2]):]
+    return tuple(labels[1:].split('_'))
 
 
-def commit_result(temp, folder, stem, labels):
-    stem, digest = numbered_stem(stem)
+def commit_result(temp, folder, source_stem, labels):
+    stem, digest = numbered_stem(source_stem)
     extensions = {suffix for _, suffix in FORMATS.values()}
-    pattern = re.compile(rf'{re.escape(stem.casefold())}_([0-9]{{2,}})(?:_[a-z0-9.-]+){{0,2}}')
+    pattern = result_pattern(source_stem)
 
     def last_number():
         return max((int(match[1]) for path in folder.iterdir()
