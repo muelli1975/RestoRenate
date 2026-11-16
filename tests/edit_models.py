@@ -115,11 +115,12 @@ def check_layout(source, language):
             assert menu.entrycget(headings[0], 'state') == menu.entrycget(headings[1], 'state') == 'disabled'
             assert all(str(menu.entrycget(heading, 'activebackground')) == str(menu.cget('background'))
                        for heading in headings[:2])
-            if menu.windowing_system == 'x11':
+            if menu.windowing_system != 'aqua':
                 assert str(menu.cget('disabledforeground')) == GOLD
-            else:
+            if menu.windowing_system != 'x11':
+                graphic = 'bitmap' if menu.windowing_system == 'win32' else 'image'
                 for heading in headings[:2]:
-                    assert menu.entrycget(heading, 'image') and menu.entrycget(heading, 'compound') == 'none'
+                    assert menu.entrycget(heading, graphic) and menu.entrycget(heading, 'compound') == 'none'
             assert menu.entrycget(headings[2], 'value') == app.translate(METHODS[UPSCALING])
             assert tuple(gui.upscale_options.cget('values')) == UPSCALERS
             flux = menu.nametowidget(menu.entrycget('FLUX', 'menu'))

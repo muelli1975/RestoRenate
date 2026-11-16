@@ -1,4 +1,6 @@
 """Native grouped menus with a visible path to the current selection."""
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import tkinter as tk
 
 from PIL import Image, ImageDraw, ImageFont, ImageTk
@@ -14,6 +16,8 @@ class SelectionMenu(tk.Menu):
         self.categories = {}
         self.marked = set()
         self.heading_images = []
+        self.heading_directory = None
+        self.heading_bitmaps = {}
         self.windowing_system = self.tk.call('tk', 'windowingsystem')
 
         size = max(10, round(self.winfo_fpixels('9p')))
@@ -29,20 +33,46 @@ class SelectionMenu(tk.Menu):
 
     def remove_trace(self, _event):
         self.selection.trace_remove('write', self.selection_trace)
+        if self.heading_directory is not None:
+            self.heading_directory.cleanup()
 
     def add_heading(self, label):
         options = dict(label=label, state='disabled', activebackground=self.cget('background'))
         if self.windowing_system == 'x11':
             self.add_command(font=('Segoe UI', 9), **options)
             return
-        # Aqua uses system text colors and Windows embosses disabled menu text.
-        font = ImageFont.load_default(size=round(self.winfo_fpixels('9p')))
+        size = round(self.winfo_fpixels('9p'))
+        if self.windowing_system == 'win32':
+            self.add_command(bitmap=f'@{self.windows_heading_bitmap(label, size)}', compound='none', **options)
+            return
+        # Aqua uses system text colors. An image preserves the heading color.
+        font = ImageFont.load_default(size=size)
         left, top, right, bottom = font.getbbox(label)
         heading = Image.new('RGBA', (right - left, bottom - top + 4))
         ImageDraw.Draw(heading).text((-left, 2 - top), label, font=font, fill=GOLD)
         image = ImageTk.PhotoImage(heading, master=self)
         self.heading_images.append(image)
         self.add_command(image=image, compound='none', **options)
+
+    def windows_heading_bitmap(self, label, size):
+        # A Tk bitmap uses disabledforeground directly. Windows embosses disabled
+        # text and stipples disabled PhotoImages, so neither draws a clean heading.
+        key = label, size
+        if key in self.heading_bitmaps:
+            return self.heading_bitmaps[key]
+        if self.heading_directory is None:
+            self.heading_directory = TemporaryDirectory(prefix='restorenate-menu-')
+        try:
+            font = ImageFont.truetype('segoeui.ttf', size)
+        except OSError:
+            font = ImageFont.load_default(size=size)
+        left, top, right, bottom = font.getbbox(label)
+        bitmap = Image.new('1', (right - left, bottom - top + 4))
+        ImageDraw.Draw(bitmap).text((-left, 2 - top), label, font=font, fill=1)
+        path = Path(self.heading_directory.name) / f'heading-{len(self.heading_bitmaps)}.xbm'
+        bitmap.save(path)
+        self.heading_bitmaps[key] = path
+        return path
 
     def add_category(self, label, submenu):
         self.add_cascade(label=label, menu=submenu, **self.marker_options)
