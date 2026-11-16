@@ -147,6 +147,19 @@ FLUX.2 [klein] 4B · Apache 2.0.
   https://huggingface.co/black-forest-labs/FLUX.2-klein-4B
   https://huggingface.co/Comfy-Org/Flux-2-Klein-4B
 
+FLUX 3 Image Klein (distilled INT8) · FLUX Kommunity License v1.0.
+  https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy
+  Download mirror: https://huggingface.co/KoalaNation/FLUX-3-KLEIN-MODELS
+  License and notice in licenses/FLUX-Kommunity-LICENSE.md and
+  licenses/FLUX-Kommunity-NOTICE.md. Model usage rights are granted by
+  Black Forest Labs directly, subject to the license.
+  The Qwen3-VL text encoder and the prompt upsampler are Apache 2.0.
+  https://huggingface.co/black-forest-labs/flux-3-image-klein-pup
+
+Boogu-Image-0.1-Edit-Turbo (1K hotfix, INT8) · Apache 2.0.
+  https://github.com/boogu-project/Boogu-Image
+  https://huggingface.co/Comfy-Org/Boogu-Image
+
 Qwen Image Edit 2509 Nunchaku R32 INT4 and Qwen Image Edit 2509 and 2511 GGUF
 with LightX2V Lightning 4-step LoRAs · Apache 2.0.
   https://huggingface.co/Qwen/Qwen-Image-Edit-2509

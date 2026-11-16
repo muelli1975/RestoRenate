@@ -3,7 +3,7 @@ from functools import lru_cache
 from math import ceil, floor, sqrt
 
 from language import translate
-from methods import (COLORIZATION_METHODS, FIBO2_TURBO, FLUX2, GGUF_METHODS, MICROSOFT,
+from methods import (BOOGU, COLORIZATION_METHODS, FIBO2_TURBO, FLUX_METHODS, GGUF_METHODS, MICROSOFT,
                      NATIVE_METHODS, QWEN2509_NUNCHAKU, UPSCALING)
 
 NO_RESCALE = 'Ohne Nachskalierung'
@@ -76,8 +76,8 @@ def restoration_size(original, method):
         return original
     if method == MICROSOFT:
         return limited_size(original, max_side=2048)
-    if method in (FLUX2, QWEN2509_NUNCHAKU):
-        # Both reference workflows use ImageScaleToTotalPixels at 1 MP.
+    if method in (*FLUX_METHODS, BOOGU, QWEN2509_NUNCHAKU):
+        # These workflows resize the working image to about 1 MP.
         width, height = original
         factor = sqrt((1024 * 1024) / (width * height))
         return max(1, round(width * factor)), max(1, round(height * factor))

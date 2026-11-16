@@ -4,6 +4,9 @@ from pathlib import Path
 FIBO2_TURBO = 'fibo2-edit-turbo'
 DEFAULT_METHOD = FIBO2_TURBO
 FLUX2 = 'flux2-klein'
+FLUX3 = 'flux3-klein'
+BOOGU = 'boogu-edit-turbo'
+FLUX_METHODS = (FLUX2, FLUX3)
 QWEN2509_NUNCHAKU = 'qwen2509-nunchaku'
 QWEN2509_LIGHTNING_4 = 'qwen2509-lightning-4'
 QWEN2509_BASE = 'qwen2509-base'
@@ -15,7 +18,7 @@ QWEN2509_GGUF_METHODS = (QWEN2509_LIGHTNING_4, QWEN2509_BASE)
 QWEN2511_GGUF_METHODS = (QWEN2511_LIGHTNING_4, QWEN2511_BASE)
 QWEN_METHODS = (QWEN2509_NUNCHAKU, *QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS)
 FIRERED_METHODS = (FIRERED_LIGHTNING, FIRERED_BASE)
-TWO_IMAGE_METHODS = (FIBO2_TURBO, FLUX2, *QWEN_METHODS, *FIRERED_METHODS)
+TWO_IMAGE_METHODS = (FIBO2_TURBO, *FLUX_METHODS, *QWEN_METHODS, *FIRERED_METHODS)
 GGUF_METHODS = (*QWEN2509_GGUF_METHODS, *QWEN2511_GGUF_METHODS, *FIRERED_METHODS)
 NUNCHAKU_LOADER = 'NunchakuQwenImageDiTLoader'
 MICROSOFT = 'microsoft'
@@ -63,6 +66,8 @@ UPSCALE_LICENSES = {
 METHODS = {
     FIBO2_TURBO: 'Fibo 2.0 Edit Turbo',
     FLUX2: 'FLUX.2 [klein] 4B',
+    FLUX3: 'FLUX 3 Image Klein · INT8',
+    BOOGU: 'Boogu 0.1 Edit-Turbo · INT8',
     QWEN2509_NUNCHAKU: 'Qwen Image Edit 2509 · Nunchaku INT4',
     QWEN2509_LIGHTNING_4: 'Qwen Image Edit 2509 · Lightning (4 Schritte)',
     QWEN2509_BASE: 'Qwen Image Edit 2509',
@@ -82,6 +87,8 @@ METHODS = {
 METHOD_FILENAME_LABELS = {
     FIBO2_TURBO: 'Fibo-2.0',
     FLUX2: 'FLUX2-4B',
+    FLUX3: 'FLUX3-Klein',
+    BOOGU: 'Boogu-Edit-Turbo',
     QWEN2509_NUNCHAKU: 'Qwen-2509-Nunchaku',
     QWEN2509_LIGHTNING_4: 'Qwen-2509-4step',
     QWEN2509_BASE: 'Qwen-2509',
@@ -113,6 +120,8 @@ UPSCALE_FILENAME_LABELS = {
 LICENSES = {
     FIBO2_TURBO: 'CC BY-NC 4.0 · nicht kommerziell',
     FLUX2: 'Apache 2.0',
+    FLUX3: 'FLUX Kommunity License v1.0',
+    BOOGU: 'Apache 2.0',
     **dict.fromkeys((*QWEN_METHODS, *FIRERED_METHODS), 'Apache 2.0'),
     MICROSOFT: 'MIT-Code',
     UPSCALING: 'siehe gewähltes Modell',
@@ -159,16 +168,29 @@ FIRERED_GGUF_FILES = {
     'diffusion': ('UnetLoaderGGUF', 'unet_name', 'FireRed-Image-Edit-1.1-transformer-q4_k_m.gguf'),
     **QWEN_SHARED_FILES,
 }
+FLUX_VAE = ('VAELoader', 'vae_name', 'flux2-vae.safetensors')
+QWEN3VL_4B = ('CLIPLoader', 'clip_name', 'qwen3vl_4b_int8_convrot.safetensors')
 MODEL_FILES = {
     FLUX2: {
         'diffusion': ('UNETLoader', 'unet_name', 'flux-2-klein-4b.safetensors'),
         'text': ('CLIPLoader', 'clip_name', 'qwen_3_4b.safetensors'),
-        'vae': ('VAELoader', 'vae_name', 'flux2-vae.safetensors'),
+        'vae': FLUX_VAE,
+    },
+    FLUX3: {
+        'diffusion': ('UNETLoader', 'unet_name', 'flux3-image-klein-int8-convrot.safetensors'),
+        'text': QWEN3VL_4B,
+        'vae': FLUX_VAE,
+        'prompt_upsampler': ('CLIPLoader', 'clip_name', 'qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors'),
+    },
+    BOOGU: {
+        'diffusion': ('UNETLoader', 'unet_name', 'boogu_image_edit_turbo_hotfix_1k_20260708_int8_convrot.safetensors'),
+        'text': ('CLIPLoader', 'clip_name', 'qwen3vl_8b_fp8_scaled.safetensors'),
+        'vae': ('VAELoader', 'vae_name', 'flux1_vae_bf16.safetensors'),
     },
     FIBO2_TURBO: {
         'diffusion': ('UNETLoader', 'unet_name', 'fibo2_edit_turbo_int8_convrot.safetensors'),
-        'text': ('CLIPLoader', 'clip_name', 'qwen3vl_4b_int8_convrot.safetensors'),
-        'vae': ('VAELoader', 'vae_name', 'flux2-vae.safetensors'),
+        'text': QWEN3VL_4B,
+        'vae': FLUX_VAE,
     },
     QWEN2509_NUNCHAKU: {
         'diffusion': (NUNCHAKU_LOADER, 'model_name',

@@ -1,4 +1,4 @@
-RestoRenate 1.1
+RestoRenate 1.2 Test
 Windows x64 · Portable
 
 DEUTSCH
@@ -29,8 +29,8 @@ lässt sich im laufenden Fenster umschalten. Die Vergleichsansicht bleibt
 mit Zoom und Reglerposition geöffnet.
 
 „Zweites Bild“ unter der Eingabe steht für Fibo 2.0 Edit Turbo, FLUX.2 [klein]
-4B, Qwen Image Edit 2509 und 2511 einschließlich Nunchaku sowie FireRed Image
-Edit 1.1 zur Verfügung. „Bild …“ lädt das zweite Bild in die Vorschau.
+4B, FLUX 3 Image Klein, Qwen Image Edit 2509 und 2511 einschließlich Nunchaku
+sowie FireRed Image Edit 1.1 zur Verfügung. „Bild …“ lädt das zweite Bild in die Vorschau.
 Es lässt sich separat beschneiden, drehen, ersetzen oder entfernen.
 Bei einem Ordner gilt es für alle Eingabebilder. Im Prompt lässt sich etwa
 beschreiben, welche Inhalte aus Bild 2 in Bild 1 übernommen werden sollen.
@@ -220,8 +220,8 @@ app initially uses the system display language. The interface language can
 be switched in place while keeping the comparison view, zoom and slider position.
 
 “Second image” below the input is available for Fibo 2.0 Edit Turbo, FLUX.2
-[klein] 4B, Qwen Image Edit 2509 and 2511 including Nunchaku, and FireRed Image
-Edit 1.1. “Image …” loads the second image into the preview. It can be cropped
+[klein] 4B, FLUX 3 Image Klein, Qwen Image Edit 2509 and 2511 including Nunchaku,
+and FireRed Image Edit 1.1. “Image …” loads the second image into the preview. It can be cropped
 and rotated independently, replaced or removed. For a folder, it applies to all
 inputs. The prompt can describe which content to transfer from image 2 into
 image 1. In Fibo prompts, use the placeholders `<image_1>` and `<image_2>`.
@@ -368,6 +368,18 @@ removes these links after confirmation. The exported images stay on disk.
 Technical logs rotate at 2 MiB and are cleaned up at startup after 30 days.
 logs/backend.log also records the CPU thread count. Set
 RESTORENATE_CPU_THREADS to use a fixed thread count for comparisons.
+
+## Neu in 1.2 Test / New in 1.2 Test
+
+FLUX 3 Image Klein INT8 arbeitet in 16 Schritten mit einem lokalen
+Prompt-Umschreiber. Boogu 0.1 Edit-Turbo verwendet den 1K-Hotfix für ein Bild
+und vier Schritte. Beide Modelle sind über „Modelle vorab laden …“ in den
+GPU-Modi verfügbar. Hinweise zu Download und Lizenzen stehen in README_DE.md.
+
+FLUX 3 Image Klein INT8 uses 16 steps and a local prompt upsampler.
+Boogu 0.1 Edit-Turbo uses the single-image 1K hotfix and four steps.
+Both models are available under “Download models …” in GPU modes. See
+README.md for download and license details.
 
 ## Neu in 1.1
 

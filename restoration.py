@@ -27,9 +27,10 @@ from sizes import (NO_RESCALE, limited_size, method_size, needs_enlargement, out
                    restoration_canvas, restoration_size)
 from method_graphs import (
     RESULT_NODE, append_export, append_upscale,
-    fibo2_graph, flux2_graph, microsoft_graph, qwen_graph, standalone_upscale_graph,
+    boogu_graph, fibo2_graph, flux2_graph, flux3_graph, microsoft_graph, qwen_graph, standalone_upscale_graph,
 )
-from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, FIBO2_TURBO, FIRERED_METHODS, FLUX2, LANCZOS,
+from methods import (BOOGU, COLORIZATION_METHODS, DEFAULT_METHOD, FIBO2_TURBO, FIRERED_METHODS, FLUX2, FLUX3,
+                     FLUX_METHODS, LANCZOS,
                      METHOD_FILENAME_LABELS, MICROSOFT, NATIVE_METHODS, NUNCHAKU_LOADER, QWEN_METHODS, REALESRGAN,
                      UPSCALE_FILENAME_LABELS, UPSCALE_FILES, UPSCALE_SCALES,
                      TWO_IMAGE_METHODS, UPSCALING, model_files, resolve_upscaler)
@@ -46,6 +47,9 @@ PHASES = {
     'ModelSamplingAuraFlow': 'Bearbeitung wird vorbereitet',
     'TextEncodeQwenImageEditPlus': 'Bild und Prompt werden verarbeitet',
     'TextEncodeFibo2': 'Bild und Prompt werden verarbeitet',
+    'TextEncodeBooguEdit': 'Bild und Prompt werden verarbeitet',
+    'TextGenerateV2': 'Prompt wird erweitert',
+    'ReferenceMultiLatent': 'Bild wird kodiert',
     'CLIPTextEncode': 'Prompt wird verarbeitet',
     'VAEEncode': 'Bild wird kodiert',
     'KSampler': 'Bild wird bearbeitet',
@@ -259,6 +263,12 @@ def restoration_graph(method, models, name, size, crop, prompt, seed, scratches,
         graph = fibo2_graph(models, name, size, prompt, seed, second_image=second_image)
     elif method == FLUX2:
         graph = flux2_graph(models, name, size, prompt, seed, second_image=second_image)
+    elif method == FLUX3:
+        graph = flux3_graph(models, name, size, prompt, seed, second_image=second_image)
+    elif method == BOOGU:
+        if second_image is not None:
+            raise ValueError(translate('Dieses Verfahren verarbeitet nur ein Bild.'))
+        graph = boogu_graph(models, name, size, prompt, seed)
     elif method in (*QWEN_METHODS, *FIRERED_METHODS):
         graph = qwen_graph(models, name, prompt, seed, method, second_image=second_image)
     else:
@@ -270,7 +280,7 @@ def processing_settings(record, model_name, graph):
     sampling = []
     for node in (graph or {}).values():
         kind, inputs = node['class_type'], node['inputs']
-        if kind in ('KSampler', 'Flux2Scheduler', 'CFGGuider', 'KSamplerSelect'):
+        if kind in ('KSampler', 'Flux2Scheduler', 'CFGGuider', 'KSamplerSelect', 'ManualSigmas'):
             sampling.append({'node': kind, **{key: value for key, value in inputs.items()
                              if isinstance(value, (int, float, str, bool))}})
     used_models = {key: name for key, name in record['models'].items()
@@ -361,7 +371,7 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
                 return export(prepared, LANCZOS if prepared.size != expected else None)
     else:
         size = restoration_size(original.size, method)
-        alignment = 32 if method == FLUX2 else 16
+        alignment = 32 if method in FLUX_METHODS else 16
         canvas = restoration_canvas(original.size, method)
         prepared, crop = prepare(original, size, alignment=alignment, canvas=canvas)
     if prepared is not original:
@@ -382,7 +392,7 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         if reference is not None:
             second, _ = open_photo(second_image, crop=second_crop, rotation=second_rotation)
             with second:
-                if method == FLUX2:
+                if method in FLUX_METHODS:
                     second_size = restoration_size(second.size, method)
                     second_size = tuple(max(32, round(edge / 32) * 32) for edge in second_size)
                 else:

@@ -5,6 +5,15 @@ from methods import (FIRERED_BASE, NUNCHAKU_LOADER, QWEN2509_BASE, QWEN2509_GGUF
 
 RESULT_NODE = '14'
 
+FLUX3_EDIT_SYSTEM_PROMPT = (
+    "Expand the user's request into one detailed English image-editing instruction. "
+    "The first input is the photo to edit. If a second input is present, use it only as directed "
+    "and say which details come from each image. Describe the intended result and relevant existing "
+    "details, keeping the requested edit, composition, faces, text, textures and photographic character. "
+    "Leave any content outside the requested changes intact. Avoid adding details that are absent or "
+    "unrequested. Output only the instruction, without Markdown or extra commentary."
+)
+
 
 def qwen_graph(models, filename, prompt, seed, method, *, second_image=None):
     graph = {}
@@ -150,6 +159,67 @@ def flux2_graph(models, filename, size, prompt, seed, *, second_image=None):
         add(33, 'ReferenceLatent', conditioning=negative, latent=['31', 0])
         positive, negative = ['32', 0], ['33', 0]
     add(20, 'CFGGuider', model=['1', 0], positive=positive, negative=negative, cfg=1.0)
+    add(9, 'SamplerCustomAdvanced', noise=['19', 0], guider=['20', 0], sampler=['18', 0],
+        sigmas=['17', 0], latent_image=['16', 0])
+    add(10, 'VAEDecode', samples=['9', 0], vae=['3', 0])
+    return graph
+
+
+def flux3_graph(models, filename, size, prompt, seed, *, second_image=None):
+    width, height = size
+    graph = {}
+
+    def add(number, kind, **inputs):
+        graph[str(number)] = {'class_type': kind, 'inputs': inputs}
+
+    add(1, 'UNETLoader', unet_name=models['diffusion'], weight_dtype='default')
+    add(2, 'CLIPLoader', clip_name=models['text'], type='flux3', device='default')
+    add(3, 'VAELoader', vae_name=models['vae'])
+    add(4, 'LoadImage', image=filename)
+    images = {'images.image1': ['4', 0]}
+    references = {'images.image0': ['4', 0]}
+    if second_image:
+        add(30, 'LoadImage', image=second_image)
+        images['images.image2'] = ['30', 0]
+        references['images.image1'] = ['30', 0]
+    add(5, 'CLIPLoader', clip_name=models['prompt_upsampler'], type='flux3', device='default')
+    add(21, 'PrimitiveStringMultiline', value=FLUX3_EDIT_SYSTEM_PROMPT)
+    add(6, 'TextGenerateV2', clip=['5', 0], prompt=prompt, max_length=3584, sampling_mode='on',
+        thinking=False, use_default_template=True, mtp='off', system_prompt=['21', 0],
+        **{'sampling_mode.temperature': 1.0, 'sampling_mode.top_k': 1, 'sampling_mode.top_p': 0.95,
+           'sampling_mode.min_p': 0.0, 'sampling_mode.repetition_penalty': 1.05,
+           'sampling_mode.presence_penalty': 0.0, 'sampling_mode.seed': seed, **images})
+    add(7, 'CLIPTextEncode', clip=['2', 0], text=['6', 0])
+    add(15, 'ConditioningZeroOut', conditioning=['7', 0])
+    add(8, 'ReferenceMultiLatent', positive=['7', 0], negative=['15', 0], vae=['3', 0],
+        resolution='keep resolution', **references)
+    add(16, 'EmptyFlux2LatentImage', width=width, height=height, batch_size=1)
+    add(9, 'KSampler', model=['1', 0], positive=['8', 0], negative=['8', 1], latent_image=['16', 0],
+        seed=seed, steps=16, cfg=1.0, sampler_name='euler', scheduler='simple', denoise=1.0)
+    add(10, 'VAEDecode', samples=['9', 0], vae=['3', 0])
+    return graph
+
+
+def boogu_graph(models, filename, size, prompt, seed):
+    width, height = size
+    graph = {}
+
+    def add(number, kind, **inputs):
+        graph[str(number)] = {'class_type': kind, 'inputs': inputs}
+
+    add(1, 'UNETLoader', unet_name=models['diffusion'], weight_dtype='default')
+    add(2, 'CLIPLoader', clip_name=models['text'], type='boogu', device='default')
+    add(3, 'VAELoader', vae_name=models['vae'])
+    add(4, 'LoadImage', image=filename)
+    add(6, 'TextEncodeBooguEdit', clip=['2', 0], vae=['3', 0], prompt=prompt, negative_prompt='',
+        **{'images.image_1': ['4', 0]})
+    add(16, 'EmptyLatentImage', width=width, height=height, batch_size=1)
+    # Boogu's 1K edit hotfix uses DMD prediction and fresh noise at each step.
+    # ComfyUI's FLOW model reverses its timestep, so use LCM at the complementary sigmas.
+    add(17, 'ManualSigmas', sigmas='1, 0.75, 0.5, 0.25, 0')
+    add(18, 'KSamplerSelect', sampler_name='lcm')
+    add(19, 'RandomNoise', noise_seed=seed)
+    add(20, 'CFGGuider', model=['1', 0], positive=['6', 0], negative=['6', 1], cfg=1.0)
     add(9, 'SamplerCustomAdvanced', noise=['19', 0], guider=['20', 0], sampler=['18', 0],
         sigmas=['17', 0], latent_image=['16', 0])
     add(10, 'VAEDecode', samples=['9', 0], vae=['3', 0])

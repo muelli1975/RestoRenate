@@ -19,6 +19,55 @@
       "source_path": "text_encoders/qwen3vl_4b_int8_convrot.safetensors"
     }
   ],
+  "flux3-klein": [
+    {
+      "path": "models/diffusion_models/flux3-image-klein-int8-convrot.safetensors",
+      "size": 5827874779,
+      "sha256": "847d8933548afd93df4af2cac2498e70891bf28d9dae06d695f536992e168fe2",
+      "url": "https://huggingface.co/KoalaNation/FLUX-3-KLEIN-MODELS/resolve/f291e17070a0894d238901fcf2a9b7cd68193014/diffusion_models/flux3_image_klein_sd_int8_convrot.safetensors?download=true",
+      "repo": "KoalaNation/FLUX-3-KLEIN-MODELS",
+      "revision": "f291e17070a0894d238901fcf2a9b7cd68193014",
+      "source_path": "diffusion_models/flux3_image_klein_sd_int8_convrot.safetensors"
+    },
+    {
+      "path": "models/text_encoders/qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
+      "size": 6724090780,
+      "sha256": "e5d85a7421d197bf5a12474511936ecabce19a833252f16e9310a983194a4458",
+      "url": "https://huggingface.co/KoalaNation/FLUX-3-KLEIN-MODELS/resolve/f291e17070a0894d238901fcf2a9b7cd68193014/text_encoders/qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors?download=true",
+      "repo": "KoalaNation/FLUX-3-KLEIN-MODELS",
+      "revision": "f291e17070a0894d238901fcf2a9b7cd68193014",
+      "source_path": "text_encoders/qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors"
+    }
+  ],
+  "boogu-edit-turbo": [
+    {
+      "path": "models/diffusion_models/boogu_image_edit_turbo_hotfix_1k_20260708_int8_convrot.safetensors",
+      "size": 10326755028,
+      "sha256": "b0bdd36eb559d62e8169e16a1e8b4438f8be17fc092ca9d43a2d8460c1d79e6a",
+      "url": "https://huggingface.co/Comfy-Org/Boogu-Image/resolve/8606e7df2f5389282617b8b534db290e1f5d7811/diffusion_models/boogu_image_edit_turbo_hotfix_1k_20260708_int8_convrot.safetensors?download=true",
+      "repo": "Comfy-Org/Boogu-Image",
+      "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
+      "source_path": "diffusion_models/boogu_image_edit_turbo_hotfix_1k_20260708_int8_convrot.safetensors"
+    },
+    {
+      "path": "models/text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
+      "size": 10588637512,
+      "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
+      "url": "https://huggingface.co/Comfy-Org/Boogu-Image/resolve/8606e7df2f5389282617b8b534db290e1f5d7811/text_encoders/qwen3vl_8b_fp8_scaled.safetensors?download=true",
+      "repo": "Comfy-Org/Boogu-Image",
+      "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
+      "source_path": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors"
+    },
+    {
+      "path": "models/vae/flux1_vae_bf16.safetensors",
+      "size": 167664710,
+      "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
+      "url": "https://huggingface.co/Comfy-Org/Boogu-Image/resolve/8606e7df2f5389282617b8b534db290e1f5d7811/vae/flux1_vae_bf16.safetensors?download=true",
+      "repo": "Comfy-Org/Boogu-Image",
+      "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
+      "source_path": "vae/flux1_vae_bf16.safetensors"
+    }
+  ],
   "microsoft": [
     {
       "path": "downloads/microsoft/global_checkpoints.zip",

@@ -23,6 +23,7 @@ from portable_setup import CPU, MACOS, MPS, UNIX_RUNTIME, Setup
 from preload_models import PreloadDialog
 from restoration import Client, restore, select_models
 from sizes import DOUBLE_SIZE, NO_RESCALE, QUADRUPLE_SIZE
+from edit_models import check_backend_schemas
 from field_focus import check_field_focus, field_focus_maps
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
@@ -84,6 +85,7 @@ def test_upscaling(source, folder):
         client = Client(backend.start(paths, method=UPSCALING), root)
         device = client.json('/system_stats')['devices'][0]
         assert device['type'] == compute, device
+        check_backend_schemas(client.json('/object_info'))
         for upscaler, model_file, size, dimensions, filename_label in (
             (None, '4xNomos2_hq_mosr.safetensors', DOUBLE_SIZE, (128, 80), 'Nomos2-MoSR'),
             (REALESRGAN_ANIME, 'RealESRGAN_x4plus_anime_6B.pth', QUADRUPLE_SIZE, (256, 160), 'RealESRGAN-Anime-4x'),

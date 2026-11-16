@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 APP_NAME = 'RestoRenate'
-APP_VERSION = '1.1'
+APP_VERSION = '1.2'
 MAX_SEED = 2**64 - 1
 PRIMITIVES = {'INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO', 'COMFY_DYNAMICCOMBO_V3'}
 
@@ -87,6 +87,12 @@ def editable_workflow(graph, definitions, source_name, *, second_image=None):
                     fields.update((key, field) for key in values if key.startswith(prefix))
                 else:
                     fields[name] = signature
+                    if signature[0] == 'COMFY_DYNAMICCOMBO_V3':
+                        option = next((item for item in signature[1]['options']
+                                       if item['key'] == values.get(name)), None)
+                        if option:
+                            fields.update((f'{name}.{child}', spec)
+                                          for group in option['inputs'].values() for child, spec in group.items())
         for name in (*fields, *(name for name in values if name not in fields)):
             signature = fields.get(name, ('*',))
             field_type = signature[0]
@@ -97,6 +103,8 @@ def editable_workflow(graph, definitions, source_name, *, second_image=None):
             if is_widget:
                 if value is None or is_link:
                     choices = field_type if isinstance(field_type, list) else options.get('options', [])
+                    if field_type == 'COMFY_DYNAMICCOMBO_V3':
+                        choices = [option['key'] for option in choices]
                     value = options.get('default', choices[0] if choices else None)
                 if kind == 'LoadImage' and name == 'image':
                     value = second_image if key == '30' and second_image else source_name

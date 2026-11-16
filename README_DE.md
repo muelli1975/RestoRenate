@@ -1,6 +1,6 @@
-# RestoRenate 1.1
+# RestoRenate 1.2 Test
 
-[Downloads und SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.1) · [English](README.md) · [Anleitung](README_DE_EN.txt)
+[Testdownloads und SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2-test) · [English](README.md) · [Anleitung](README_DE_EN.txt)
 
 RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner. Mit unterstützten Modellen lassen sich Bilder auch per Prompt bearbeiten oder anhand eines zweiten Fotos verändern. Die Oberfläche ist auf Deutsch und Englisch verfügbar.
 
@@ -33,6 +33,12 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 3. **Start** wählen. Über **Modelle vorab laden …** lassen sich mehrere Verfahren gemeinsam einrichten. Optionale Lightning-LoRAs stehen unter ihrem Basismodell.
 4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. Die Navigation zeigt beispielsweise **Ergebnis 1/3**. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild↑ / Bild↓** blättern durch die Ergebnisse.
 
+## Neu in 1.2 Test
+
+**FLUX 3 Image Klein · INT8** bearbeitet Fotos in 16 Schritten mit einem lokalen Prompt-Umschreiber und unterstützt Bild 2. Der optionale Download vom KoalaNation-Spiegel funktioniert ohne Hugging-Face-Konto. RestoRenate prüft die SHA-256-Werte der Originaldateien und verwendet Fibos Textencoder sowie den gemeinsamen FLUX-Bilddecoder weiter. Es gilt die FLUX Kommunity License.
+
+**Boogu 0.1 Edit-Turbo · INT8** bearbeitet einzelne Fotos mit dem 1K-Hotfix in vier Schritten. Das Modell steht unter Apache 2.0. Beide Testmodelle stehen in den GPU-Modi zur Auswahl.
+
 ## Neu in 1.1
 
 Bild 2 kann unabhängig beschnitten und gedreht werden. Bild 1 bestimmt mit seinem Ausschnitt das Seitenverhältnis der Ausgabe. Zwei Montage-Presets und zusätzliche Satzbausteine stehen im Prompt-Menü bereit.
@@ -45,7 +51,7 @@ JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoR
 
 Standardmäßig landen die Ergebnisse in `output` neben dem gewählten Bild oder im gewählten Eingabeordner. Mit jeder neuen Eingabe passt sich das Ziel an. **Auswählen …** wechselt zu einem eigenen Ordner und speichert direkt dort. Die App merkt sich den Ausgabemodus und den eigenen Ordner getrennt.
 
-- **Restaurierung und Bearbeitung:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, Qwen Image Edit 2509/2511 und FireRed Image Edit 1.1. Unterstützte Edit-Modelle können ein separat drehbares zweites Bild nutzen.
+- **Restaurierung und Bearbeitung:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Boogu Edit-Turbo, Qwen Image Edit 2509/2511 und FireRed Image Edit 1.1. Unterstützte Edit-Modelle können ein separat drehbares zweites Bild nutzen.
 - **Kolorierung:** DDColor ModelScope, Paper, Artistic und Tiny sowie DeOldify Stable und Artistic. Die Kolorierung läuft auf der CPU. DDColor Paper ist ein optionaler Download.
 - **Hochskalieren:** Nomos2 HQ MoSR ist die Vorgabe für Restaurierung und Hochskalierung. Zur Auswahl stehen auch Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT für Porträts sowie Real-ESRGAN Anime 4× und AnimeSharp 4× für Zeichnungen und Illustrationen.
 - **Export:** PNG, JPEG mit Qualität 95 und 4:4:4 sowie TIFF mit LZW-Kompression. JPEG und TIFF übernehmen geeignete Metadaten. PNG speichert bei ComfyUI-Verarbeitung den Workflow.

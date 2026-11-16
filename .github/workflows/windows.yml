@@ -2,7 +2,7 @@ name: Build and test Windows x64
 
 on:
   push:
-    branches: [main, codex/restorenate-1.1]
+    branches: [main, codex/restorenate-1.1, codex/restorenate-1.2-test]
   pull_request:
   workflow_dispatch:
 
@@ -32,7 +32,7 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $digest -notmatch '^sha256:[a-f0-9]{64}$') { throw 'Published Windows archive checksum is unavailable' }
           gh release download v1.0 --pattern 'RestoRenate_1.0_Windows_x64.zip' --dir original
           if ($LASTEXITCODE -ne 0) { throw 'Unable to download the Windows package' }
-          python scripts/repack_portable.py windows original/RestoRenate_1.0_Windows_x64.zip dist/RestoRenate_1.1_Windows_x64.zip --smoke-dir dist/smoke --base-sha256 ($digest.Substring(7))
+          python scripts/repack_portable.py windows original/RestoRenate_1.0_Windows_x64.zip dist/RestoRenate_1.2_Test_Windows_x64.zip --smoke-dir dist/smoke --base-sha256 ($digest.Substring(7))
       - name: Test the EXE from a fresh extraction
         shell: pwsh
         run: |
@@ -41,7 +41,7 @@ jobs:
           if (!$launcher.WaitForExit(10000) -or $launcher.ExitCode -ne 0) { throw 'Launcher failed' }
           $app = $null
           for ($i=0; $i -lt 60 -and !$app; $i++) {
-            $app = Get-Process pythonw -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $root 'runtime/python/pythonw.exe') -and $_.MainWindowTitle -eq 'RestoRenate – 1.1' } | Select-Object -First 1
+            $app = Get-Process pythonw -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $root 'runtime/python/pythonw.exe') -and $_.MainWindowTitle -eq 'RestoRenate – 1.2' } | Select-Object -First 1
             if (!$app) { Start-Sleep -Milliseconds 250 }
           }
           if (!$app -or !$app.Responding) {
@@ -58,6 +58,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Windows startup check failed' }
           & "$root/runtime/python/python.exe" tests/lut_controls.py $root
           if ($LASTEXITCODE -ne 0) { throw 'LUT check failed' }
+          & "$root/runtime/python/python.exe" tests/edit_models.py $root
+          if ($LASTEXITCODE -ne 0) { throw 'Edit model checks failed' }
       - uses: actions/upload-artifact@v4
         if: success() || failure()
         with:
@@ -67,5 +69,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: RestoRenate-Windows-x64
-          path: dist/RestoRenate_1.1_Windows_x64.zip
+          path: dist/RestoRenate_1.2_Test_Windows_x64.zip
           if-no-files-found: error
