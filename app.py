@@ -41,6 +41,7 @@ from sizes import (CUSTOM_SIZES, MAX_SIDE, NO_RESCALE, SIZE_CHOICES, ULTRA_HD, m
 from photo_colors import Colorizer
 from progress_track import ProgressTrack
 from prompt_menu import PromptMenu
+from selection_menu import SelectionMenu
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
                    TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, attach_tooltip, checkbox,
                    set_control_state)
@@ -471,8 +472,8 @@ class Application:
         self.method_widget = ttk.Menubutton(left, textvariable=self.method, style='Method.Input.TMenubutton',
                                             takefocus=True)
         self.method_widget.grid(row=9, column=0, sticky='ew')
-        self.method_menu_colors = dict(menu_colors, disabledforeground=MUTED, selectcolor=GOLD_LIGHT)
-        self.method_menu = tk.Menu(self.method_widget, **self.method_menu_colors)
+        self.method_menu_colors = dict(menu_colors, disabledforeground=GOLD)
+        self.method_menu = SelectionMenu(self.method_widget, self.method, **self.method_menu_colors)
         self.method_widget.configure(menu=self.method_menu)
         self.controls.append(self.method_widget)
         self.refresh_method_menu()
@@ -832,17 +833,14 @@ class Application:
 
     def add_method_option(self, menu, method):
         value = translate(METHODS[method])
-        menu.add_radiobutton(label=COLORIZATION_NAMES.get(method, value), value=value,
-                             variable=self.method, command=self.choose_method)
+        self.method_menu.add_choice(COLORIZATION_NAMES.get(method, value), value, self.choose_method, menu=menu)
 
     def refresh_method_menu(self):
         menu = self.method_menu
-        menu.delete(0, 'end')
-        for submenu in menu.winfo_children():
-            submenu.destroy()
+        menu.clear_entries()
         available = set(self.method_ids.values())
         for heading, families in METHOD_MENU_SECTIONS:
-            menu.add_command(label=translate(heading), state='disabled')
+            menu.add_heading(translate(heading))
             for family, methods in families:
                 visible = [method for method in methods if method in available]
                 if not visible:
@@ -850,11 +848,12 @@ class Application:
                 target = menu
                 if family is not None:
                     target = tk.Menu(menu, **self.method_menu_colors)
-                    menu.add_cascade(label=family, menu=target)
+                    menu.add_category(family, target)
                 for method in visible:
                     self.add_method_option(target, method)
             menu.add_separator()
         self.add_method_option(menu, UPSCALING)
+        menu.update_marks()
 
     def offer_cpu_fallback(self, reason):
         self.status.set(reason.splitlines()[0])

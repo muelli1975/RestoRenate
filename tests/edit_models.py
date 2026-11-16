@@ -16,6 +16,7 @@ from export_metadata import editable_workflow, seed_from_metadata
 from methods import FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, UPSCALERS, UPSCALING, available_methods, model_files
 from portable_setup import MACOS, MPS, NVIDIA, Setup
 from restoration import restoration_graph
+from theme import GOLD
 
 
 def make_graph(second=None):
@@ -100,12 +101,20 @@ def check_layout(source, language):
             assert menu_labels(menu) == [headings[0], METHODS[FIBO2_TURBO], 'FireRed', 'FLUX', METHODS[MICROSOFT],
                                          'Qwen', headings[1], 'DDColor', 'DeOldify', headings[2]]
             assert menu.entrycget(headings[0], 'state') == menu.entrycget(headings[1], 'state') == 'disabled'
+            if window.tk.call('tk', 'windowingsystem') == 'aqua':
+                assert all(menu.entrycget(heading, 'image') for heading in headings[:2])
+            else:
+                assert str(menu.cget('disabledforeground')) == GOLD
             assert menu.entrycget(headings[2], 'value') == app.translate(METHODS[UPSCALING])
             assert tuple(gui.upscale_options.cget('values')) == UPSCALERS
             flux = menu.nametowidget(menu.entrycget('FLUX', 'menu'))
             assert [flux.entrycget(index, 'value') for index in range(flux.index('end') + 1)] == [METHODS[FLUX2], METHODS[FLUX3]]
+            assert menu.entrycget('FLUX', 'image') == str(menu.blank)
             flux.invoke(1)
             assert gui.current_method == FLUX3
+            assert menu.entrycget('FLUX', 'image') == flux.entrycget(1, 'image') == str(menu.check)
+            assert flux.entrycget(0, 'image') == str(menu.blank)
+            assert menu.entrycget(METHODS[FIBO2_TURBO], 'image') == str(menu.blank)
             window.update()
             assert gui.second_row.winfo_ismapped()
             minimum = window.minsize()
@@ -120,6 +129,8 @@ def check_layout(source, language):
                 print(f'{language} {FLUX3}: {window.winfo_width()}x{window.winfo_height()}, '
                       f'minimum {minimum}, method field {button.winfo_width()}x{button.winfo_height()} px.')
             menu.invoke(METHODS[FIBO2_TURBO])
+            assert menu.entrycget(METHODS[FIBO2_TURBO], 'image') == str(menu.check)
+            assert menu.entrycget('FLUX', 'image') == flux.entrycget(1, 'image') == str(menu.blank)
             with patch.object(app.messagebox, 'askyesno', return_value=True):
                 assert gui.offer_cpu_fallback('Test CPU fallback')
             assert 'FireRed' not in menu_labels(menu)

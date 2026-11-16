@@ -6,6 +6,7 @@ import customtkinter as ctk
 
 from language import translate
 from looks import Look, catalog
+from selection_menu import SelectionMenu
 from theme import BORDER, DISABLED, GOLD, GOLD_LIGHT, PANEL_BG, SECONDARY_BG, TEXT, attach_tooltip, checkbox, set_control_state
 
 SECTIONS = {
@@ -24,7 +25,8 @@ class LookControls:
         self.kept_look = None
         pref = app.config.get('lut')
         pref = pref if isinstance(pref, dict) else {}
-        self.first_key = self.key = next(iter(catalog()))
+        self.first_key = next(iter(catalog()))
+        self.key = tk.StringVar(master=parent, value=self.first_key)
         amount = pref.get('strength')
         self.strength = tk.DoubleVar(master=parent, value=amount if type(amount) is int and 0 <= amount <= 100 else 100)
         self.hover = None
@@ -83,7 +85,7 @@ class LookControls:
 
     def localize(self):
         previous = self.menu
-        self.menu = tk.Menu(self.choose, **self.menu_colors, postcommand=self.begin_menu)
+        self.menu = SelectionMenu(self.choose, self.key, **self.menu_colors, postcommand=self.begin_menu)
         self.menu.bind('<Unmap>', self.end_menu)
         groups = {}
         section = 'film'
@@ -93,10 +95,11 @@ class LookControls:
         for section, options in groups.items():
             group = tk.Menu(self.menu, **self.menu_colors)
             for key, entry in options:
-                group.add_command(label=self.label(entry), command=lambda k=key: self.select(k))
+                self.menu.add_choice(self.label(entry), key, lambda k=key: self.select(k), menu=group)
             group.bind('<<MenuSelect>>', lambda event, g=group, opts=options: self.highlight(g, opts))
             group.bind('<Unmap>', lambda event, g=group: self.end_menu(event, g))
-            self.menu.add_cascade(label=translate(SECTIONS[section]), menu=group)
+            self.menu.add_category(translate(SECTIONS[section]), group)
+        self.menu.update_marks()
         self.choose.configure(menu=self.menu)
         if previous is not None:
             previous.destroy()
@@ -114,7 +117,7 @@ class LookControls:
         return entry.get('name_en', entry['name']) if self.app.language == 'en' else entry['name']
 
     def look(self):
-        return Look(self.key, round(self.strength.get()))
+        return Look(self.key.get(), round(self.strength.get()))
 
     def armed(self):
         return self.look() if self.enabled.get() and round(self.strength.get()) else None
@@ -131,13 +134,13 @@ class LookControls:
             self.enabled.set(False)
 
     def load_input(self, *, use_kept):
-        self.key = self.first_key
+        self.key.set(self.first_key)
         self.set_look(self.kept_look if use_kept else None)
 
     def set_look(self, look):
         self.clear()
         if look is not None:
-            self.key = look.key
+            self.key.set(look.key)
             self.strength.set(look.strength)
             self.enabled.set(True)
 
@@ -167,7 +170,8 @@ class LookControls:
             self.refresh()
 
     def select(self, key):
-        self.key = key
+        if key != self.key.get():
+            self.key.set(key)
         self.hover = self.hover_menu = None
         self.update_kept_look()
         self.refresh()
@@ -249,7 +253,7 @@ class LookControls:
                 self.enabled.set(True)
             if key in ('left', 'right'):
                 order = list(catalog())
-                index = order.index(self.key) + (1 if key == 'right' else -1)
+                index = order.index(self.key.get()) + (1 if key == 'right' else -1)
                 self.select(order[index % len(order)])
             else:
                 self.step(5 if key == 'up' else -5)
@@ -288,13 +292,13 @@ class LookControls:
         state = 'normal' if active else 'disabled'
         set_control_state(self.check, 'normal' if self.available else 'disabled')
         set_control_state(self.keep_check, 'normal' if self.available else 'disabled')
-        self.choose.configure(state=state, text=self.label(catalog()[self.key]))
+        self.choose.configure(state=state, text=self.label(catalog()[self.key.get()]))
         self.slider.configure(state=state, progress_color=GOLD if active else BORDER,
                               button_color=GOLD_LIGHT if active else DISABLED,
                               button_hover_color=GOLD_LIGHT if active else DISABLED)
         self.value.configure(text=f'{round(self.strength.get())} %', text_color=TEXT if active else DISABLED)
         self.save_button.configure(state='normal' if active and round(self.strength.get()) else 'disabled')
-        look = Look(self.hover or self.key, round(self.strength.get())) if active else None
+        look = Look(self.hover or self.key.get(), round(self.strength.get())) if active else None
         basis = self.view.after_image if self.result else self.view.before_image
         self.view.preview_look(basis if look is not None else None, look)
         self.app.after_heading.configure(text=translate('LUT-Vorschau' if active else 'Nachher'),

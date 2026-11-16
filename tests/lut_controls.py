@@ -337,7 +337,7 @@ def test_gui(root):
         first_look, other_look, *_ = catalog()
         app.SETTINGS.write_text(json.dumps({'lut': {'id': other_look, 'strength': 100}}), encoding='utf-8')
         gui = app.Application(window)
-        assert gui.look_controls.key == first_look
+        assert gui.look_controls.look().key == first_look
         assert window.title() == f'{app.APP_NAME} – {app.APP_VERSION}'
         window.update()
         check_preload(window, root)
@@ -415,7 +415,7 @@ def test_gui(root):
         time.sleep(.025)
         window.update()
         assert not controls.enabled.get() and gui.compare.look_basis is None
-        key_before = controls.key
+        key_before = controls.look().key
         for name in ('c', 'Right'):
             widget.event_generate(f'<KeyPress-{name}>')
             if name == 'Right':
@@ -424,7 +424,22 @@ def test_gui(root):
         time.sleep(.025)
         window.update()
         assert controls.enabled.get() and gui.compare.look_basis is original
-        assert controls.key != key_before
+        assert controls.look().key != key_before
+        menu = controls.menu
+        film, film_index = menu.choices[controls.look().key]
+        cinema, cinema_index = menu.choices['classic_cinema']
+        _, film_entry = menu.categories[film]
+        _, cinema_entry = menu.categories[cinema]
+        assert menu.entrycget(film_entry, 'image') == film.entrycget(film_index, 'image') == str(menu.check)
+        assert menu.entrycget(cinema_entry, 'image') == cinema.entrycget(cinema_index, 'image') == str(menu.blank)
+        cinema.activate(cinema_index)
+        cinema.event_generate('<<MenuSelect>>')
+        assert controls.hover == 'classic_cinema'
+        assert controls.look().key != 'classic_cinema' and menu.entrycget(film_entry, 'image') == str(menu.check)
+        cinema.invoke(cinema_index)
+        assert controls.look().key == 'classic_cinema' and controls.hover is None
+        assert menu.entrycget(cinema_entry, 'image') == cinema.entrycget(cinema_index, 'image') == str(menu.check)
+        assert menu.entrycget(film_entry, 'image') == film.entrycget(film_index, 'image') == str(menu.blank)
         controls.step(-5)
         assert controls.look().strength == 95
         entry = gui.seed_entry
@@ -465,7 +480,7 @@ def test_gui(root):
         assert gui.compare.look_basis is gui.compare.before_image
         gui.preview_switch.invoke()
         assert gui.index == 0 and gui.compare.after_image is not None and not controls.enabled.get()
-        assert controls.key != first_look and controls.look().strength == 95
+        assert controls.look().key != first_look and controls.look().strength == 95
         assert gui.second_button.cget('text') == app.translate('Bild …')
 
         controls.check.toggle()
@@ -549,12 +564,12 @@ def test_gui(root):
 
         controls.select(other_look)
         gui.pick_sources(source)
-        assert gui.index >= 0 and controls.key == first_look
+        assert gui.index >= 0 and controls.look().key == first_look
         new_source = root / 'new-image.png'
         Image.new('RGB', (80, 48)).save(new_source)
         controls.select(other_look)
         gui.pick_sources(new_source)
-        assert gui.index == -1 and controls.key == first_look
+        assert gui.index == -1 and controls.look().key == first_look
         assert controls.look().strength == 95 and not controls.enabled.get()
 
         gui.pick_sources(source)
@@ -591,7 +606,7 @@ def test_gui(root):
         gui.load_processing_preset('Series look')
         assert controls.armed() == Look(other_look, 35) and not controls.keep.get()
         gui.pick_sources(source)
-        assert gui.index >= 0 and controls.armed() is None and controls.key == first_look
+        assert gui.index >= 0 and controls.armed() is None and controls.look().key == first_look
         gui.load_processing_preset('Series look')
         assert gui.index == -1 and controls.armed() == Look(other_look, 35)
         assert gui.compare.look_basis is gui.compare.before_image
