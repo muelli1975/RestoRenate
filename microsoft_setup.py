@@ -31,7 +31,7 @@ def microsoft_ready(setup, comfy):
     if not vendor.is_file() or not node.is_file() or node.read_bytes() != vendor.read_bytes():
         return False
     receipts = setup.backend_state.get('microsoft_wheels', {})
-    if any(receipts.get(item['path']) != item['sha256'] for item in setup.models if item['path'].endswith('.whl')):
+    if any(receipts.get(item['path']) != item['sha256'] for item in setup.microsoft_wheels):
         return False
     folder = setup.root / 'models/microsoft/checkpoints'
     if not weights_present(folder, GLOBAL_FILES):
@@ -70,8 +70,7 @@ def install_microsoft(setup, python, comfy):
     folder = setup.root / 'models/microsoft/checkpoints'
     wheel_receipts = setup.backend_state.setdefault('microsoft_wheels', {})
     method_name = METHODS[MICROSOFT]
-    wheels = [item for item in setup.models if item['path'].endswith('.whl')
-              and wheel_receipts.get(item['path']) != item['sha256']]
+    wheels = [item for item in setup.microsoft_wheels if wheel_receipts.get(item['path']) != item['sha256']]
     if wheels:
         setup.notify(translate('{0} wird eingerichtet …', method_name))
         setup.command([python, '-I', '-X', 'utf8', '-m', 'pip', '--isolated', 'install', '--no-index', '--no-deps',

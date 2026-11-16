@@ -26,12 +26,13 @@ from crop import CropRegion
 from export_metadata import editor_graph
 from imaging import exiftool_executable
 from looks import Look, apply_look, catalog
-from methods import DDCOLOR, DDCOLOR_ARTISTIC, DDCOLOR_PAPER, DDCOLOR_TINY, LANCZOS, MICROSOFT, UPSCALING
+from methods import (COLORIZATION_NAMES, DDCOLOR, DDCOLOR_ARTISTIC, DDCOLOR_PAPER, DDCOLOR_TINY,
+                     DEOLDIFY_STABLE, LANCZOS, MICROSOFT, UPSCALING)
 from portable_paths import CODE
 from portable_setup import COMFY_CONSTRAINTS, UNIX_RUNTIME
 from preload_models import PreloadDialog
 from restoration import export_look_variant, restore
-from sizes import DOUBLE_SIZE
+from sizes import DOUBLE_SIZE, NO_RESCALE
 from reference_controls import check_reference_controls
 from setup_downloads import check_downloads
 
@@ -91,6 +92,67 @@ def test_metadata(root, exiftool):
         export_look_variant(source, saved, None, 0, root / 'output', fmt, exiftool,
                             look, {}, inherited, lambda: False)
         assert inherited['luts'] == [look.record(), look.record()], inherited
+
+
+def test_microsoft_colorization_export(root):
+    source = root / 'scan.png'
+    folder = root / 'microsoft-output'
+    size = (80, 48)
+    Image.new('RGB', size, (60, 60, 60)).save(source)
+    restored = (128, 128, 128)
+    colored = (168, 118, 96)
+    client = SimpleNamespace(root=root, image=lambda _: Image.new('RGB', size, restored))
+
+    def colorize(image):
+        assert image.size == size and image.getpixel((0, 0)) == restored
+        return Image.new('RGB', image.size, colored)
+
+    colorizer = Mock(process=Mock(side_effect=colorize))
+    models = {'colorizer': 'ddcolor_paper.onnx'}
+    record = {'method': 'Microsoft', 'models': models, 'prompt': '', 'seed': None}
+    messages = []
+    with patch('restoration.generate', return_value={'filename': 'preview.png'}) as generate:
+        saved, warning = restore(client, models, source, folder, 'PNG', None, '', None, messages.append,
+                                 lambda: False, record, method=MICROSOFT, faces=True, upscaler=LANCZOS,
+                                 size_choice=(NO_RESCALE, 0), colorization=DDCOLOR_PAPER, colorizer=colorizer)
+    assert not warning and list(folder.glob('*.png')) == [saved]
+    assert 'Microsoft' in saved.name and 'DDColor-Paper' in saved.name
+    with Image.open(saved) as image:
+        assert image.size == size and image.getpixel((0, 0)) == colored
+    graph = generate.call_args.args[1]
+    assert graph['20']['inputs']['image'] == ['9', 0]
+    assert record['settings']['colorization'] == DDCOLOR_PAPER
+    assert record['settings']['models']['colorizer'] == 'ddcolor_paper.onnx'
+    assert record['seconds_by_stage']['colorization'] >= 0
+    assert app.translate('Bild wird koloriert …') in messages
+    colorizer.process.assert_called_once()
+    assert not list((root / 'work/input').glob('*.png'))
+
+
+def check_microsoft_colorization_controls(gui):
+    microsoft = app.translate(app.METHODS[MICROSOFT])
+    gui.method.set(microsoft)
+    gui.choose_method()
+    gui.window.update()
+    assert gui.microsoft_options.winfo_ismapped()
+    assert gui.microsoft_colorizer_widget.instate(['disabled'])
+    assert gui.microsoft_colorization() is None
+    gui.microsoft_colorize_control.toggle()
+    assert gui.microsoft_colorizer_widget.instate(['readonly'])
+    gui.microsoft_colorizer.set(COLORIZATION_NAMES[DEOLDIFY_STABLE])
+    gui.microsoft_colorizer_widget.event_generate('<<ComboboxSelected>>')
+    assert gui.microsoft_colorization() == DEOLDIFY_STABLE
+    assert app.read_settings()['microsoft_colorizer'] == DEOLDIFY_STABLE
+    combined = {'method': MICROSOFT, **gui.microsoft_colorization_settings()}
+    gui.method.set(app.translate(app.METHODS[DDCOLOR]))
+    gui.choose_method()
+    gui.window.update()
+    assert not gui.microsoft_options.winfo_ismapped() and gui.microsoft_colorization() is None
+    gui.processing_presets.update({'Legacy Microsoft': {'method': MICROSOFT}, 'Combined': combined})
+    gui.load_processing_preset('Legacy Microsoft')
+    assert gui.microsoft_colorization() is None and gui.microsoft_colorizer_widget.instate(['disabled'])
+    gui.load_processing_preset('Combined')
+    assert gui.microsoft_colorization() == DEOLDIFY_STABLE
 
 
 def check_preload(window, root):
@@ -574,6 +636,7 @@ def test_gui(root):
             assert len(gui.results) == 5
         gui.events.put(('status', 'event after settings error'))
         wait_for(lambda: gui.status.get() == 'event after settings error')
+        check_microsoft_colorization_controls(gui)
     finally:
         window.destroy()
 
@@ -588,6 +651,7 @@ if __name__ == '__main__':
         directory = Path(temp)
         check_downloads(directory)
         test_export(directory)
+        test_microsoft_colorization_export(directory)
         exiftool = os.environ.get('RESTORENATE_TEST_EXIFTOOL') or exiftool_executable(app.ROOT)
         test_metadata(directory, exiftool)
         test_gui(directory)

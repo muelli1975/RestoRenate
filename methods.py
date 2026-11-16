@@ -84,6 +84,7 @@ METHODS = {
     DEOLDIFY_ARTISTIC: 'Kolorieren · DeOldify Artistic',
     UPSCALING: 'Nur hochskalieren',
 }
+COLORIZATION_NAMES = {method: METHODS[method].removeprefix('Kolorieren · ') for method in COLORIZATION_METHODS}
 METHOD_FILENAME_LABELS = {
     FIBO2_TURBO: 'Fibo-2.0',
     FLUX2: 'FLUX2-4B',

@@ -127,7 +127,7 @@ def remove_readonly(function, path, error):
 class Setup:
     def __init__(self, root=ROOT, notify=print, transfer=None, cancelled=lambda: False,
                  method=DEFAULT_METHOD, faces=False, upscaler=None, compute=DEFAULT_COMPUTE,
-                 download_limits=None, confirm_download=None):
+                 download_limits=None, confirm_download=None, colorization=None):
         self.root = Path(root).resolve()
         code = CODE if self.root == ROOT else self.root
         self.manifest_bytes = (code / 'download_manifest.json').read_bytes()
@@ -157,8 +157,14 @@ class Setup:
                 spec for spec in optional[MICROSOFT] if not spec['path'].endswith('cp313-cp313-win_amd64.whl')
             ] + optional['microsoft-amd-wheels']
         self.models = model_specs(self.manifest, optional, method, self.faces, upscaler)
+        self.microsoft_wheels = [spec for spec in self.models if spec['path'].endswith('.whl')] if method == MICROSOFT else []
         self.nunchaku_runtime = optional['nunchaku-runtime'] if method == QWEN2509_NUNCHAKU else []
-        self.colorizer_path = contained(self.root, optional[method][0]['path']) if method in COLORIZATION_METHODS else None
+        self.colorizer_method = method if method in COLORIZATION_METHODS else None
+        if method == MICROSOFT and colorization in COLORIZATION_METHODS:
+            self.colorizer_method = colorization
+            self.models.extend(model_specs(self.manifest, optional, colorization))
+        self.colorizer_path = (contained(self.root, optional[self.colorizer_method][0]['path'])
+                               if self.colorizer_method else None)
         self.color_runtime = optional['color-runtime'] if self.colorizer_path and not UNIX_RUNTIME else []
         self.color_runtime_path = None if UNIX_RUNTIME else self.root / 'runtime/color-python'
         if self.color_runtime:
@@ -516,8 +522,9 @@ class Setup:
         return not self.color_runtime or (self.color_runtime_path / 'onnxruntime/__init__.py').is_file()
 
     def runtime_needs_setup(self):
-        if not self.color_ready():
-            return True
+        return not self.color_ready() or self.comfy_needs_setup()
+
+    def comfy_needs_setup(self):
         if not self.comfy:
             return False
         paths = self.paths()

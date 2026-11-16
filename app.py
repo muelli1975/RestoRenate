@@ -32,7 +32,7 @@ from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINT
                             UNIX_RUNTIME, ComputeUnavailable, Setup, SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import PreloadProgress, choose_preloads, format_download_size, preload_label
-from methods import (COLORIZATION_METHODS, CPU_METHODS, DEFAULT_METHOD, LANCZOS, LICENSES,
+from methods import (COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
                      METHODS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
                      TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
                      available_methods, resolve_upscaler, uses_comfy)
@@ -106,6 +106,7 @@ SETTINGS = ROOT / 'settings' / 'settings.json'
 JOBS_LOG = ROOT / 'logs' / 'jobs.jsonl'
 FILE_TYPES = [('Bilddateien', ' '.join('*' + ext for ext in sorted(EXTENSIONS))), ('Alle Dateien', '*')]
 ROTATION_CHOICES = (('90° links', -1), ('90° rechts', 1), ('180°', 2), ('Drehung zurücksetzen', None))
+COLORIZATION_IDS = {name: method for method, name in COLORIZATION_NAMES.items()}
 REFERENCE_PREVIEW_SIZE = (152, 104)
 MIN_WINDOW_WIDTH = 950
 START_WINDOW_WIDTH = 1280
@@ -153,6 +154,14 @@ def read_processing_presets(saved):
             if isinstance(name, str) and name.strip() and name not in BUILTIN_PROCESSING_PRESETS
             and isinstance(preset, dict) and isinstance(preset.get('method'), str)
             and preset['method'] in METHODS}
+
+
+def processing_device(method, device, colorizer_method):
+    if device != 'CPU' and colorizer_method is not None:
+        if method == MICROSOFT:
+            return '{0} (Restaurierung) · CPU (Kolorierung)', device
+        return 'CPU (Kolorierung) · {0} (Upscaler)', device
+    return '{0}', device
 
 
 class LocalizedText(tk.StringVar):
@@ -233,6 +242,9 @@ class Application:
         self.method = tk.StringVar(value=translate(METHODS[self.current_method]))
         self.scratches = tk.BooleanVar(value=bool(self.config.get('scratches', True)))
         self.faces = tk.BooleanVar(value=bool(self.config.get('faces', False)))
+        self.microsoft_colorize = tk.BooleanVar()
+        self.microsoft_colorizer = tk.StringVar()
+        self.load_microsoft_colorization(self.config)
         self.variant_count = VARIANT_COUNTS.get(str(self.config.get('variants')), 1)
         self.variants = tk.StringVar(value=str(self.variant_count))
         self.custom = self.read_custom_presets(self.config.get('presets'))
@@ -494,7 +506,19 @@ class Application:
         faces = self.labelled(checkbox, self.microsoft_options, 'Gesichter verbessern',
                               variable=self.faces, command=self.check_ready)
         faces.pack(anchor='w')
-        self.controls.extend((scratches, faces))
+        colorization = tk.Frame(self.microsoft_options, bg=PANEL)
+        colorization.pack(fill='x', pady=(4, 0))
+        self.microsoft_colorize_control = self.labelled(
+            checkbox, colorization, 'Kolorieren', variable=self.microsoft_colorize,
+            command=self.microsoft_colorization_changed,
+        )
+        self.microsoft_colorize_control.pack(side='left', padx=(0, 8))
+        self.microsoft_colorizer_widget = ttk.Combobox(
+            colorization, textvariable=self.microsoft_colorizer, values=tuple(COLORIZATION_IDS), width=1,
+        )
+        self.microsoft_colorizer_widget.pack(side='left', fill='x', expand=True)
+        self.microsoft_colorizer_widget.bind('<<ComboboxSelected>>', self.microsoft_colorization_changed)
+        self.controls.extend((scratches, faces, self.microsoft_colorize_control))
         self.labelled(tk.Label, self.microsoft_options, 'Klassische Restaurierung ohne Prompt', bg=PANEL,
                  fg=MUTED, anchor='w').pack(fill='x', pady=(5, 0))
         self.microsoft_options.grid_remove()
@@ -766,7 +790,7 @@ class Application:
     def check_ready(self):
         upscaler = self.effective_upscaler()
         setup = Setup(ROOT, method=self.current_method, faces=self.faces.get(),
-                      upscaler=upscaler, compute=self.active_compute)
+                      upscaler=upscaler, compute=self.active_compute, colorization=self.microsoft_colorization())
         self.setup_status_key = setup.setup_status()
         self.ready = self.setup_status_key == 'Verfahren bereit'
         self.update_setup_status()
@@ -830,7 +854,8 @@ class Application:
         return True
 
     def setup_for_job(self, upscaler):
-        options = dict(method=self.current_method, faces=self.faces.get(), upscaler=upscaler)
+        options = dict(method=self.current_method, faces=self.faces.get(), upscaler=upscaler,
+                       colorization=self.microsoft_colorization())
         setup = Setup(ROOT, **options, compute=self.active_compute)
         missing_nvidia = (setup.comfy and self.active_compute == NVIDIA and (os.name == 'nt' or LINUX)
                           and not nvidia_driver_available())
@@ -853,25 +878,29 @@ class Application:
             details.extend(f'{Path(path).name} · {format_download_size(amount)}'
                            for path, amount in downloads.items() if amount)
         if setup_runtime:
-            details.append(translate('ComfyUI und Python-Pakete werden eingerichtet.' if setup.comfy
-                                     else 'Python-Laufzeit für die Kolorierung wird eingerichtet.'))
+            if setup.comfy_needs_setup():
+                details.append(translate('ComfyUI und Python-Pakete werden eingerichtet.'))
+            if not setup.color_ready():
+                details.append(translate('Python-Laufzeit für die Kolorierung wird eingerichtet.'))
         upscaler_names = ''
         if upscaler in UPSCALE_LICENSES:
             upscaler_names = f'{upscaler}: {UPSCALE_LICENSES[upscaler]}.\n'
         backend_license = 'ComfyUI: GPL-3.0.\n' if setup.comfy else ''
         device = compute_label(setup.compute) if setup.comfy else 'CPU'
-        if method in COLORIZATION_METHODS and setup.comfy and setup.compute != CPU:
-            device = translate('CPU (Kolorierung) · {0} (Upscaler)', device)
+        device = translate(*processing_device(method, device, setup.colorizer_method))
         backend_device = translate('Berechnung: {0}.\n', device)
         if setup.compute == CPU and method not in NO_PROMPT:
             backend_device += translate('Dieses Verfahren kann auf der CPU viel Zeit und Arbeitsspeicher benötigen.\n')
-        face_license = translate('Gesichtspunkte (iBUG 300-W): nichtkommerziell.\n') if setup.faces else ''
+        additional_licenses = translate('Gesichtspunkte (iBUG 300-W): nichtkommerziell.\n') if setup.faces else ''
+        if method == MICROSOFT and setup.colorizer_method is not None:
+            colorizer = setup.colorizer_method
+            additional_licenses += f'{COLORIZATION_NAMES[colorizer]}: {translate(LICENSES[colorizer])}.\n'
         return messagebox.askyesno(
             translate('Downloads und Einrichtung' if download_bytes else 'Laufzeit einrichten'),
             translate(
                 '{0}\n\n{1}\n\n{2}Lizenz für das Verfahren: {3}.\n{4}{5}{6}\nJetzt einrichten?',
                 translate(METHODS[method]), '\n'.join(details), backend_device, translate(LICENSES[method]),
-                face_license, upscaler_names, backend_license,
+                additional_licenses, upscaler_names, backend_license,
             ),
             parent=self.window,
         )
@@ -1402,6 +1431,31 @@ class Application:
         )
         self.update_dimensions()
 
+    def load_microsoft_colorization(self, settings):
+        model = settings.get('microsoft_colorizer', DDCOLOR)
+        valid = model in COLORIZATION_METHODS
+        self.microsoft_colorizer.set(COLORIZATION_NAMES[model if valid else DDCOLOR])
+        self.microsoft_colorize.set(valid and settings.get('microsoft_colorize') is True)
+
+    def microsoft_colorization_settings(self):
+        return dict(microsoft_colorize=self.microsoft_colorize.get(),
+                    microsoft_colorizer=COLORIZATION_IDS[self.microsoft_colorizer.get()])
+
+    def microsoft_colorization(self):
+        if self.current_method == MICROSOFT and self.microsoft_colorize.get():
+            return COLORIZATION_IDS[self.microsoft_colorizer.get()]
+        return None
+
+    def update_microsoft_colorization(self):
+        self.microsoft_colorizer_widget.configure(
+            state='readonly' if not self.action and self.microsoft_colorize.get() else 'disabled',
+        )
+
+    def microsoft_colorization_changed(self, _event=None):
+        self.update_microsoft_colorization()
+        self.check_ready()
+        self.save_settings()
+
     def load_method_prompt(self):
         self.schedule_window_minimum()
         method = self.current_method
@@ -1415,6 +1469,7 @@ class Application:
             self.prompt_heading_widget.grid()
         if method in NO_PROMPT:
             if method == MICROSOFT:
+                self.update_microsoft_colorization()
                 self.microsoft_options.grid()
             for widget in (self.preset_widget, self.prompt, self.variant_row, self.seed_row, self.seed_actions):
                 widget.grid_remove()
@@ -1545,6 +1600,7 @@ class Application:
             preset['lut'] = look.record()
         if method == MICROSOFT:
             preset.update(scratches=self.scratches.get(), faces=self.faces.get())
+            preset.update(self.microsoft_colorization_settings())
 
         name = simpledialog.askstring('Preset', translate('Name für das Preset'), parent=self.window)
         name = name.strip() if name else ''
@@ -1593,6 +1649,7 @@ class Application:
         if method == MICROSOFT:
             self.scratches.set(preset.get('scratches', True) is True)
             self.faces.set(preset.get('faces') is True)
+            self.load_microsoft_colorization(preset)
         if method not in NO_PROMPT:
             self.variants.set(str(VARIANT_COUNTS.get(str(preset.get('variants')), 1)))
             prompt = preset.get('prompt')
@@ -1626,7 +1683,7 @@ class Application:
                     processing_presets=self.processing_presets,
                     variants=str(self.variant_count), scaling=self.scaling,
                     scratches=self.scratches.get(), faces=self.faces.get(),
-                    lut={'strength': self.look_controls.look().strength})
+                    lut={'strength': self.look_controls.look().strength}, **self.microsoft_colorization_settings())
         stage = SETTINGS.with_suffix('.tmp')
         try:
             SETTINGS.parent.mkdir(parents=True, exist_ok=True)
@@ -1758,7 +1815,7 @@ class Application:
             return
         self.save_settings()
         self.start_worker('run' if ready else 'run_setup', self.work, setup.method,
-                          setup.faces, job, upscaler, downloads)
+                          setup.faces, job, upscaler, downloads, setup.colorizer_method)
 
     def start_worker(self, action, target, *args):
         self.action = action
@@ -1779,6 +1836,7 @@ class Application:
         self.update_output_controls()
         for control in (self.method_widget, self.size_widget):
             control.configure(state='disabled' if value else 'readonly')
+        self.update_microsoft_colorization()
         self.upscale_options.configure(state='disabled' if value or self.size_choice() == NO_RESCALE else 'readonly')
         self.format_widget.configure(state='disabled' if value else 'readonly')
         self.start_button.configure(
@@ -1806,7 +1864,7 @@ class Application:
     def show_transfer(self, name, current, total, phase):
         self.events.put(('transfer', (name, current, total, phase)))
 
-    def work(self, method, faces, job, upscaler, downloads):
+    def work(self, method, faces, job, upscaler, downloads, colorization=None):
         upscaler = resolve_upscaler(method, upscaler)
         finished = False
         retry_on_cpu = None
@@ -1818,7 +1876,7 @@ class Application:
             setup = Setup(ROOT, notify=self.notify_setup, transfer=self.show_transfer,
                           cancelled=self.cancelled.is_set, method=method, faces=faces,
                           upscaler=upscaler, compute=self.active_compute, download_limits=downloads,
-                          confirm_download=self.confirm_additional_download)
+                          confirm_download=self.confirm_additional_download, colorization=colorization)
             paths = setup.ensure()
             if self.cancelled.is_set():
                 raise SetupCancelled(translate('Bearbeitung abgebrochen.'))
@@ -1840,15 +1898,13 @@ class Application:
                     device = device.replace('CUDA ', 'ROCm ', 1)
                 definitions = client.json('/object_info')
                 models = select_models(definitions, method, upscaler)
-            if method in COLORIZATION_METHODS:
+            if setup.colorizer_method is not None:
                 status(translate('Modell wird geladen …'))
                 if setup.color_runtime_path is not None and str(setup.color_runtime_path) not in sys.path:
                     sys.path.insert(0, str(setup.color_runtime_path))
-                colorizer = Colorizer(setup.colorizer_path, method=method)
+                colorizer = Colorizer(setup.colorizer_path, method=setup.colorizer_method)
                 models['colorizer'] = colorizer.model_name
-            device_label = ('{0}', device)
-            if method in COLORIZATION_METHODS and device != 'CPU':
-                device_label = ('CPU (Kolorierung) · {0} (Upscaler)', device)
+            device_label = processing_device(method, device, setup.colorizer_method)
             self.events.put(('device', device_label))
             device = translate(*device_label)
             completed, errors, warnings = 0, 0, 0
@@ -1887,6 +1943,7 @@ class Application:
                             size_choice=size_choice, upscaler=upscaler, definitions=definitions, colorizer=colorizer,
                             source_crop=crop, source_rotation=rotation, second_image=second_image,
                             second_rotation=second_rotation, second_crop=second_crop, look=look,
+                            colorization=setup.colorizer_method,
                         )
                         record.update(status='ok', output=str(output), metadata_warnings=warning or '')
                         completed += 1

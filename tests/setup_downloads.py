@@ -8,9 +8,9 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from app import Application
-from methods import LANCZOS
+from methods import DDCOLOR_PAPER, LANCZOS, MICROSOFT
 from portable_paths import CODE
-from portable_setup import COMFY_CONSTRAINTS, Setup, SetupCancelled, UNIX_RUNTIME
+from portable_setup import COMFY_CONSTRAINTS, CPU, Setup, SetupCancelled, UNIX_RUNTIME
 
 
 def check_downloads(root):
@@ -77,7 +77,7 @@ def check_downloads(root):
         if kind == 'bad-model':
             assert len(list(target.parent.glob('model.bin.invalid-*'))) == 1
 
-    setup = Mock(method='test', faces=False)
+    setup = Mock(method='test', faces=False, colorizer_method=None)
     setup.ready.return_value = False
     setup.remaining_downloads.return_value = {}
     setup.runtime_needs_setup.return_value = False
@@ -86,7 +86,7 @@ def check_downloads(root):
                                  preload_installing=False, preload_download_paths=frozenset())
     Application.launch(controller, 'job', upscaler=LANCZOS, setup=setup)
     controller.approve_setup.assert_not_called()
-    controller.start_worker.assert_called_once_with('run_setup', controller.work, 'test', False, 'job', LANCZOS, {})
+    controller.start_worker.assert_called_once_with('run_setup', controller.work, 'test', False, 'job', LANCZOS, {}, None)
     controller.start_worker.reset_mock()
     setup.runtime_needs_setup.return_value = True
     Application.launch(controller, 'job', upscaler=LANCZOS, setup=setup)
@@ -131,3 +131,11 @@ def check_downloads(root):
     assert fresh.valid(spec) and fresh.valid(other)
     assert fresh.backend_state['setup_signature'] == 'test-signature'
     already_waiting.stream.assert_not_called()
+
+    microsoft = Setup(folder, method=MICROSOFT, faces=True, upscaler=LANCZOS, compute=CPU)
+    colorizer = Setup(folder, method=DDCOLOR_PAPER, upscaler=LANCZOS, compute=CPU)
+    combined = Setup(folder, method=MICROSOFT, faces=True, upscaler=LANCZOS, compute=CPU, colorization=DDCOLOR_PAPER)
+    assert microsoft.colorizer_path is None and combined.colorizer_path == colorizer.colorizer_path
+    assert combined.colorizer_method == DDCOLOR_PAPER
+    assert combined.models == microsoft.models + colorizer.models
+    assert combined.microsoft_wheels == microsoft.microsoft_wheels

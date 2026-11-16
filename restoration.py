@@ -291,14 +291,14 @@ def processing_settings(record, model_name, graph):
             'working_crop': record.get('active_crop'), 'output_size': record['output_size'], 'upscaler': model_name,
             **{key: record[key] for key in ('source_crop', 'source_rotation', 'second_image', 'second_rotation', 'second_crop', 'second_size', 'luts')
                if key in record},
-            **{key: record[key] for key in ('scratches', 'faces') if key in record}}
+            **{key: record[key] for key in ('scratches', 'faces', 'colorization') if key in record}}
 
 
 def restore(client, models, source, folder, output_format, exiftool, prompt, seed, status, cancelled, record,
             progress=lambda value: None, method=DEFAULT_METHOD, scratches=True, faces=False,
             staged_id=None, size_choice=(None, 2160), upscaler=None, definitions=None, colorizer=None,
             source_crop=None, source_rotation=0, second_image=None, second_rotation=0,
-            second_crop=None, look=None):
+            second_crop=None, look=None, colorization=None):
     started = time.monotonic()
     timing = record['seconds_by_stage'] = {}
     status(translate('Bild wird vorbereitet …'))
@@ -326,6 +326,10 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         record['luts'] = [look.record()]
     if method == MICROSOFT:
         record.update(scratches=scratches, faces=faces)
+        if colorization is not None:
+            record['colorization'] = colorization
+    else:
+        colorization = None
 
     def export(image, model_name, graph=None):
         if cancelled():
@@ -334,6 +338,8 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         labels = []
         if method != UPSCALING:
             labels.append(METHOD_FILENAME_LABELS[method])
+        if colorization is not None:
+            labels.append(METHOD_FILENAME_LABELS[colorization])
         if model_name == LANCZOS:
             labels.append('lanczos')
         elif model_name and upscaler == REALESRGAN:
@@ -431,13 +437,22 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         timing['comfy_total'] = round(time.monotonic() - graph_started, 2)
         progress(None)
         status(translate('Ergebnis wird übertragen …'))
-        with client.image(descriptor) as upscaled:
-            if upscaled.size != expected:
+        with client.image(descriptor) as result:
+            if result.size != expected:
                 raise RuntimeError(translate(
                                        'Unerwartete Ausgabegröße: {0} × {1} px.',
-                                       upscaled.width, upscaled.height,
+                                       result.width, result.height,
                                    ))
-            return export(upscaled, model_name, output_graph(graph, RESULT_NODE))
+            rendered_graph = output_graph(graph, RESULT_NODE)
+            if colorization is not None:
+                if cancelled():
+                    raise SetupCancelled(translate('Bearbeitung abgebrochen.'))
+                status(translate('Bild wird koloriert …'))
+                color_started = time.monotonic()
+                with (colorizer or Colorizer(models['colorizer'], method=colorization)).process(result) as colored:
+                    timing['colorization'] = round(time.monotonic() - color_started, 2)
+                    return export(colored, model_name, rendered_graph)
+            return export(result, model_name, rendered_graph)
     finally:
         staged.unlink(missing_ok=True)
         if reference is not None:
