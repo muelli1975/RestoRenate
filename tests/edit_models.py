@@ -117,7 +117,10 @@ def check_layout(source, language):
                        for heading in headings[:2])
             if menu.windowing_system != 'aqua':
                 assert str(menu.cget('disabledforeground')) == GOLD
-            if menu.windowing_system != 'x11':
+            if menu.windowing_system == 'x11':
+                for heading in headings[:2]:
+                    assert font.Font(window, font=menu.entrycget(heading, 'font')).actual('weight') == 'bold'
+            else:
                 graphic = 'bitmap' if menu.windowing_system == 'win32' else 'image'
                 for heading in headings[:2]:
                     assert menu.entrycget(heading, graphic) and menu.entrycget(heading, 'compound') == 'none'

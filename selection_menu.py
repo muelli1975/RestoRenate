@@ -39,20 +39,30 @@ class SelectionMenu(tk.Menu):
     def add_heading(self, label):
         options = dict(label=label, state='disabled', activebackground=self.cget('background'))
         if self.windowing_system == 'x11':
-            self.add_command(font=('Segoe UI', 9), **options)
+            self.add_command(font=('Helvetica', 9, 'bold'), **options)
             return
         size = round(self.winfo_fpixels('9p'))
         if self.windowing_system == 'win32':
             self.add_command(bitmap=f'@{self.windows_heading_bitmap(label, size)}', compound='none', **options)
             return
         # Aqua uses system text colors. An image preserves the heading color.
-        font = ImageFont.load_default(size=size)
-        left, top, right, bottom = font.getbbox(label)
-        heading = Image.new('RGBA', (right - left, bottom - top + 4))
-        ImageDraw.Draw(heading).text((-left, 2 - top), label, font=font, fill=GOLD)
+        heading = self.draw_heading(label, size, '/System/Library/Fonts/Supplemental/Arial Bold.ttf', 'RGBA', GOLD)
         image = ImageTk.PhotoImage(heading, master=self)
         self.heading_images.append(image)
         self.add_command(image=image, compound='none', **options)
+
+    @staticmethod
+    def draw_heading(label, size, font_path, mode, color):
+        try:
+            font = ImageFont.truetype(font_path, size)
+            stroke = 0
+        except OSError:
+            font = ImageFont.load_default(size=size)
+            stroke = 1
+        left, top, right, bottom = font.getbbox(label, stroke_width=stroke)
+        image = Image.new(mode, (right - left, bottom - top + 4))
+        ImageDraw.Draw(image).text((-left, 2 - top), label, font=font, fill=color, stroke_width=stroke)
+        return image
 
     def windows_heading_bitmap(self, label, size):
         # A Tk bitmap uses disabledforeground directly. Windows embosses disabled
@@ -62,13 +72,7 @@ class SelectionMenu(tk.Menu):
             return self.heading_bitmaps[key]
         if self.heading_directory is None:
             self.heading_directory = TemporaryDirectory(prefix='restorenate-menu-')
-        try:
-            font = ImageFont.truetype('segoeui.ttf', size)
-        except OSError:
-            font = ImageFont.load_default(size=size)
-        left, top, right, bottom = font.getbbox(label)
-        bitmap = Image.new('1', (right - left, bottom - top + 4))
-        ImageDraw.Draw(bitmap).text((-left, 2 - top), label, font=font, fill=1)
+        bitmap = self.draw_heading(label, size, 'segoeuib.ttf', '1', 1)
         path = Path(self.heading_directory.name) / f'heading-{len(self.heading_bitmaps)}.xbm'
         bitmap.save(path)
         self.heading_bitmaps[key] = path
