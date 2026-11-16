@@ -15,7 +15,8 @@ case $(uname -s):$(uname -m) in
 esac
 
 mkdir -p "$root/_internal" "$root/runtime" "$root/tools"
-cp Start.sh README.md README_DE.md README_DE_EN.txt LICENSE THIRD_PARTY.txt "$root/"
+rm -f -- "$root/README.md" "$root/README_DE.md"
+cp Start.sh README_DE_EN.txt LICENSE THIRD_PARTY.txt "$root/"
 cp -r assets vendor licenses "$root/"
 cp ./*.py constraints-comfy-unix.txt download_manifest.json method_downloads.json exiftool_restorenate.config "$root/_internal/"
 
