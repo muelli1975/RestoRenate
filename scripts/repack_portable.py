@@ -73,9 +73,11 @@ def build(base, output, platform, smoke_dir, base_sha256=None):
         for name in ('constraints-comfy-unix.txt', 'download_manifest.json', 'method_downloads.json',
                      'exiftool_restorenate.config'):
             shutil.copy2(ROOT / name, code / name)
-        for name in ('README.md', 'README_DE.md'):
+        for name in ('README.md', 'README_DE_EN.txt'):
             (package / name).unlink(missing_ok=True)
-        for name in ('README_DE_EN.txt', 'LICENSE', 'THIRD_PARTY.txt'):
+        for name in ('README_DE.md', 'README_EN.md'):
+            shutil.copy2(ROOT / 'docs/portable' / name, package / name)
+        for name in ('LICENSE', 'THIRD_PARTY.txt'):
             shutil.copy2(ROOT / name, package / name)
         (package / 'assets/dismiss-circle.png').unlink(missing_ok=True)
         shutil.copytree(ROOT / 'assets/luts', package / 'assets/luts', dirs_exist_ok=True)

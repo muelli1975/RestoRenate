@@ -12,6 +12,7 @@ from PIL import Image
 
 
 root = Path(sys.argv[1]).resolve()
+assert {path.name for path in root.glob('README*') if path.is_file()} == {'README_DE.md', 'README_EN.md'}
 sys.path.insert(0, str(root / '_internal'))
 
 import app

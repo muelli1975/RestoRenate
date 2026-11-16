@@ -49,19 +49,18 @@ def format_download_size(size):
 
 
 def verify_local_models(root, compute, models, cancelled, results):
-    verified = set()
     try:
         setup = Setup(root, compute=compute, notify=lambda _: None, cancelled=cancelled.is_set)
         for path, spec in models.items():
             try:
                 if setup.download(spec, local_only=True) is not None:
-                    verified.add(path)
+                    results.put(path)
             except OSError:
                 continue
     except SetupCancelled:
         pass
     finally:
-        results.put(verified)
+        results.put(None)
 
 
 class PreloadDialog(tk.Toplevel):
@@ -80,6 +79,7 @@ class PreloadDialog(tk.Toplevel):
         self.upscalers = {}
         self.local_models = {}
         self.pending_checks = {}
+        self.verified_local = set()
         self.verification_results = SimpleQueue()
         self.verification_cancelled = Event()
         self.verification_timer = None
@@ -148,9 +148,14 @@ class PreloadDialog(tk.Toplevel):
         self.bind('<Return>', lambda event: self.apply())
         self.protocol('WM_DELETE_WINDOW', self.destroy)
         if self.local_models:
+            complete = sorted((paths for _, paths in self.pending_checks.values()),
+                              key=lambda paths: sum(self.local_models[path]['size'] for path in paths))
+            # Finish small, complete selections before checking partial selections.
+            order = dict.fromkeys(path for paths in complete for path in paths)
+            order.update(self.local_models)
             self.verification_timer = self.after(75, self.poll_verification)
             Thread(target=verify_local_models, daemon=True,
-                   args=(self.root, self.compute, self.local_models,
+                   args=(self.root, self.compute, order,
                          self.verification_cancelled, self.verification_results)).start()
         self.update_total()
 
@@ -190,17 +195,26 @@ class PreloadDialog(tk.Toplevel):
         return self.downloads[request]
 
     def poll_verification(self):
-        try:
-            verified = self.verification_results.get_nowait()
-        except Empty:
-            self.verification_timer = self.after(75, self.poll_verification)
-            return
-        self.verification_timer = None
+        finished = False
+        while True:
+            try:
+                path = self.verification_results.get_nowait()
+            except Empty:
+                break
+            if path is None:
+                finished = True
+                break
+            self.verified_local.add(path)
+        self.verification_timer = None if finished else self.after(75, self.poll_verification)
+        changed = False
         for value, paths in tuple(self.pending_checks.values()):
-            if paths <= verified:
+            if paths <= self.verified_local:
                 value.set(True)
-        self.pending_checks.clear()
-        self.update_total()
+                changed = True
+        if finished:
+            self.pending_checks.clear()
+        if finished or changed:
+            self.update_total()
 
     def destroy(self):
         self.verification_cancelled.set()
