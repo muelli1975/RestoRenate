@@ -14,6 +14,7 @@ class SelectionMenu(tk.Menu):
         self.categories = {}
         self.marked = set()
         self.heading_images = []
+        self.windowing_system = self.tk.call('tk', 'windowingsystem')
 
         size = max(10, round(self.winfo_fpixels('9p')))
         self.blank = tk.PhotoImage(master=self, width=size, height=size)
@@ -21,7 +22,8 @@ class SelectionMenu(tk.Menu):
         ImageDraw.Draw(check).line(((1, size // 2), (size // 3, size - 3), (size - 2, 2)),
                                    fill=GOLD_LIGHT, width=max(2, size // 6), joint='curve')
         self.check = ImageTk.PhotoImage(check, master=self)
-        self.marker_options = dict(image=self.blank, compound='left', hidemargin=True)
+        self.marker_options = dict(image=self.blank, compound='left',
+                                   hidemargin=self.windowing_system != 'win32')
         self.selection_trace = selection.trace_add('write', self.update_marks)
         self.bind('<Destroy>', self.remove_trace, add='+')
 
@@ -29,30 +31,33 @@ class SelectionMenu(tk.Menu):
         self.selection.trace_remove('write', self.selection_trace)
 
     def add_heading(self, label):
-        if self.tk.call('tk', 'windowingsystem') != 'aqua':
-            self.add_command(label=label, state='disabled', font=('Segoe UI', 9))
+        options = dict(label=label, state='disabled', activebackground=self.cget('background'))
+        if self.windowing_system == 'x11':
+            self.add_command(font=('Segoe UI', 9), **options)
             return
-        # Aqua draws native menu text in system colors. An image carries the heading color.
+        # Aqua uses system text colors and Windows embosses disabled menu text.
         font = ImageFont.load_default(size=round(self.winfo_fpixels('9p')))
         left, top, right, bottom = font.getbbox(label)
         heading = Image.new('RGBA', (right - left, bottom - top + 4))
         ImageDraw.Draw(heading).text((-left, 2 - top), label, font=font, fill=GOLD)
         image = ImageTk.PhotoImage(heading, master=self)
         self.heading_images.append(image)
-        self.add_command(label=label, state='disabled', image=image)
+        self.add_command(image=image, compound='none', **options)
 
     def add_category(self, label, submenu):
         self.add_cascade(label=label, menu=submenu, **self.marker_options)
         self.categories[submenu] = self, self.index('end')
 
     def add_choice(self, label, value, command, *, menu):
+        options = (dict(selectcolor=GOLD_LIGHT) if self.windowing_system == 'win32'
+                   else dict(indicatoron=False, **self.marker_options))
         menu.add_radiobutton(label=label, value=value, variable=self.selection, command=command,
-                             indicatoron=False, **self.marker_options)
+                             **options)
         self.choices[value] = menu, menu.index('end')
 
     def update_marks(self, *_):
         choice = self.choices.get(self.selection.get())
-        marked = {choice} if choice else set()
+        marked = {choice} if choice and self.windowing_system != 'win32' else set()
         if choice and choice[0] in self.categories:
             marked.add(self.categories[choice[0]])
         for menu, index in self.marked - marked:

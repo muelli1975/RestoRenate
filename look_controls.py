@@ -1,6 +1,6 @@
 """Transient LUT preview and output controls for the comparison pane."""
 import tkinter as tk
-from tkinter import ttk
+from tkinter import font, ttk
 
 import customtkinter as ctk
 
@@ -51,12 +51,10 @@ class LookControls:
         attach_tooltip(self.keep_check, lambda: translate('LUT und Stärke für weitere Bilder übernehmen.'))
         self.menu_colors = menu_colors
         # Keep the field's minimum size independent of the selected preset.
-        picker = tk.Frame(row, bg=PANEL_BG)
-        picker.grid(row=0, column=2, sticky='ew', padx=(0, 6))
-        self.choose = ttk.Menubutton(picker, width=11, style='Input.TMenubutton')
-        picker.configure(width=self.choose.winfo_reqwidth(), height=self.choose.winfo_reqheight())
-        picker.pack_propagate(False)
-        self.choose.configure(width=0)
+        self.picker = tk.Frame(row, bg=PANEL_BG)
+        self.picker.grid(row=0, column=2, sticky='ew', padx=(0, 6))
+        self.picker.pack_propagate(False)
+        self.choose = ttk.Menubutton(self.picker, style='Input.TMenubutton')
         self.choose.pack(fill='both', expand=True)
         self.menu = None
         # Use StereoFine's LUT slider widget, range and colour treatment.
@@ -103,6 +101,10 @@ class LookControls:
         self.choose.configure(menu=self.menu)
         if previous is not None:
             previous.destroy()
+        picker_font = font.Font(self.choose, font=ttk.Style(self.choose).lookup(self.choose.cget('style'), 'font'))
+        longest = max((self.label(entry) for entry in catalog().values()), key=picker_font.measure)
+        self.choose.configure(text=longest)
+        self.picker.configure(width=self.choose.winfo_reqwidth(), height=self.choose.winfo_reqheight())
         self.refresh()
         self.frame.after_idle(self.fit_actions)
 

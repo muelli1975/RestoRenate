@@ -64,7 +64,9 @@ jobs:
         if: success() || failure()
         with:
           name: windows-reference-control
-          path: dist/smoke/reference-controls.png
+          path: |
+            dist/smoke/reference-controls.png
+            dist/smoke/*menu-*.png
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:

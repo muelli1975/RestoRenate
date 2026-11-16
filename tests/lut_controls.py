@@ -23,6 +23,7 @@ else:
 
 import app
 from crop import CropRegion
+from edit_models import has_choice_mark
 from export_metadata import editor_graph
 from imaging import exiftool_executable
 from looks import Look, apply_look, catalog
@@ -431,8 +432,8 @@ def test_gui(root):
         cinema, cinema_index = menu.choices['classic_cinema']
         _, film_entry = menu.categories[film]
         _, cinema_entry = menu.categories[cinema]
-        assert menu.entrycget(film_entry, 'image') == film.entrycget(film_index, 'image') == str(menu.check)
-        assert menu.entrycget(cinema_entry, 'image') == cinema.entrycget(cinema_index, 'image') == str(menu.blank)
+        assert menu.entrycget(film_entry, 'image') == str(menu.check) and has_choice_mark(menu, film, film_index)
+        assert menu.entrycget(cinema_entry, 'image') == str(menu.blank) and not has_choice_mark(menu, cinema, cinema_index)
         # Native menus differ in how they dispatch synthetic events while closed.
         with patch.object(cinema, 'index', return_value=0):
             controls.highlight(cinema, [('classic_cinema', catalog()['classic_cinema'])])
@@ -440,8 +441,8 @@ def test_gui(root):
         assert controls.look().key != 'classic_cinema' and menu.entrycget(film_entry, 'image') == str(menu.check)
         cinema.invoke(cinema_index)
         assert controls.look().key == 'classic_cinema' and controls.hover is None
-        assert menu.entrycget(cinema_entry, 'image') == cinema.entrycget(cinema_index, 'image') == str(menu.check)
-        assert menu.entrycget(film_entry, 'image') == film.entrycget(film_index, 'image') == str(menu.blank)
+        assert menu.entrycget(cinema_entry, 'image') == str(menu.check) and has_choice_mark(menu, cinema, cinema_index)
+        assert menu.entrycget(film_entry, 'image') == str(menu.blank) and not has_choice_mark(menu, film, film_index)
         controls.step(-5)
         assert controls.look().strength == 95
         entry = gui.seed_entry
@@ -538,7 +539,7 @@ def test_gui(root):
             if window.winfo_width() >= app.START_WINDOW_WIDTH:
                 assert gui.preview_tools.grid_info()['row'] == 0
             gui.result_position.set(app.translate('Ergebnis {0}/{1}', 2, 2))
-            for width in (window.minsize()[0], 1600):
+            for width in (window.minsize()[0], app.START_WINDOW_WIDTH):
                 window.geometry(f'{width}x750')
                 window.update()
                 bounds = controls.choose.winfo_width(), controls.save_button.grid_info()['row']
@@ -554,12 +555,7 @@ def test_gui(root):
                     controls.select(key)
                     probe.configure(text=controls.label(entry))
                     window.update_idletasks()
-                    # Builds may run with a small desktop or different font scaling.
-                    # The picker and slider split the space left after the fixed controls.
-                    name_extra = max(0, probe.winfo_reqwidth() - picker.winfo_reqwidth())
-                    free = controls.settings.winfo_width() - controls.settings.winfo_reqwidth()
-                    if free >= 2 * name_extra:
-                        assert controls.choose.winfo_width() >= probe.winfo_reqwidth()
+                    assert controls.choose.winfo_width() >= probe.winfo_reqwidth(), (sizes, probe.cget('text'))
                     assert controls.choose.cget('text') == probe.cget('text')
                     assert (controls.choose.winfo_width(), controls.save_button.grid_info()['row']) == bounds
         probe.destroy()

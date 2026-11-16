@@ -1,10 +1,15 @@
 """Check the packaged Windows UI and model default with a local test image."""
+import ctypes
+from ctypes import wintypes
 from pathlib import Path
+from queue import Queue
 import sys
+from threading import Thread
+from time import monotonic, sleep
 import tkinter as tk
-from tkinter import ttk
+from tkinter import font, ttk
 
-from PIL import Image, ImageGrab
+from PIL import Image, ImageChops, ImageGrab
 
 
 root = Path(sys.argv[1]).resolve()
@@ -15,6 +20,73 @@ from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALING
 from field_focus import check_field_focus, field_focus_maps
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
+
+
+def capture_popup(menu, destination, headings=()):
+    user32 = ctypes.windll.user32
+    user32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
+    user32.FindWindowW.restype = wintypes.HWND
+    user32.IsWindowVisible.argtypes = [wintypes.HWND]
+    user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    result = Queue()
+    heading_centers = [(menu.yposition(index) + menu.yposition(index + 1)) // 2 for index in headings]
+    user32.SetCursorPos(0, 0)
+
+    def capture():
+        try:
+            deadline = monotonic() + 4
+            while monotonic() < deadline:
+                popup = user32.FindWindowW('#32768', None)
+                if popup and user32.IsWindowVisible(popup):
+                    sleep(0.25)  # Let Windows finish animating the native popup.
+                    bounds = wintypes.RECT()
+                    if user32.GetWindowRect(popup, ctypes.byref(bounds)):
+                        box = bounds.left, bounds.top, bounds.right, bounds.bottom
+                        with ImageGrab.grab(box) as screenshot:
+                            screenshot.save(destination)
+                            for y in heading_centers:
+                                user32.SetCursorPos(bounds.left + screenshot.width // 2, bounds.top + y)
+                                sleep(0.15)
+                                with ImageGrab.grab(box) as hovered:
+                                    assert not ImageChops.difference(screenshot, hovered).getbbox(), (destination, y)
+                            result.put(screenshot.width)
+                            return
+                sleep(0.03)
+            result.put(AssertionError('Native menu did not appear'))
+        except Exception as error:
+            result.put(error)
+        finally:
+            user32.keybd_event(0x1B, 0, 0, 0)  # Escape closes TrackPopupMenu.
+            user32.keybd_event(0x1B, 0, 2, 0)
+
+    Thread(target=capture, daemon=True).start()
+    menu.post(32, 32)
+    width = result.get(timeout=5)
+    if isinstance(width, Exception):
+        raise width
+    return width
+
+
+def check_native_menus(gui):
+    window = gui.window
+    controls = gui.look_controls
+    controls.check.toggle()
+    for language in ('de', 'en'):
+        gui.change_language(language)
+        window.update()
+        window.focus_force()
+        method_menu = gui.method_menu
+        headings = [method_menu.index(app.translate(heading)) for heading in ('Bearbeiten', 'Kolorieren')]
+        capture_popup(method_menu, root.parent / f'model-menu-{language}.png', headings)
+        for name, menu in (('model-submenu', method_menu), ('lut-menu', controls.menu)):
+            group_font = font.Font(window, font=menu.cget('font'))
+            choices = [(group_font.measure(group.entrycget(index, 'label')), group, index)
+                       for group, index in menu.choices.values() if group is not menu]
+            text_width, group, index = max(choices, key=lambda option: option[0])
+            group.invoke(index)
+            width = capture_popup(group, root.parent / f'{name}-{language}.png')
+            assert width >= text_width + 14, (language, name, width, text_width, group.entrycget(index, 'label'))
+            print(f'{language} {name} has {width}px for a {text_width}px label and its checkmark.')
 
 
 assert resolve_upscaler(UPSCALING) == NOMOS2_HQ
@@ -50,6 +122,7 @@ try:
     assert style.lookup('Vertical.TScrollbar', 'arrowcolor') == app.MUTED
     assert style.lookup('Vertical.TScrollbar', 'background', ('active',)) == app.HOVER_BG
     check_field_focus(gui, native_focus)
+    check_native_menus(gui)
 finally:
     window.destroy()
 

@@ -22,6 +22,15 @@ from sizes import DOUBLE_SIZE, FULL_HD, NO_RESCALE, ULTRA_HD
 from theme import GOLD
 
 
+def has_choice_mark(menu, choice_menu, index):
+    if menu.windowing_system == 'win32':
+        assert int(choice_menu.entrycget(index, 'indicatoron')) == 1
+        assert int(choice_menu.entrycget(index, 'hidemargin')) == 0
+        assert choice_menu.entrycget(index, 'image') == ''
+        return choice_menu.getvar(choice_menu.entrycget(index, 'variable')) == choice_menu.entrycget(index, 'value')
+    return choice_menu.entrycget(index, 'image') == str(menu.check)
+
+
 def make_graph(second=None):
     models = {key: filename for key, (_, _, filename) in model_files(FLUX3, LANCZOS).items()}
     return restoration_graph(FLUX3, models, 'main.png', (1024, 768), (0, 2, 1024, 764),
@@ -104,10 +113,13 @@ def check_layout(source, language):
             assert menu_labels(menu) == [headings[0], METHODS[FIBO2_TURBO], 'FireRed', 'FLUX', METHODS[MICROSOFT],
                                          'Qwen', headings[1], 'DDColor', 'DeOldify', headings[2]]
             assert menu.entrycget(headings[0], 'state') == menu.entrycget(headings[1], 'state') == 'disabled'
-            if window.tk.call('tk', 'windowingsystem') == 'aqua':
-                assert all(menu.entrycget(heading, 'image') for heading in headings[:2])
-            else:
+            assert all(str(menu.entrycget(heading, 'activebackground')) == str(menu.cget('background'))
+                       for heading in headings[:2])
+            if menu.windowing_system == 'x11':
                 assert str(menu.cget('disabledforeground')) == GOLD
+            else:
+                for heading in headings[:2]:
+                    assert menu.entrycget(heading, 'image') and menu.entrycget(heading, 'compound') == 'none'
             assert menu.entrycget(headings[2], 'value') == app.translate(METHODS[UPSCALING])
             assert tuple(gui.upscale_options.cget('values')) == UPSCALERS
             flux = menu.nametowidget(menu.entrycget('FLUX', 'menu'))
@@ -115,9 +127,9 @@ def check_layout(source, language):
             assert menu.entrycget('FLUX', 'image') == str(menu.blank)
             flux.invoke(1)
             assert gui.current_method == FLUX3
-            assert menu.entrycget('FLUX', 'image') == flux.entrycget(1, 'image') == str(menu.check)
-            assert flux.entrycget(0, 'image') == str(menu.blank)
-            assert menu.entrycget(METHODS[FIBO2_TURBO], 'image') == str(menu.blank)
+            assert menu.entrycget('FLUX', 'image') == str(menu.check) and has_choice_mark(menu, flux, 1)
+            assert not has_choice_mark(menu, flux, 0)
+            assert not has_choice_mark(menu, menu, METHODS[FIBO2_TURBO])
             window.update()
             assert gui.second_row.winfo_ismapped()
             minimum = window.minsize()
@@ -132,8 +144,8 @@ def check_layout(source, language):
                 print(f'{language} {FLUX3}: {window.winfo_width()}x{window.winfo_height()}, '
                       f'minimum {minimum}, method field {button.winfo_width()}x{button.winfo_height()} px.')
             menu.invoke(METHODS[FIBO2_TURBO])
-            assert menu.entrycget(METHODS[FIBO2_TURBO], 'image') == str(menu.check)
-            assert menu.entrycget('FLUX', 'image') == flux.entrycget(1, 'image') == str(menu.blank)
+            assert has_choice_mark(menu, menu, METHODS[FIBO2_TURBO])
+            assert menu.entrycget('FLUX', 'image') == str(menu.blank) and not has_choice_mark(menu, flux, 1)
             with patch.object(app.messagebox, 'askyesno', return_value=True):
                 assert gui.offer_cpu_fallback('Test CPU fallback')
             assert 'FireRed' not in menu_labels(menu)
