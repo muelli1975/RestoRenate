@@ -19,7 +19,7 @@ from methods import (DDCOLOR_TINY, FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, 
                      NOMOS2_DAT2, NOMOS8K_DAT, SEEDVR2, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
                      VOSR2, available_methods, model_files)
 from portable_setup import CPU, MACOS, MPS, NVIDIA, Setup
-from restoration import restore, restoration_graph
+from restoration import report_progress, restore, restoration_graph
 from sizes import CUSTOM_SIZE, DOUBLE_SIZE, FULL_HD, NO_RESCALE, ULTRA_HD
 from theme import GOLD
 
@@ -126,6 +126,26 @@ def check_upscale_graphs(source, directory):
                 assert str(node_id) in json.loads(result.info['prompt'])
             assert set(models) <= record['settings']['models'].keys()
     print('Four upscale models passed both export paths and model-manifest checks.')
+
+
+def check_vosr_progress():
+    graph = {'41': {'class_type': 'VOSR2Upscale'}, '80': {'class_type': 'ImageScale'}}
+    statuses, percentages = [], []
+
+    def report(kind, **data):
+        report_progress({'type': kind, 'data': {'prompt_id': 'current', 'node': '41', **data}},
+                        graph, 'current', statuses.append, percentages.append)
+
+    with patch('restoration.translate', side_effect=lambda text: text):
+        report('progress', value=2, max=2)
+        report('restorenate_vosr_phase', prompt_id='previous', phase='color_alignment')
+        report('restorenate_vosr_phase', node='80', phase='color_alignment')
+        report('restorenate_vosr_phase', phase='decode')
+        report('restorenate_vosr_phase', phase='color_alignment')
+        report('executing', node='80')
+    assert statuses == ['Bild wird hochskaliert · Kachel 2/2', 'Bild wird dekodiert …',
+                        'Farben werden angeglichen …', 'Ausgabegröße wird angepasst …']
+    assert percentages == [100, None, None, None]
 
 
 def check_layout(source, language):
@@ -258,7 +278,7 @@ def check_compute_settings(directory):
     gpu = MPS if MACOS else NVIDIA
     cpu_standard = (MICROSOFT, NO_RESCALE, LANCZOS)
     gpu_standard = (FIBO2_TURBO, ULTRA_HD, NOMOS2_HQ)
-    detail_preset = (FIBO2_TURBO, ULTRA_HD, SEEDVR2)
+    detail_preset = (FIBO2_TURBO, ULTRA_HD, VOSR2)
     with patch.object(app, 'SETTINGS', settings), patch.object(app.messagebox, 'showinfo'):
         settings.write_text(json.dumps({'compute': CPU}), encoding='utf-8')
         with launch() as gui:
@@ -327,6 +347,7 @@ def check_compute_settings(directory):
 
 if __name__ == '__main__':
     check_graphs()
+    check_vosr_progress()
     with TemporaryDirectory() as directory:
         source = Path(directory) / 'reference.png'
         with Image.new('RGB', (200, 120)) as image:

@@ -52,7 +52,7 @@ die zugehörigen Ausgabe- und Modelleinstellungen speichern. Eingabe und Ausgabe
 bleiben beim Laden ausgewählt. Die GPU-Startvorgabe und „Standard“ im GPU-Modus
 verwenden Fibo 2.0 Edit Turbo, „Allround“ und Nomos2 HQ MoSR 4×.
 „Detailrekonstruktion“ steht im selben Menü im GPU-Modus zur Auswahl und
-verwendet bei denselben Einstellungen SeedVR2 3B INT8 als Upscaler.
+verwendet bei denselben Einstellungen VOSR 2.0 als Upscaler.
 Gespeicherte Einstellungen haben beim Start Vorrang.
 
 Start berechnet und speichert das Ergebnis. Bei Verfahren mit Prompt unter

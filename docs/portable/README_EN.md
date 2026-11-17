@@ -47,7 +47,7 @@ Use “Presets” to save the method, prompt, variants and applicable output
 and model settings. Loading a preset keeps the selected input and output
 folder. The GPU startup settings and the GPU “Default” preset use Fibo 2.0 Edit Turbo,
 “General-purpose restoration” and Nomos2 HQ MoSR 4×. “Detail reconstruction”
-is available in the same menu in GPU mode and uses SeedVR2 3B INT8 with the
+is available in the same menu in GPU mode and uses VOSR 2.0 with the
 same processing settings. Saved settings take precedence at startup.
 
 Start processes and saves the result. For prompt-based methods, type a number

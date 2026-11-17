@@ -351,6 +351,7 @@ ENGLISH = {
     'Restaurieren und kolorieren 2': 'Restore and colorize 2',
     'Restaurieren und kolorieren · Kurz': 'Restore and colorize · Short',
     'Bild wird dekodiert': 'Decoding image',
+    'Farben werden angeglichen': 'Matching colors',
     'Restaurierung': 'Restoration',
     'Satzbausteine': 'Prompt snippets',
     'Bearbeitung wird vorbereitet': 'Preparing',

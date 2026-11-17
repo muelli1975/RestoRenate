@@ -57,7 +57,7 @@ Standardmäßig landen die Ergebnisse in `output` neben dem gewählten Bild oder
 
 - **Restaurierung und Bearbeitung:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Qwen Image Edit 2509/2511 und FireRed Image Edit 1.1. Unterstützte Edit-Modelle können ein separat drehbares zweites Bild nutzen.
 - **Kolorierung:** DDColor ModelScope, Paper, Artistic und Tiny sowie DeOldify Stable und Artistic. Die Kolorierung läuft auf der CPU. DDColor Paper ist ein optionaler Download.
-- **Hochskalieren:** Nomos2 HQ MoSR 4× ist die GPU-Vorgabe. Das Preset „Detailrekonstruktion“ verwendet SeedVR2 3B INT8. Zur Auswahl stehen auch VOSR 2.0, Nomos2 HQ DAT2, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT für Porträts sowie Real-ESRGAN Anime 4× und AnimeSharp 4× für Zeichnungen und Illustrationen.
+- **Hochskalieren:** Nomos2 HQ MoSR 4× ist die GPU-Vorgabe. Das Preset „Detailrekonstruktion“ verwendet VOSR 2.0. Zur Auswahl stehen auch SeedVR2 3B INT8, Nomos2 HQ DAT2, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT für Porträts sowie Real-ESRGAN Anime 4× und AnimeSharp 4× für Zeichnungen und Illustrationen.
 - **Export:** PNG, JPEG mit Qualität 95 und 4:4:4 sowie TIFF mit LZW-Kompression. JPEG und TIFF übernehmen geeignete Metadaten. PNG speichert bei ComfyUI-Verarbeitung den Workflow.
 
 ## Quellcode und Builds

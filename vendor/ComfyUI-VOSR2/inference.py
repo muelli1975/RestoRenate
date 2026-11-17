@@ -15,6 +15,8 @@ import torch
 import torch.nn.functional as F
 
 import comfy.utils
+from comfy_execution.utils import get_executing_context
+from server import PromptServer
 
 from .color import apply_color_alignment
 from .tiled_vae import _gaussian_weights, _make_tile_grid
@@ -22,6 +24,15 @@ from .tiled_vae import _gaussian_weights, _make_tile_grid
 AE_FACTOR = 8
 DIT_PATCH_SIZE = 2
 PAD_MULTIPLE = AE_FACTOR * DIT_PATCH_SIZE  # 16
+
+
+def _report_phase(phase: str):
+    context = get_executing_context()
+    server = getattr(PromptServer, "instance", None)
+    if context is not None and server is not None and server.client_id is not None:
+        server.send_sync("restorenate_vosr_phase", {
+            "prompt_id": context.prompt_id, "node": context.node_id, "phase": phase,
+        }, server.client_id)
 
 
 def _pad_to_multiple(x: torch.Tensor, multiple: int):
@@ -82,6 +93,7 @@ def _run_untiled_batch(model, resized01: torch.Tensor, seed: int, vae_tile_size:
 
     noise = _generate_noise_batch(lq_latent.shape[1:], seed, b, lq_latent.device, lq_latent.dtype)
     sr_latent = model.denoise_one_step(lq_latent, noise, venc_fea)
+    _report_phase("decode")
     decoded_pm1 = model.decode_tiled(sr_latent, latents_mean, latents_std, vae_tile_size, vae_tile_overlap)
 
     return decoded_pm1[:, :, :h, :w]
@@ -146,6 +158,7 @@ def _run_tiled_single(model, resized01: torch.Tensor, seed: int, tile_size: int,
 
         sr_latent = z - u_acc / w_acc
 
+    _report_phase("decode")
     decoded_pm1 = model.decode_tiled(sr_latent, latents_mean, latents_std, vae_tile_size, vae_tile_overlap)
     return decoded_pm1[:, :, :h, :w]
 
@@ -210,11 +223,15 @@ def run_vosr2(
         for i in range(b):
             item_pm1 = _run_tiled_single(model, resized01[i:i + 1], seed + i, tile_size, tile_overlap, vae_tile_size, vae_tile_overlap, pbar=pbar).cpu()
             item01 = (item_pm1.clamp(-1.0, 1.0) + 1.0) / 2.0
+            if color_alignment != "none":
+                _report_phase("color_alignment")
             aligned_items.append(apply_color_alignment(item01, resized01[i:i + 1].cpu(), color_alignment))
         aligned01 = torch.cat(aligned_items, dim=0)
     else:
         outputs_pm1 = _run_untiled_batch(model, resized01, seed, vae_tile_size, vae_tile_overlap)
         decoded01 = (outputs_pm1.clamp(-1.0, 1.0) + 1.0) / 2.0
+        if color_alignment != "none":
+            _report_phase("color_alignment")
         aligned01 = apply_color_alignment(decoded01, resized01, color_alignment)
 
     return aligned01.movedim(1, -1)

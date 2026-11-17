@@ -33,8 +33,8 @@ from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINT
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import PreloadProgress, choose_preloads, format_download_size, preload_label
 from methods import (COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
-                     METHODS, METHOD_MENU_SECTIONS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU, SEEDVR2,
-                     TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
+                     METHODS, METHOD_MENU_SECTIONS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
+                     TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING, VOSR2,
                      available_methods, resolve_upscaler, uses_comfy)
 from sizes import (CUSTOM_SIZES, MAX_SIDE, NO_RESCALE, SIZE_CHOICES, ULTRA_HD, method_size,
                    needs_enlargement, output_size, restoration_size, size_choices)
@@ -103,7 +103,7 @@ GPU_STANDARD_PRESET = {
 }
 BUILTIN_PROCESSING_PRESETS = {
     'Standard': GPU_STANDARD_PRESET,
-    'Detailrekonstruktion': dict(GPU_STANDARD_PRESET, upscaler=SEEDVR2),
+    'Detailrekonstruktion': dict(GPU_STANDARD_PRESET, upscaler=VOSR2),
 }
 CPU_PROCESSING_PRESETS = {
     'Standard': {'method': MICROSOFT, 'size': NO_RESCALE, 'upscaler': LANCZOS},

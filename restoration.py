@@ -75,6 +75,7 @@ STEP_UNITS = {
     'VOSR2Upscale': 'Kachel',
     'FotoRestaurierungMicrosoft': 'Phase', 'FotoRestaurierungGesichter': 'Phase',
 }
+VOSR_PHASES = {'decode': 'Bild wird dekodiert', 'color_alignment': 'Farben werden angeglichen'}
 
 
 
@@ -180,6 +181,11 @@ def report_progress(event, graph, prompt_id, status, progress):
                 return
             progress(100 * value / total)
             status(f'{phase} · {translate(unit)} {value}/{total}')
+    elif kind == 'restorenate_vosr_phase' and node_type == 'VOSR2Upscale':
+        name = data.get('phase')
+        if isinstance(name, str) and name in VOSR_PHASES:
+            progress(None)
+            status(translate(VOSR_PHASES[name]) + ' …')
 
 
 def generate(client, graph, status, cancelled, progress=lambda value: None, node_seconds=None):
