@@ -33,7 +33,7 @@ stub = SimpleNamespace(
     input_folder="", output=value(""), custom_output=value(""), output_in_source=value(True),
     output_format=value("PNG"), seed="", compute=value("CPU"), current_method="test",
     draft="", custom={}, language="en", processing_presets={"sample": {"method": "test"}},
-    variant_count=1, scaling={}, scratches=value(False), faces=value(False),
+    processing_by_compute={}, variant_count=1, scaling={}, scratches=value(False), faces=value(False),
     look_controls=SimpleNamespace(look=lambda: SimpleNamespace(strength=100)),
 )
 assert app.Application.save_settings(stub) is not False
