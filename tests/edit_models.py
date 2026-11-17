@@ -190,9 +190,14 @@ def check_layout(source, language):
                 upscale_font = ttk.Style(window).lookup(upscale_button.cget('style'), 'font') or 'TkDefaultFont'
                 upscale_width = max(font.Font(window, font=upscale_font).measure(name) for name in UPSCALERS)
                 assert upscale_button.winfo_width() >= upscale_width + 20, (upscale_button.winfo_width(), upscale_width)
+                size_field = gui.size_widget
+                size_font = ttk.Style(window).lookup('TCombobox', 'font') or 'TkDefaultFont'
+                size_width = max(font.Font(window, font=size_font).measure(name) for name in size_field.cget('values'))
+                assert size_field.winfo_width() >= size_width + 20, (size_field.winfo_width(), size_width)
                 print(f'{language} {FLUX3}: {window.winfo_width()}x{window.winfo_height()}, '
                       f'minimum {minimum}, method field {button.winfo_width()}x{button.winfo_height()} px, '
-                      f'upscaler field {upscale_button.winfo_width()}x{upscale_button.winfo_height()} px.')
+                      f'upscaler field {upscale_button.winfo_width()}x{upscale_button.winfo_height()} px, '
+                      f'target size field {size_field.winfo_width()}x{size_field.winfo_height()} px.')
             menu.invoke(METHODS[FIBO2_TURBO])
             assert has_choice_mark(menu, menu, METHODS[FIBO2_TURBO])
             assert menu.entrycget('FLUX', 'image') == str(menu.blank) and not has_choice_mark(menu, flux, 1)

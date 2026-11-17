@@ -462,8 +462,8 @@ class Application:
         self.format_widget.grid(row=5, column=0, sticky='ew', pady=(4, 0))
         scaling = tk.Frame(left, bg=PANEL)
         scaling.grid(row=6, column=0, sticky='ew', pady=(5, 0))
-        scaling.columnconfigure(0, weight=9, uniform='scaling')
-        scaling.columnconfigure(1, weight=10, uniform='scaling')
+        scaling.columnconfigure(0, weight=10, uniform='scaling')
+        scaling.columnconfigure(1, weight=9, uniform='scaling')
         tk.Label(scaling, text='Upscaler', bg=PANEL, fg=INK, anchor='w').grid(
             row=0, column=0, sticky='ew', padx=(0, 5))
         self.labelled(tk.Label, scaling, 'Zielgröße', bg=PANEL, fg=INK, anchor='w').grid(row=0, column=1, sticky='ew')
