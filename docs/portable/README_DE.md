@@ -12,6 +12,8 @@ Modelle, Einstellungen und eigene Presets lassen sich weiterverwenden.
 
 Linux: Das Archiv entpacken und ./Start.sh in einer grafischen Sitzung starten.
 macOS 15+: Die ZIP entpacken und RestoRenate.app aus dem Ordner öffnen.
+Gatekeeper kann beim ersten Start eine Meldung zur ad hoc signierten App zeigen.
+Die Hinweise zum Öffnen stehen im [Apple-Support](https://support.apple.com/de-de/102445).
 Python, Tk und ExifTool sind enthalten. ExifTool verwendet das Perl des Systems.
 
 Ein Bild oder einen Ordner öffnen und ein Verfahren auswählen.

@@ -1,6 +1,6 @@
 # RestoRenate 1.3
 
-[Downloads and SHA-256 (1.2)](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2) · [Deutsch](README_DE.md) · [User guide](docs/portable/README_EN.md)
+[Downloads and SHA-256](https://github.com/muelli1975/RestoRenate/releases/latest) · [Deutsch](README_DE.md) · [User guide](docs/portable/README_EN.md)
 
 RestoRenate is a local desktop tool for restoring, colorizing and upscaling photos. With text prompts and supported models, it can also edit an image or use a second photo as a reference. The interface is available in English and German.
 

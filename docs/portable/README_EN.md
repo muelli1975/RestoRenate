@@ -12,6 +12,8 @@ can be reused.
 
 Linux: Extract the archive and run ./Start.sh in a graphical desktop session.
 macOS 15+: Extract the ZIP and open RestoRenate.app from its folder.
+Gatekeeper may display an alert when opening the ad hoc signed app for the first time.
+See [Apple Support](https://support.apple.com/en-us/102445) for details.
 Python, Tk and ExifTool are included. ExifTool uses the system Perl.
 
 Open an image or folder and choose a method. Input formats

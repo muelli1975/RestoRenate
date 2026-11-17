@@ -1,3 +1,4 @@
+# Modified for RestoRenate: local verified bundles, safe checkpoint loading and cancellation checks.
 """Discovery and strict loading of a VOSR 2.0 bundle.
 
 A bundle is a self-contained folder under ``ComfyUI/models/vosr2/`` -- VOSR 2.0

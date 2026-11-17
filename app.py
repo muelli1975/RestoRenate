@@ -108,6 +108,12 @@ BUILTIN_PROCESSING_PRESETS = {
 CPU_PROCESSING_PRESETS = {
     'Standard': {'method': MICROSOFT, 'size': NO_RESCALE, 'upscaler': LANCZOS},
 }
+
+
+def processing_preset_key(name, *, custom=False):
+    return ('custom:' if custom else 'builtin:') + name
+
+
 SETTINGS = ROOT / 'settings' / 'settings.json'
 JOBS_LOG = ROOT / 'logs' / 'jobs.jsonl'
 FILE_TYPES = [('Bilddateien', ' '.join('*' + ext for ext in sorted(EXTENSIONS))), ('Alle Dateien', '*')]
@@ -255,6 +261,8 @@ class Application:
         self.compute = tk.StringVar(value=selected_compute)
         self.processing_by_compute = read_processing_by_compute(self.config, selected_compute)
         processing = self.processing_by_compute.get(processing_mode(selected_compute), {})
+        selected_preset = processing.get('preset_selection', processing_preset_key('Standard'))
+        self.active_processing_preset = selected_preset if isinstance(selected_preset, str) else ''
         previous_method = processing.get('method')
         self.method_ids = self.available_method_ids()
         default_method = self.builtin_processing_presets()['Standard']['method']
@@ -380,7 +388,9 @@ class Application:
         self.language_button.configure(menu=languages)
         self.language_button.pack(side='right', padx=(0, 4))
         self.processing_button = ttk.Menubutton(self.header_controls, text='Presets')
-        self.processing_menu = tk.Menu(self.processing_button, **menu_colors)
+        self.processing_mark = tk.StringVar(self.window)
+        self.processing_menu = SelectionMenu(self.processing_button, self.processing_mark,
+                                             postcommand=self.update_processing_mark, **menu_colors)
         self.processing_delete_menu = tk.Menu(self.processing_menu, **menu_colors)
         self.processing_button.configure(menu=self.processing_menu)
         self.processing_button.pack(side='right', padx=(0, 4))
@@ -1459,6 +1469,7 @@ class Application:
         if self.active_compute == self.startup_compute:
             self.processing_by_compute[processing_mode(self.active_compute)] = dict(
                 method=self.current_method, scaling=self.scaling.copy(),
+                preset_selection=self.active_processing_preset,
             )
 
     def load_scaling(self, preset=None):
@@ -1629,22 +1640,22 @@ class Application:
         return CPU_PROCESSING_PRESETS if self.active_compute == CPU else BUILTIN_PROCESSING_PRESETS
 
     def refresh_processing_menu(self):
-        self.processing_menu.delete(0, 'end')
+        self.processing_menu.clear_entries()
         self.processing_delete_menu.delete(0, 'end')
         available = set(self.method_ids.values())
         builtin = self.builtin_processing_presets()
         for name, preset in builtin.items():
-            self.processing_menu.add_command(
-                label=translate(name),
-                command=lambda key=name: self.load_processing_preset(key),
+            self.processing_menu.add_choice(
+                translate(name), processing_preset_key(name), lambda key=name: self.load_processing_preset(key),
+                menu=self.processing_menu,
                 state='normal' if preset['method'] in available else 'disabled',
             )
         builtin_labels = {translate(name) for name in builtin}
         for name, preset in self.processing_presets.items():
             label = translate('{0} (eigenes Preset)', name) if name in builtin_labels else name
-            self.processing_menu.add_command(
-                label=label,
-                command=lambda key=name: self.load_processing_preset(key, custom=True),
+            self.processing_menu.add_choice(
+                label, processing_preset_key(name, custom=True),
+                lambda key=name: self.load_processing_preset(key, custom=True), menu=self.processing_menu,
                 state='normal' if preset['method'] in available else 'disabled',
             )
         self.processing_menu.add_separator()
@@ -1653,6 +1664,53 @@ class Application:
             for name in self.processing_presets:
                 self.processing_delete_menu.add_command(label=name, command=lambda key=name: self.delete_processing_preset(key))
             self.processing_menu.add_cascade(label=translate('Eigenes Preset löschen'), menu=self.processing_delete_menu)
+
+    def update_processing_mark(self):
+        key = self.active_processing_preset
+        kind, _, name = key.partition(':')
+        presets = self.processing_presets if kind == 'custom' else self.builtin_processing_presets()
+        preset = presets.get(name)
+        self.processing_mark.set(key if key in self.processing_menu.choices and preset
+                                 and self.processing_preset_matches(preset) else '')
+
+    def processing_preset_matches(self, preset):
+        method = self.current_method
+        if preset['method'] != method:
+            return False
+        try:
+            size, side = self.selected_size()
+            seed = self.fixed_seed() if method not in NO_PROMPT else None
+            preset_side = int(preset.get('side_pixels') or 2160) if size in CUSTOM_SIZES else 2160
+        except (TypeError, ValueError):
+            return False
+        if (size != method_size(method, preset.get('size')) or side != preset_side
+                or self.upscaler.get() != resolve_upscaler(method, preset.get('upscaler'))
+                or self.look_controls.armed() != self.processing_preset_look(preset)):
+            return False
+        fmt = preset.get('format')
+        if isinstance(fmt, str) and fmt in FORMATS and self.output_format.get() != fmt:
+            return False
+        if method == MICROSOFT:
+            colorizer = preset.get('microsoft_colorizer', DDCOLOR) if preset.get('microsoft_colorize') is True else None
+            return (self.scratches.get() == (preset.get('scratches', True) is True)
+                    and self.faces.get() == (preset.get('faces') is True)
+                    and self.microsoft_colorization() == (colorizer if colorizer in COLORIZATION_METHODS else None))
+        if method in NO_PROMPT:
+            return True
+        prompt = preset.get('prompt')
+        return (seed == parse_seed(preset.get('seed'))
+                and self.variant_count == VARIANT_COUNTS.get(str(preset.get('variants')), 1)
+                and (not isinstance(prompt, str) or not prompt.strip()
+                     or self.prompt.get('1.0', 'end-1c').strip() == prompt.strip()))
+
+    @staticmethod
+    def processing_preset_look(preset):
+        saved_look = preset.get('lut')
+        if isinstance(saved_look, dict):
+            key, strength = saved_look.get('id'), saved_look.get('strength')
+            if isinstance(key, str) and key in catalog() and type(strength) is int and 1 <= strength <= 100:
+                return Look(key, strength)
+        return None
 
     def save_processing_preset(self):
         if self.action:
@@ -1703,6 +1761,7 @@ class Application:
         ):
             return
         self.processing_presets[name] = preset
+        self.active_processing_preset = processing_preset_key(name, custom=True)
         saved = self.save_settings()
         self.refresh_processing_menu()
         if saved:
@@ -1711,9 +1770,8 @@ class Application:
     def load_processing_preset(self, name, *, custom=False):
         if self.action:
             return
-        preset = self.processing_presets.get(name)
-        if not custom:
-            preset = self.builtin_processing_presets().get(name, preset)
+        builtin = None if custom else self.builtin_processing_presets().get(name)
+        preset = builtin or self.processing_presets.get(name)
         if preset is None or preset['method'] not in self.method_ids.values():
             return
         self.remember_prompt()
@@ -1724,12 +1782,7 @@ class Application:
         fmt = preset.get('format')
         if isinstance(fmt, str) and fmt in FORMATS:
             self.output_format.set(fmt)
-        look = None
-        saved_look = preset.get('lut')
-        if isinstance(saved_look, dict):
-            key, strength = saved_look.get('id'), saved_look.get('strength')
-            if isinstance(key, str) and key in catalog() and type(strength) is int and 1 <= strength <= 100:
-                look = Look(key, strength)
+        look = self.processing_preset_look(preset)
         if look is not None and self.index >= 0:
             self.show_original()
         self.look_controls.set_look(look)
@@ -1752,6 +1805,7 @@ class Application:
         self.update_size_controls()
         self.load_method_prompt()
         self.check_ready()
+        self.active_processing_preset = processing_preset_key(name, custom=builtin is None)
         if self.save_settings():
             self.status.set_message('Preset „{0}“ geladen.', name)
 
@@ -1760,6 +1814,8 @@ class Application:
             return
         if messagebox.askyesno('Preset', translate('„{0}“ löschen?', name), parent=self.window):
             del self.processing_presets[name]
+            if self.active_processing_preset == processing_preset_key(name, custom=True):
+                self.active_processing_preset = ''
             self.save_settings()
             self.refresh_processing_menu()
 

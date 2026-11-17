@@ -274,6 +274,14 @@ def check_compute_settings(directory):
     def selected(gui):
         return gui.current_method, gui.size_choice(), gui.effective_upscaler()
 
+    def mark(gui, name=None, *, custom=False):
+        gui.update_processing_mark()
+        key = app.processing_preset_key(name, custom=custom) if name else ''
+        assert gui.processing_mark.get() == key, gui.processing_mark.get()
+        if key:
+            menu, index = gui.processing_menu.choices[key]
+            assert has_choice_mark(gui.processing_menu, menu, index)
+
     settings = directory / 'compute-settings.json'
     gpu = MPS if MACOS else NVIDIA
     cpu_standard = (MICROSOFT, NO_RESCALE, LANCZOS)
@@ -285,6 +293,7 @@ def check_compute_settings(directory):
             assert selected(gui) == cpu_standard
             assert gui.upscale_options.instate(['disabled'])
             assert tuple(gui.builtin_processing_presets()) == ('Standard',)
+            mark(gui, 'Standard')
             select(gui, DDCOLOR_TINY, DOUBLE_SIZE, LANCZOS)
             gui.load_processing_preset('Standard')
             assert selected(gui) == cpu_standard
@@ -293,13 +302,22 @@ def check_compute_settings(directory):
             gui.save_settings()
         with launch() as gui:
             assert gui.active_compute == gpu and selected(gui) == gpu_standard
+            mark(gui, 'Standard')
             gui.method.set(app.translate(METHODS[UPSCALING]))
             gui.choose_method()
             assert selected(gui) == (UPSCALING, ULTRA_HD, NOMOS2_HQ)
             gui.processing_menu.invoke(app.translate('Detailrekonstruktion'))
             assert selected(gui) == detail_preset
+            mark(gui, 'Detailrekonstruktion')
+            gui.upscaler.set(NOMOS2_HQ)
+            mark(gui)
+            gui.upscaler.set(VOSR2)
+            mark(gui, 'Detailrekonstruktion')
+            gui.seed_value.set('42')
+            mark(gui)
             gui.load_processing_preset('Standard')
             assert selected(gui) == gpu_standard
+            mark(gui, 'Standard')
 
         # An existing 1.2 configuration retains its explicitly selected model.
         settings.write_text(json.dumps({'compute': gpu, 'language': 'de', 'processing_by_compute': {'gpu': {
@@ -313,10 +331,12 @@ def check_compute_settings(directory):
             assert int(gui.upscale_options.cget('width') or 0) == 0
             gui.processing_menu.invoke('Detailrekonstruktion (eigenes Preset)')
             assert selected(gui) == (FLUX2, FULL_HD, LANCZOS)
+            mark(gui, 'Detailrekonstruktion', custom=True)
             gui.processing_menu.invoke('Detailrekonstruktion')
             assert selected(gui) == detail_preset
         with launch() as gui:
             assert selected(gui) == detail_preset
+            mark(gui, 'Detailrekonstruktion')
 
         # A settings file from 1.1 belongs to the device it was saved with.
         settings.write_text(json.dumps({'compute': gpu, 'method': FLUX2,

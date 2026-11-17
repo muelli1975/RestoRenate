@@ -1,3 +1,4 @@
+# Modified for RestoRenate: progress events, safe padding and a per-item tile count.
 """VOSR2 inference contract: bicubic pre-scale, pad, encode, one-step denoise,
 decode, color-align, crop -- with optional DiT/VAE tiling. See VOSR2.md
 "Inference contract" and "Tiling".

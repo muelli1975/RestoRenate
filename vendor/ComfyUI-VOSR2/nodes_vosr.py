@@ -1,3 +1,4 @@
+# Modified for RestoRenate: select the locally installed VOSR bundle.
 import sys
 
 from typing_extensions import override

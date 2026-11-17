@@ -92,6 +92,16 @@ def check_native_menus(gui):
             width = capture_popup(group, root.parent / f'{name}-{language}.png')
             assert width >= text_width + 14, (language, name, width, text_width, group.entrycget(index, 'label'))
             print(f'{language} {name} has {width}px for a {text_width}px label and its checkmark.')
+        gui.load_processing_preset('Standard')
+        menu = gui.processing_menu
+        window.update()
+        destination = root.parent / f'preset-menu-{language}.png'
+        width = capture_popup(menu, destination)
+        preset_font = font.Font(window, font=menu.cget('font'))
+        label_width = max(preset_font.measure(menu.entrycget(index, 'label')) for _, index in menu.choices.values())
+        assert width >= label_width + 14
+        with Image.open(destination) as screenshot:
+            assert any(r >= 175 and 115 <= g < r and b < g - 25 for r, g, b in screenshot.convert('RGB').getdata())
 
 
 def check_closed_upscaler(gui):
