@@ -263,6 +263,7 @@ ENGLISH = {
     'Saubere Fotos und Porträts': 'Clean photos and portraits',
     'Kleine und komprimierte Fotos': 'Small and compressed photos',
     'Detailrekonstruktion': 'Detail reconstruction',
+    '{0} (eigenes Preset)': '{0} (custom preset)',
     'Allrounder': 'General purpose',
     'Zeichnungen und Anime': 'Drawings and anime',
     'Kolorieren': 'Colorize',

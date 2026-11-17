@@ -33,7 +33,7 @@ from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINT
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import PreloadProgress, choose_preloads, format_download_size, preload_label
 from methods import (COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
-                     METHODS, METHOD_MENU_SECTIONS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
+                     METHODS, METHOD_MENU_SECTIONS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU, SEEDVR2,
                      TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
                      available_methods, resolve_upscaler, uses_comfy)
 from sizes import (CUSTOM_SIZES, MAX_SIDE, NO_RESCALE, SIZE_CHOICES, ULTRA_HD, method_size,
@@ -97,11 +97,13 @@ PRESETS = {
 }
 MAX_VARIANTS = 100
 VARIANT_COUNTS = {str(count): count for count in range(1, MAX_VARIANTS + 1)}
+GPU_STANDARD_PRESET = {
+    'method': DEFAULT_METHOD, 'preset': DEFAULT_PROMPT_NAME, 'prompt': PRESETS[DEFAULT_PROMPT_NAME], 'variants': 1,
+    'size': ULTRA_HD, 'upscaler': resolve_upscaler(DEFAULT_METHOD),
+}
 BUILTIN_PROCESSING_PRESETS = {
-    'Standard': {
-        'method': DEFAULT_METHOD, 'preset': DEFAULT_PROMPT_NAME, 'prompt': PRESETS[DEFAULT_PROMPT_NAME], 'variants': 1,
-        'size': ULTRA_HD, 'upscaler': resolve_upscaler(DEFAULT_METHOD, gpu=True),
-    },
+    'Standard': GPU_STANDARD_PRESET,
+    'Detailrekonstruktion': dict(GPU_STANDARD_PRESET, upscaler=SEEDVR2),
 }
 CPU_PROCESSING_PRESETS = {
     'Standard': {'method': MICROSOFT, 'size': NO_RESCALE, 'upscaler': LANCZOS},
@@ -155,7 +157,7 @@ def read_processing_presets(saved):
     if not isinstance(saved, dict):
         return {}
     return {name: preset for name, preset in saved.items()
-            if isinstance(name, str) and name.strip() and name not in BUILTIN_PROCESSING_PRESETS
+            if isinstance(name, str) and name.strip() and name != 'Standard'
             and isinstance(preset, dict) and isinstance(preset.get('method'), str)
             and preset['method'] in METHODS}
 
@@ -1467,7 +1469,7 @@ class Application:
             values = standard if method == standard['method'] else {}
         self.size.set(translate(method_size(method, values.get('size'))))
         self.side_pixels.set(str(values.get('side_pixels') or 2160))
-        self.upscaler.set(resolve_upscaler(method, values.get('upscaler'), gpu=self.active_compute != CPU))
+        self.upscaler.set(resolve_upscaler(method, values.get('upscaler')))
 
     def size_choice(self):
         return method_size(self.current_method, self.size_ids.get(self.size.get()))
@@ -1631,10 +1633,18 @@ class Application:
         self.processing_delete_menu.delete(0, 'end')
         available = set(self.method_ids.values())
         builtin = self.builtin_processing_presets()
-        for name, preset in {**builtin, **self.processing_presets}.items():
+        for name, preset in builtin.items():
             self.processing_menu.add_command(
-                label=translate(name) if name in builtin else name,
+                label=translate(name),
                 command=lambda key=name: self.load_processing_preset(key),
+                state='normal' if preset['method'] in available else 'disabled',
+            )
+        builtin_labels = {translate(name) for name in builtin}
+        for name, preset in self.processing_presets.items():
+            label = translate('{0} (eigenes Preset)', name) if name in builtin_labels else name
+            self.processing_menu.add_command(
+                label=label,
+                command=lambda key=name: self.load_processing_preset(key, custom=True),
                 state='normal' if preset['method'] in available else 'disabled',
             )
         self.processing_menu.add_separator()
@@ -1685,7 +1695,7 @@ class Application:
         name = name.strip() if name else ''
         if not name:
             return
-        if name in BUILTIN_PROCESSING_PRESETS:
+        if name in BUILTIN_PROCESSING_PRESETS and name not in self.processing_presets:
             messagebox.showinfo('Preset', translate('Bitte einen eigenen Namen verwenden.'), parent=self.window)
             return
         if name in self.processing_presets and not messagebox.askyesno(
@@ -1698,10 +1708,12 @@ class Application:
         if saved:
             self.status.set_message('Preset „{0}“ gespeichert.', name)
 
-    def load_processing_preset(self, name):
+    def load_processing_preset(self, name, *, custom=False):
         if self.action:
             return
-        preset = self.builtin_processing_presets().get(name) or self.processing_presets.get(name)
+        preset = self.processing_presets.get(name)
+        if not custom:
+            preset = self.builtin_processing_presets().get(name, preset)
         if preset is None or preset['method'] not in self.method_ids.values():
             return
         self.remember_prompt()

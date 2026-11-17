@@ -144,6 +144,8 @@ def check_layout(source, language):
             gui = app.Application(window)
         with patch.object(gui, 'save_settings'):
             gui.pick_sources(source)
+            assert gui.processing_menu.entrycget(0, 'label') == app.translate('Standard')
+            assert gui.processing_menu.entrycget(1, 'label') == app.translate('Detailrekonstruktion')
             menu = gui.method_menu
             headings = ('Bearbeiten', 'Kolorieren', 'Nur hochskalieren') if language == 'de' else ('Edit', 'Colorize', 'Upscale only')
             assert menu_labels(menu) == [headings[0], METHODS[FIBO2_TURBO], 'FireRed', 'FLUX', METHODS[MICROSOFT],
@@ -158,7 +160,10 @@ def check_layout(source, language):
                 assert menu.entrycget(heading, graphic) and menu.entrycget(heading, 'compound') == 'none'
             assert menu.entrycget(headings[2], 'value') == app.translate(METHODS[UPSCALING])
             upscale_menu = gui.upscale_menu
-            assert UPSCALERS[:2] == (SEEDVR2, VOSR2)
+            assert tuple(heading for heading, _ in UPSCALE_MENU_SECTIONS[:2]) == (
+                'Saubere Fotos und Porträts', 'Detailrekonstruktion',
+            )
+            assert UPSCALERS[0] == NOMOS2_HQ and UPSCALE_MENU_SECTIONS[1][1] == (SEEDVR2, VOSR2)
             assert menu_labels(upscale_menu) == [
                 value for heading, choices in UPSCALE_MENU_SECTIONS
                 for value in (app.translate(heading), *choices)
@@ -252,12 +257,14 @@ def check_compute_settings(directory):
     settings = directory / 'compute-settings.json'
     gpu = MPS if MACOS else NVIDIA
     cpu_standard = (MICROSOFT, NO_RESCALE, LANCZOS)
-    gpu_standard = (FIBO2_TURBO, ULTRA_HD, SEEDVR2)
+    gpu_standard = (FIBO2_TURBO, ULTRA_HD, NOMOS2_HQ)
+    detail_preset = (FIBO2_TURBO, ULTRA_HD, SEEDVR2)
     with patch.object(app, 'SETTINGS', settings), patch.object(app.messagebox, 'showinfo'):
         settings.write_text(json.dumps({'compute': CPU}), encoding='utf-8')
         with launch() as gui:
             assert selected(gui) == cpu_standard
             assert gui.upscale_options.instate(['disabled'])
+            assert tuple(gui.builtin_processing_presets()) == ('Standard',)
             select(gui, DDCOLOR_TINY, DOUBLE_SIZE, LANCZOS)
             gui.load_processing_preset('Standard')
             assert selected(gui) == cpu_standard
@@ -268,18 +275,28 @@ def check_compute_settings(directory):
             assert gui.active_compute == gpu and selected(gui) == gpu_standard
             gui.method.set(app.translate(METHODS[UPSCALING]))
             gui.choose_method()
-            assert selected(gui) == (UPSCALING, ULTRA_HD, SEEDVR2)
+            assert selected(gui) == (UPSCALING, ULTRA_HD, NOMOS2_HQ)
+            gui.processing_menu.invoke(app.translate('Detailrekonstruktion'))
+            assert selected(gui) == detail_preset
             gui.load_processing_preset('Standard')
             assert selected(gui) == gpu_standard
 
         # An existing 1.2 configuration retains its explicitly selected model.
-        settings.write_text(json.dumps({'compute': gpu, 'processing_by_compute': {'gpu': {
+        settings.write_text(json.dumps({'compute': gpu, 'language': 'de', 'processing_by_compute': {'gpu': {
             'method': FIBO2_TURBO, 'scaling': {'restoration': {'size': ULTRA_HD, 'upscaler': NOMOS2_HQ}},
+        }}, 'processing_presets': {'Detailrekonstruktion': {
+            'method': FLUX2, 'size': FULL_HD, 'upscaler': LANCZOS,
         }}}), encoding='utf-8')
         with launch() as gui:
             assert selected(gui) == (FIBO2_TURBO, ULTRA_HD, NOMOS2_HQ)
             assert gui.upscale_options.cget('text') == NOMOS2_HQ
             assert int(gui.upscale_options.cget('width') or 0) == 0
+            gui.processing_menu.invoke('Detailrekonstruktion (eigenes Preset)')
+            assert selected(gui) == (FLUX2, FULL_HD, LANCZOS)
+            gui.processing_menu.invoke('Detailrekonstruktion')
+            assert selected(gui) == detail_preset
+        with launch() as gui:
+            assert selected(gui) == detail_preset
 
         # A settings file from 1.1 belongs to the device it was saved with.
         settings.write_text(json.dumps({'compute': gpu, 'method': FLUX2,
