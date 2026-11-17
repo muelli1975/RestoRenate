@@ -1,0 +1,87 @@
+name: Review 1.3 VOSR on Apple Silicon
+
+on:
+  push:
+    branches: [codex/restorenate-1.3-mps-review]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  vosr-mps:
+    runs-on: macos-15
+    timeout-minutes: 28
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 44063113424
+          name: RestoRenate-macOS-AppleSilicon
+          path: dist
+      - name: Run VOSR from the verified test package
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd dist && shasum -a 256 -c SHA256SUMS.txt)
+          ditto -x -k dist/RestoRenate_1.3_Test_macOS_AppleSilicon.zip review
+          root="$PWD/review/RestoRenate"
+          "$root/runtime/python/bin/python3.12" -u - "$root" <<'PY'
+          from pathlib import Path
+          import sys
+          from PIL import Image, ImageDraw, ImageChops
+
+          root = Path(sys.argv[1])
+          sys.path.insert(0, str(root / '_internal'))
+          from language import configure_language
+          from local_backend import Backend
+          from methods import UPSCALING, VOSR2
+          from portable_setup import MPS, Setup
+          from restoration import Client, restore, select_models
+          from sizes import CUSTOM_SIZE
+
+          configure_language('en')
+          setup = Setup(root, method=UPSCALING, upscaler=VOSR2, compute=MPS)
+          paths = setup.ensure()
+          assert setup.ready()
+          setup.verify_compute(paths[0])
+          backend = Backend(root, compute=MPS)
+          try:
+              url = backend.start(paths, method=UPSCALING, upscaler=VOSR2)
+              client = Client(url, root)
+              assert client.json('/system_stats')['devices'][0]['type'] == MPS
+              schema = client.json('/object_info')
+              models = select_models(schema, UPSCALING, VOSR2)
+              work = root / 'review-images'
+              work.mkdir()
+              for width, height, scale in ((80, 54, 2), (384, 256, 3)):
+                  source = work / f'source-{width}.png'
+                  with Image.linear_gradient('L').resize((width, height)).convert('RGB') as image:
+                      ImageDraw.Draw(image).rectangle((10, 10, width // 2, height // 2), outline='#bba380', width=3)
+                      image.save(source)
+                  phases = []
+                  def status(text):
+                      print(text)
+                      phases.append(text)
+                  record = {'method': UPSCALING, 'models': models, 'prompt': '', 'seed': 12}
+                  output, warning = restore(
+                      client, models, source, work, 'PNG', None, '', 12, status, lambda: False,
+                      record, method=UPSCALING, upscaler=VOSR2,
+                      size_choice=(CUSTOM_SIZE, width * scale), definitions=schema,
+                  )
+                  assert not warning
+                  assert phases.index('Decoding image …') < phases.index('Matching colors …')
+                  with Image.open(output) as image:
+                      assert image.size == (width * scale, height * scale) and 'workflow' in image.info
+                      assert any(lo < hi for lo, hi in image.getextrema())
+                  print(f'Passed VOSR on MPS at {width * scale} × {height * scale}: {record["seconds_by_stage"]}')
+          finally:
+              backend.close()
+          PY
+      - name: Upload diagnostic logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vosr-mps-review-logs
+          path: review/RestoRenate/logs/*.log
+          if-no-files-found: ignore
