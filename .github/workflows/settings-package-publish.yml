@@ -1,0 +1,37 @@
+name: Publish verified RestoRenate settings update
+on:
+  push:
+    branches: ['release/settings-location*']
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: restorenate-settings-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+      VERIFIED_RUN: '44085792468'
+      VERIFIED_SHA: '0dacf433cc585933f671bdfc163e824f91f736c5'
+      SOURCE_TREE: 'aab4baa249fe6499efaf81907a04f95e1c46fed0'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect the verified archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GH_REPO/branches/main" --jq '.commit.commit.tree.sha')" = "$SOURCE_TREE"
+          gh api "repos/$GH_REPO/actions/runs/$VERIFIED_RUN" |
+            jq -e --arg sha "$VERIFIED_SHA" '.head_sha == $sha and .conclusion == "success"'
+          for platform in windows macos linux; do
+            gh run download "$VERIFIED_RUN" --name "settings-$platform" --dir "staged/$platform"
+          done
+      - name: Update the six existing release records
+        run: python3 .github/settings-update/publish.py
