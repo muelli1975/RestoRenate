@@ -24,7 +24,7 @@ The Linux and macOS packages include Python, Tk and ExifTool. ExifTool uses the 
 
 Windows offers CPU and NVIDIA modes, plus experimental AMD ROCm. The Linux release defaults to CPU and offers experimental modes for NVIDIA (CUDA 13-compatible driver) and AMD ([hardware and drivers compatible with ROCm 7.2](https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2/docs/compatibility/compatibilityrad/native_linux/native_linux_compatibility.html)). The macOS release defaults to Apple Metal (MPS) and also offers CPU processing. Nunchaku INT4 is available on supported Windows NVIDIA systems.
 
-When updating Windows, close RestoRenate and extract the package into a clean folder. To keep an existing setup, copy `models`, `backend`, `downloads`, `settings` and the existing runtime subfolders and download receipts as needed. Extract the new package in full to keep its `_internal`, `assets` and `tools` together.
+When updating Windows, close RestoRenate and extract the package into a clean folder. To keep an existing setup, copy `settings.json` into the new program folder. Copy `models`, `backend`, `downloads` and the existing runtime subfolders and download receipts as needed. Extract the new package in full to keep its `_internal`, `assets` and `tools` together.
 
 ## Quick start
 

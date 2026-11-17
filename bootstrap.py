@@ -39,7 +39,7 @@ def launch():
         TechnicalLog(ROOT / 'logs/launcher_error.log').write(traceback.format_exc())
         from tkinter import messagebox
         try:
-            settings = json.loads((ROOT / 'settings/settings.json').read_text(encoding='utf-8'))
+            settings = json.loads((ROOT / 'settings.json').read_text(encoding='utf-8'))
         except (OSError, ValueError):
             settings = {}
         configure_language(settings.get('language') if isinstance(settings, dict) else None)

@@ -114,7 +114,7 @@ def processing_preset_key(name, *, custom=False):
     return ('custom:' if custom else 'builtin:') + name
 
 
-SETTINGS = ROOT / 'settings' / 'settings.json'
+SETTINGS = ROOT / 'settings.json'
 JOBS_LOG = ROOT / 'logs' / 'jobs.jsonl'
 FILE_TYPES = [('Bilddateien', ' '.join('*' + ext for ext in sorted(EXTENSIONS))), ('Alle Dateien', '*')]
 ROTATION_CHOICES = (('90° links', -1), ('90° rechts', 1), ('180°', 2), ('Drehung zurücksetzen', None))

@@ -7,8 +7,8 @@ Portable edition
 Extract the entire ZIP to a short, writable path such as D:\RestoRenate and
 open RestoRenate.exe. To update, close RestoRenate and copy the contents of the
 RestoRenate folder in the ZIP into the existing program folder. Replace the
-program files. Models, settings and custom presets
-can be reused.
+program files. Models can be reused. The settings and custom presets are in
+settings.json at the top level of the program folder.
 
 Linux: Extract the archive and run ./Start.sh in a graphical desktop session.
 macOS 15+: Extract the ZIP and open RestoRenate.app from its folder.

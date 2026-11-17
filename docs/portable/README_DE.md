@@ -8,7 +8,8 @@ Die gesamte ZIP in einen kurzen, beschreibbaren Pfad entpacken, etwa
 D:\RestoRenate, und RestoRenate.exe öffnen. Für ein Update RestoRenate beenden
 und den Inhalt des Ordners RestoRenate aus der ZIP in den bestehenden
 Programmordner kopieren und die Programmdateien ersetzen.
-Modelle, Einstellungen und eigene Presets lassen sich weiterverwenden.
+Modelle lassen sich weiterverwenden. Einstellungen und eigene Presets stehen
+in settings.json direkt im Programmordner.
 
 Linux: Das Archiv entpacken und ./Start.sh in einer grafischen Sitzung starten.
 macOS 15+: Die ZIP entpacken und RestoRenate.app aus dem Ordner öffnen.
