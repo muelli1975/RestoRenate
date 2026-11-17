@@ -34,7 +34,7 @@ from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import PreloadProgress, choose_preloads, format_download_size, preload_label
 from methods import (COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
                      METHODS, METHOD_MENU_SECTIONS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
-                     TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
+                     TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
                      available_methods, resolve_upscaler, uses_comfy)
 from sizes import (CUSTOM_SIZES, MAX_SIDE, NO_RESCALE, SIZE_CHOICES, ULTRA_HD, method_size,
                    needs_enlargement, output_size, restoration_size, size_choices)
@@ -467,15 +467,17 @@ class Application:
         tk.Label(scaling, text='Upscaler', bg=PANEL, fg=INK, anchor='w').grid(
             row=0, column=0, sticky='ew', padx=(0, 5))
         self.labelled(tk.Label, scaling, 'Zielgröße', bg=PANEL, fg=INK, anchor='w').grid(row=0, column=1, sticky='ew')
-        self.upscale_options = ttk.Combobox(scaling, textvariable=self.upscaler, values=UPSCALERS,
-                                            state='readonly', width=1)
+        self.upscale_options = ttk.Menubutton(scaling, textvariable=self.upscaler,
+                                              style='Input.TMenubutton', width=1)
+        self.upscale_menu = SelectionMenu(self.upscale_options, self.upscaler, **dict(menu_colors, disabledforeground=GOLD))
+        self.upscale_options.configure(menu=self.upscale_menu)
         self.upscale_options.grid(row=1, column=0, sticky='ew', padx=(0, 5))
+        self.refresh_upscale_menu()
         size_row = tk.Frame(scaling, bg=PANEL)
         size_row.grid(row=1, column=1, sticky='ew')
         self.size_widget = ttk.Combobox(size_row, textvariable=self.size, state='readonly', width=1)
         self.size_widget.pack(side='left', fill='x', expand=True)
         self.side_entry = ttk.Entry(size_row, textvariable=self.side_pixels, width=6)
-        self.upscale_options.bind('<<ComboboxSelected>>', self.scaling_changed)
         self.size_widget.bind('<<ComboboxSelected>>', self.scaling_changed)
         self.side_entry.bind('<FocusOut>', self.scaling_changed)
         self.side_entry.bind('<Return>', self.scaling_changed)
@@ -786,6 +788,17 @@ class Application:
             self.update_size_controls()
             self.check_ready()
             self.save_settings()
+
+    def refresh_upscale_menu(self):
+        menu = self.upscale_menu
+        menu.clear_entries()
+        for heading, upscalers in UPSCALE_MENU_SECTIONS:
+            menu.add_heading(translate(heading))
+            for upscaler in upscalers:
+                menu.add_choice(upscaler, upscaler, self.scaling_changed, menu=menu)
+        menu.add_separator()
+        menu.add_choice(LANCZOS, LANCZOS, self.scaling_changed, menu=menu)
+        menu.update_marks()
 
     def effective_upscaler(self, *, all_sources=False):
         method = self.current_method
@@ -1486,7 +1499,7 @@ class Application:
         rescale = self.size_choice() != NO_RESCALE
         self.upscale_options.configure(
             textvariable=self.upscaler if rescale else self.inactive_upscaler,
-            state='disabled' if self.action or not rescale else 'readonly',
+            state='disabled' if self.action or not rescale else 'normal',
         )
         self.update_dimensions()
 
@@ -1899,7 +1912,7 @@ class Application:
         self.update_output_controls()
         self.size_widget.configure(state='disabled' if value else 'readonly')
         self.update_microsoft_colorization()
-        self.upscale_options.configure(state='disabled' if value or self.size_choice() == NO_RESCALE else 'readonly')
+        self.upscale_options.configure(state='disabled' if value or self.size_choice() == NO_RESCALE else 'normal')
         self.format_widget.configure(state='disabled' if value else 'readonly')
         self.start_button.configure(
             text=translate('Abbrechen') if value else 'Start',
@@ -1954,7 +1967,8 @@ class Application:
             exiftool = None if output_format == 'PNG' else exiftool_executable(ROOT)
             client, definitions, models, device, colorizer = None, {}, {}, 'CPU', None
             if uses_comfy(method, upscaler):
-                client = Client(self.backend.start(paths, status, self.cancelled.is_set, method=method), ROOT)
+                server = self.backend.start(paths, status, self.cancelled.is_set, method=method, upscaler=upscaler)
+                client = Client(server, ROOT)
                 device = client.device() or COMPUTE_DEVICES[self.active_compute]
                 if self.active_compute == AMD and device.startswith('CUDA '):
                     device = device.replace('CUDA ', 'ROCm ', 1)
@@ -2263,6 +2277,7 @@ class Application:
         self.method_ids = self.available_method_ids()
         self.method.set(translate(METHODS[self.current_method]))
         self.refresh_method_menu()
+        self.refresh_upscale_menu()
         self.refresh_processing_menu()
         self.prompt_heading.set(translate('Restaurierung') if self.current_method == MICROSOFT else 'Prompt')
         self.preset_widget.configure(values=self.preset_names())

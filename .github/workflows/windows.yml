@@ -2,7 +2,7 @@ name: Build and test Windows x64
 
 on:
   push:
-    branches: [main, codex/restorenate-1.1, codex/restorenate-1.2-test, release/v1.2-windows]
+    branches: [main, codex/restorenate-1.1, codex/restorenate-1.2-test, codex/restorenate-1.3-test, release/v1.2-windows]
   pull_request:
   workflow_dispatch:
 
@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
-      RR_WINDOWS_ARCHIVE: ${{ github.ref == 'refs/heads/release/v1.2-windows' && 'RestoRenate_1.2_Windows_x64.zip' || 'RestoRenate_1.2_Test_Windows_x64.zip' }}
+      RR_WINDOWS_ARCHIVE: ${{ github.ref == 'refs/heads/release/v1.2-windows' && 'RestoRenate_1.2_Windows_x64.zip' || 'RestoRenate_1.3_Test_Windows_x64.zip' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,6 +34,9 @@ jobs:
           gh release download v1.0 --pattern 'RestoRenate_1.0_Windows_x64.zip' --dir original
           if ($LASTEXITCODE -ne 0) { throw 'Unable to download the Windows package' }
           python scripts/repack_portable.py windows original/RestoRenate_1.0_Windows_x64.zip "dist/$env:RR_WINDOWS_ARCHIVE" --smoke-dir dist/smoke --base-sha256 ($digest.Substring(7))
+          if ($LASTEXITCODE -ne 0) { throw 'Windows package build failed' }
+          $checksum = (Get-FileHash -Algorithm SHA256 "dist/$env:RR_WINDOWS_ARCHIVE").Hash.ToLowerInvariant()
+          "$checksum  $env:RR_WINDOWS_ARCHIVE" | Set-Content -Encoding ascii dist/SHA256SUMS.txt
       - name: Test the EXE from a fresh extraction
         shell: pwsh
         run: |
@@ -42,7 +45,7 @@ jobs:
           if (!$launcher.WaitForExit(10000) -or $launcher.ExitCode -ne 0) { throw 'Launcher failed' }
           $app = $null
           for ($i=0; $i -lt 60 -and !$app; $i++) {
-            $app = Get-Process pythonw -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $root 'runtime/python/pythonw.exe') -and $_.MainWindowTitle -eq 'RestoRenate – 1.2' } | Select-Object -First 1
+            $app = Get-Process pythonw -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $root 'runtime/python/pythonw.exe') -and $_.MainWindowTitle -eq 'RestoRenate – 1.3' } | Select-Object -First 1
             if (!$app) { Start-Sleep -Milliseconds 250 }
           }
           if (!$app -or !$app.Responding) {
@@ -76,7 +79,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: RestoRenate-Windows-x64
-          path: dist/${{ env.RR_WINDOWS_ARCHIVE }}
+          path: |
+            dist/${{ env.RR_WINDOWS_ARCHIVE }}
+            dist/SHA256SUMS.txt
           if-no-files-found: error
 
   publish:

@@ -1,6 +1,6 @@
-# RestoRenate 1.2
+# RestoRenate 1.3
 
-[Downloads and SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2) · [Deutsch](README_DE.md) · [User guide](docs/portable/README_EN.md)
+[Downloads and SHA-256 (1.2)](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2) · [Deutsch](README_DE.md) · [User guide](docs/portable/README_EN.md)
 
 RestoRenate is a local desktop tool for restoring, colorizing and upscaling photos. With text prompts and supported models, it can also edit an image or use a second photo as a reference. The interface is available in English and German.
 
@@ -32,6 +32,10 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 2. Check the output destination, choose a file format and size, then select a method. Edit the prompt for models that accept text.
 3. Select **Start**. Use **Download models …** to prepare multiple methods in one pass. Optional Lightning LoRAs are listed beneath their base models.
 4. Compare the saved result with the before-and-after slider. The navigation shows **Result 1/3**, for example. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
+
+## New in 1.3
+
+Upscalers are grouped by use. Nomos2 HQ DAT2 and Nomos8kDAT join the photo models. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail in a single step. All four can upscale a photo directly or process the result of a restoration.
 
 ## New in 1.2
 

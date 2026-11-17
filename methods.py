@@ -57,11 +57,22 @@ REMACRI = 'Remacri 4×'
 REALWEBPHOTO = 'RealWebPhoto v4'
 SIAX = 'NMKD Siax 4×'
 NOMOS2_HQ = 'Nomos2 HQ MoSR 4×'
+NOMOS2_DAT2 = 'Nomos2 HQ DAT2 4×'
+NOMOS8K_DAT = 'Nomos8kDAT 4×'
 FACEUP_DAT = '4× FaceUpDAT'
 SWINIR_S = 'SwinIR-S 4×'
 LANCZOS = 'Lanczos'
-UPSCALERS = (NOMOS2_HQ, REALESRGAN, SIAX, REMACRI, ULTRASHARP_ORIGINAL, ULTRASHARP, ULTRASHARP_LITE, SWINIR_S,
-             REALESRGAN_ANIME, ANIMESHARP, REALWEBPHOTO, FACEUP_DAT, LANCZOS)
+SEEDVR2 = 'SeedVR2 3B INT8'
+VOSR2 = 'VOSR 2.0'
+VOSR2_BUNDLE = 'VOSR2'
+UPSCALE_MENU_SECTIONS = (
+    ('Saubere Fotos und Porträts', (NOMOS2_HQ, NOMOS2_DAT2, FACEUP_DAT)),
+    ('Kleine und komprimierte Fotos', (NOMOS8K_DAT, REALWEBPHOTO)),
+    ('Detailrekonstruktion', (SEEDVR2, VOSR2)),
+    ('Allrounder', (REALESRGAN, SIAX, REMACRI, ULTRASHARP_ORIGINAL, ULTRASHARP, ULTRASHARP_LITE, SWINIR_S)),
+    ('Zeichnungen und Anime', (REALESRGAN_ANIME, ANIMESHARP)),
+)
+UPSCALERS = (*(item for _, group in UPSCALE_MENU_SECTIONS for item in group), LANCZOS)
 UPSCALE_LICENSES = {
     ULTRASHARP_ORIGINAL: 'CC BY-NC-SA 4.0',
     ULTRASHARP: 'CC BY-NC-SA 4.0',
@@ -73,6 +84,10 @@ UPSCALE_LICENSES = {
     REALWEBPHOTO: 'CC BY 4.0',
     SIAX: 'WTFPL',
     NOMOS2_HQ: 'CC BY 4.0',
+    NOMOS2_DAT2: 'CC BY 4.0',
+    NOMOS8K_DAT: 'CC BY 4.0',
+    SEEDVR2: 'Apache 2.0',
+    VOSR2: 'Apache 2.0',
     FACEUP_DAT: 'CC BY 4.0',
     SWINIR_S: 'Apache 2.0',
 }
@@ -126,6 +141,10 @@ UPSCALE_FILENAME_LABELS = {
     REALWEBPHOTO: 'RealWebPhoto-v4',
     SIAX: 'Siax',
     NOMOS2_HQ: 'Nomos2-MoSR',
+    NOMOS2_DAT2: 'Nomos2-DAT2-4x',
+    NOMOS8K_DAT: 'Nomos8kDAT-4x',
+    SEEDVR2: 'SeedVR2-3B-INT8',
+    VOSR2: 'VOSR-2.0',
     FACEUP_DAT: 'FaceUpDAT-4x',
     SWINIR_S: 'SwinIR-S-4x',
 }
@@ -158,8 +177,15 @@ UPSCALE_FILES = {
     REALWEBPHOTO: {'upscale': ('UpscaleModelLoader', 'model_name', '4xRealWebPhoto_v4_dat2.safetensors')},
     SIAX: {'upscale': ('UpscaleModelLoader', 'model_name', '4x_NMKD-Siax_200k.pth')},
     NOMOS2_HQ: {'upscale': ('UpscaleModelLoader', 'model_name', '4xNomos2_hq_mosr.safetensors')},
+    NOMOS2_DAT2: {'upscale': ('UpscaleModelLoader', 'model_name', '4xNomos2_hq_dat2.safetensors')},
+    NOMOS8K_DAT: {'upscale': ('UpscaleModelLoader', 'model_name', '4xNomos8kDAT.safetensors')},
     FACEUP_DAT: {'upscale': ('UpscaleModelLoader', 'model_name', '4xFaceUpDAT.safetensors')},
     SWINIR_S: {'upscale': ('UpscaleModelLoader', 'model_name', '002_lightweightSR_DIV2K_s64w8_SwinIR-S_x4.pth')},
+    SEEDVR2: {
+        'upscale_seedvr2': ('UNETLoader', 'unet_name', 'seedvr2_3b_int8_convrot.safetensors'),
+        'upscale_seedvr2_vae': ('VAELoader', 'vae_name', 'seedvr2_ema_vae_fp16.safetensors'),
+    },
+    VOSR2: {'upscale_vosr2': ('VOSR2ModelLoader', 'model', VOSR2_BUNDLE)},
     LANCZOS: {},
 }
 UPSCALE_SCALES = {'upscale': 4, 'upscale_lite': 4, 'esrgan2': 2, 'esrgan4': 4}
@@ -250,7 +276,10 @@ def model_specs(manifest, optional, method, faces=False, upscaler=None):
     files = {Path(item['path']).name: item for item in manifest['models']}
     for group in optional.values():
         files.update((Path(item['path']).name, item) for item in group)
-    names = [entry[2] for entry in model_files(method, upscaler).values()]
+    names = [entry[2] for entry in model_files(method, upscaler).values() if entry[2] != VOSR2_BUNDLE]
     if method == MICROSOFT or method in COLORIZATION_METHODS:
         names.extend(Path(item['path']).name for item in optional[method] if faces or not item.get('face_only'))
-    return [files[name] for name in dict.fromkeys(names)]
+    specs = [files[name] for name in dict.fromkeys(names)]
+    if upscaler == VOSR2:
+        specs.extend(optional['vosr2'])
+    return specs

@@ -16,7 +16,7 @@ root = Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(root / '_internal'))
 
 import app
-from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALING, resolve_upscaler
+from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALE_MENU_SECTIONS, UPSCALING, resolve_upscaler
 from field_focus import check_field_focus, field_focus_maps
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
@@ -78,6 +78,9 @@ def check_native_menus(gui):
         method_menu = gui.method_menu
         headings = [method_menu.index(app.translate(heading)) for heading in ('Bearbeiten', 'Kolorieren')]
         capture_popup(method_menu, root.parent / f'model-menu-{language}.png', headings)
+        upscale_menu = gui.upscale_menu
+        headings = [upscale_menu.index(app.translate(heading)) for heading, _ in UPSCALE_MENU_SECTIONS]
+        capture_popup(upscale_menu, root.parent / f'upscaler-menu-{language}.png', headings)
         for name, menu in (('model-submenu', method_menu), ('lut-menu', controls.menu)):
             group_font = font.Font(window, font=menu.cget('font'))
             choices = [(group_font.measure(group.entrycget(index, 'label')), group, index)
@@ -114,7 +117,7 @@ try:
     left, top = row.winfo_rootx(), row.winfo_rooty()
     with ImageGrab.grab((left, top, left + row.winfo_width(), top + row.winfo_height())) as screenshot:
         screenshot.save(root.parent / 'reference-controls.png')
-    popup = str(window.tk.call('ttk::combobox::PopdownWindow', str(gui.upscale_options)))
+    popup = str(window.tk.call('ttk::combobox::PopdownWindow', str(gui.size_widget)))
     assert window.tk.call(popup + '.f.sb', 'cget', '-style') == ''
     style = ttk.Style(window)
     assert style.lookup('Vertical.TScrollbar', 'background') == app.BORDER

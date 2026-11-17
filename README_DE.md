@@ -1,6 +1,6 @@
-# RestoRenate 1.2
+# RestoRenate 1.3
 
-[Downloads und SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2) · [English](README.md) · [Anleitung](docs/portable/README_DE.md)
+[Downloads und SHA-256 (1.2)](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2) · [English](README.md) · [Anleitung](docs/portable/README_DE.md)
 
 RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner. Mit unterstützten Modellen lassen sich Bilder auch per Prompt bearbeiten oder anhand eines zweiten Fotos verändern. Die Oberfläche ist auf Deutsch und Englisch verfügbar.
 
@@ -32,6 +32,10 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 2. Ausgabeziel prüfen, Format und Größe wählen, dann ein Verfahren auswählen. Bei Modellen mit Texteingabe den Prompt bearbeiten.
 3. **Start** wählen. Über **Modelle vorab laden …** lassen sich mehrere Verfahren gemeinsam einrichten. Optionale Lightning-LoRAs stehen unter ihrem Basismodell.
 4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. Die Navigation zeigt beispielsweise **Ergebnis 1/3**. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild↑ / Bild↓** blättern durch die Ergebnisse.
+
+## Neu in 1.3
+
+Die Upscaler sind nach Einsatzbereich gruppiert. Nomos2 HQ DAT2 und Nomos8kDAT ergänzen die Fotomodelle. SeedVR2 3B INT8 und VOSR 2.0 rekonstruieren Details in einem Verarbeitungsschritt. Alle vier können ein Foto direkt vergrößern oder das Ergebnis einer Restaurierung weiterverarbeiten.
 
 ## Neu in 1.2
 

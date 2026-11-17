@@ -1,4 +1,4 @@
-# RestoRenate 1.2
+# RestoRenate 1.3
 
 Portable Ausgabe
 
@@ -138,6 +138,10 @@ Zielgröße an. Die GPU-Voreinstellung für Restaurierung ist Fibo 2.0 Edit Turb
 mit 2160 px Bildhöhe und Nomos2 HQ MoSR 4×. „Nur hochskalieren“ verwendet
 standardmäßig ebenfalls diese Zielgröße und diesen Upscaler.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
+Das Upscaler-Menü und die Modelldownloads gruppieren die Modelle nach Einsatzbereich.
+Nomos2 HQ DAT2 4× ist für saubere Fotos gedacht. Nomos8kDAT 4× ist für kleine
+und komprimierte Fotos gedacht. SeedVR2 3B INT8 und VOSR 2.0 sind
+lokale Verfahren zur Detailrekonstruktion und werden bei Bedarf geladen.
 Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
 gedacht. Beide Modelle werden bei Bedarf heruntergeladen.
 

@@ -197,12 +197,28 @@ Remacri 4× by foolhardy · CC BY-NC-SA 4.0.
   https://openmodeldb.info/models/4x-Remacri
   https://huggingface.co/FacehugmanIII/4x_foolhardy_Remacri
 
-RealWebPhoto v4 DAT2, Nomos2 HQ MoSR 4× and 4× FaceUpDAT by Philip Hofmann
+RealWebPhoto v4 DAT2, Nomos2 HQ MoSR 4×, Nomos2 HQ DAT2 4×, Nomos8kDAT 4×
+and 4× FaceUpDAT by Philip Hofmann
 (Helaman / Phips) · CC BY 4.0.
   https://huggingface.co/Phips/4xRealWebPhoto_v4_dat2
   https://huggingface.co/Phips/4xNomos2_hq_mosr
+  https://huggingface.co/Phips/4xNomos2_hq_dat2
+  https://huggingface.co/Phips/4xNomos8kDAT
   https://huggingface.co/Phips/4xFaceUpDAT
   https://creativecommons.org/licenses/by/4.0/
+
+SeedVR2 by ByteDance Seed and collaborators · Apache 2.0.
+  ComfyUI files: https://huggingface.co/Comfy-Org/SeedVR2
+  Native image workflow:
+  https://github.com/Comfy-Org/workflow_templates/blob/main/templates/utility_seedvr2_3b_int8_upscale_image.json
+  Research code and license: https://github.com/ByteDance-Seed/SeedVR
+
+VOSR 2.0 by CSWRY and collaborators · Apache 2.0.
+  https://github.com/cswry/VOSR
+  Weights, matched Qwen-Image 2D VAE and DINOv2-L: https://huggingface.co/CSWRY/VOSR
+  ComfyUI nodes by ylchen333 · Apache 2.0, bundled under vendor/ComfyUI-VOSR2.
+  https://github.com/ylchen333/ComfyUI-VOSR2/tree/6a21810b3f4f1a0ffc477c55330db0ac03c671f0
+  RestoRenate uses local files verified by its download manager.
 
 NMKD Siax 4× by Nmkd · WTFPL.
   https://openmodeldb.info/models/4x-NMKD-Siax-CX
