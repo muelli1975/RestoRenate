@@ -1,0 +1,34 @@
+name: Verify updated RestoRenate archives
+on:
+  push:
+    branches: ['codex/settings-package-check*']
+
+permissions:
+  contents: read
+
+jobs:
+  settings:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {platform: windows, os: windows-2022}
+          - {platform: macos, os: macos-15}
+          - {platform: linux, os: ubuntu-24.04}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Repack and run settings checks with each bundled runtime
+        shell: bash
+        run: python .github/settings-update/repack.py ${{ matrix.platform }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: settings-${{ matrix.platform }}
+          path: candidates/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 3

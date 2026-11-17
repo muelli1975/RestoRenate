@@ -1,0 +1,204 @@
+[
+  {
+    "id": 445299115,
+    "tag": "v1.0-macos-preview",
+    "draft": true,
+    "prerelease": false,
+    "assets": [
+      {
+        "id": 751381423,
+        "name": "RestoRenate_macOS_AppleSilicon_Preview.zip",
+        "digest": "0e97a711b0eb71abc47a20e4560e040a1111772f8cd1d8d1cc2907c0d88a1c77",
+        "label": "RestoRenate_1.0_macOS_AppleSilicon.zip",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/untagged-530928a569cb0e85df49/RestoRenate_macOS_AppleSilicon_Preview.zip"
+      },
+      {
+        "id": 751381424,
+        "name": "SHA256SUMS.txt",
+        "digest": "e232bf07d7e276ccbe291b3c9cacd518348c35040823a0059be97d00bb3fb27f",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/untagged-530928a569cb0e85df49/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "id": 445267156,
+    "tag": "v1.0-linux-preview",
+    "draft": true,
+    "prerelease": true,
+    "assets": [
+      {
+        "id": 751390876,
+        "name": "RestoRenate_Linux_x64_Preview.tar.gz",
+        "digest": "ca833177d015537651593f241bf6690a393ce09fb7b143b54a36a228572fecf0",
+        "label": "RestoRenate_1.0_Linux_x64.tar.gz",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/untagged-6493025052aa45d32dde/RestoRenate_Linux_x64_Preview.tar.gz"
+      },
+      {
+        "id": 751390877,
+        "name": "SHA256SUMS.txt",
+        "digest": "ab7bf69540633baf2ee960480da1bd55051b4aa40594b566096a5906132f6c49",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/untagged-6493025052aa45d32dde/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "id": 448515329,
+    "tag": "v1.3",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "id": 758723407,
+        "name": "RestoRenate_1.3_Linux_x64.tar.gz",
+        "digest": "f51c1777311556c71d4a1a7c6ab01ef94763311215b8b3269badc0253d843083",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.3/RestoRenate_1.3_Linux_x64.tar.gz"
+      },
+      {
+        "id": 758723414,
+        "name": "RestoRenate_1.3_macOS_AppleSilicon.zip",
+        "digest": "f3714d96186e3554f1fe64800eeea163bbfba95edd528c55b6811904352d3141",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.3/RestoRenate_1.3_macOS_AppleSilicon.zip"
+      },
+      {
+        "id": 758723409,
+        "name": "RestoRenate_1.3_Windows_x64.zip",
+        "digest": "493b4648ad96e7f9f79292fbf8a26bef63c0275fbcf325c1be54cbe1920cb0a8",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.3/RestoRenate_1.3_Windows_x64.zip"
+      },
+      {
+        "id": 758723413,
+        "name": "SHA256SUMS.txt",
+        "digest": "1a3257957263dbc951d70572238ba56c6c8a2eac7c8265db17d90e5c0c1063e0",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.3/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "id": 447399038,
+    "tag": "v1.2",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "id": 756039982,
+        "name": "RestoRenate_1.2_Linux_x64.tar.gz",
+        "digest": "af06dc88629ed33d93d8204c2093f0bdf45d46d103b7b03aac2ecc96e82a02d3",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.2/RestoRenate_1.2_Linux_x64.tar.gz"
+      },
+      {
+        "id": 756039985,
+        "name": "RestoRenate_1.2_macOS_AppleSilicon.zip",
+        "digest": "162b0aa7761895b19cb26b52696749177e611262c53040e1657ae61c52c5130a",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.2/RestoRenate_1.2_macOS_AppleSilicon.zip"
+      },
+      {
+        "id": 755995010,
+        "name": "RestoRenate_1.2_Windows_x64.zip",
+        "digest": "90ab9a0eb729d715b252560c745471b53c28c3e8dc260f072804ca59217a884d",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.2/RestoRenate_1.2_Windows_x64.zip"
+      },
+      {
+        "id": 756039984,
+        "name": "SHA256SUMS.txt",
+        "digest": "eba65a81d6ecedf14cc1a539024a821c1662f8171013c5f0e7505d1154167365",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.2/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "id": 446267952,
+    "tag": "v1.1",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "id": 755994766,
+        "name": "RestoRenate_1.1_Linux_x64.tar.gz",
+        "digest": "073ff6167aa1dae44cc2134fe25fd1867e6c52d84f79c464163de1199b779ddb",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.1/RestoRenate_1.1_Linux_x64.tar.gz"
+      },
+      {
+        "id": 755994765,
+        "name": "RestoRenate_1.1_macOS_AppleSilicon.zip",
+        "digest": "dd987396ba0be81dfb823ad4d83db42c4ef791b176079b13192c319dc57b4e29",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.1/RestoRenate_1.1_macOS_AppleSilicon.zip"
+      },
+      {
+        "id": 755994767,
+        "name": "RestoRenate_1.1_Windows_x64.zip",
+        "digest": "27e8d693366ad549b1a496c19a454674054466bc8b32761de49acf59b47b4b62",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.1/RestoRenate_1.1_Windows_x64.zip"
+      },
+      {
+        "id": 755994768,
+        "name": "SHA256SUMS.txt",
+        "digest": "2bcb165dd9b7baa9a75819418d27955c1cdf556357ce97e2d0297fc83618221f",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.1/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "id": 445238723,
+    "tag": "v1.0",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "id": 747278398,
+        "name": "ddcolor_paper.onnx",
+        "digest": "d637c9c5b68cf8d9801cbe4a1c504a492dd766736ad8bd2472a92ddaa026967d",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.0/ddcolor_paper.onnx"
+      },
+      {
+        "id": 747276723,
+        "name": "ddcolor_paper_LICENSE.txt",
+        "digest": "ce560ea7d8f8c7d941f1059ed53ea40c92b5a732b4892e993414b1dd78bfcaae",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.0/ddcolor_paper_LICENSE.txt"
+      },
+      {
+        "id": 756066440,
+        "name": "RestoRenate_1.0_Linux_x64_Preview.tar.gz",
+        "digest": "ca833177d015537651593f241bf6690a393ce09fb7b143b54a36a228572fecf0",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_Linux_x64_Preview.tar.gz"
+      },
+      {
+        "id": 756066439,
+        "name": "RestoRenate_1.0_macOS_AppleSilicon_Preview.zip",
+        "digest": "0e97a711b0eb71abc47a20e4560e040a1111772f8cd1d8d1cc2907c0d88a1c77",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_macOS_AppleSilicon_Preview.zip"
+      },
+      {
+        "id": 751376271,
+        "name": "RestoRenate_1.0_Windows_x64.zip",
+        "digest": "7436648dccda74f8c0687aebc69238abff282a1953eee4e9a129ef249dd0143c",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.0/RestoRenate_1.0_Windows_x64.zip"
+      },
+      {
+        "id": 756066443,
+        "name": "SHA256SUMS.txt",
+        "digest": "00add4f5d17d583d777d164b1737851806ef3f7175c942de5820d19f05d38520",
+        "label": "",
+        "url": "https://github.com/muelli1975/RestoRenate/releases/download/v1.0/SHA256SUMS.txt"
+      }
+    ]
+  }
+]
