@@ -30,7 +30,10 @@ def api(endpoint, method="GET", payload=None):
 
 def get_release(plan):
     release = api(f"{API}/{plan['id']}")
-    assert release["tag_name"] == plan["tag"]
+    if plan["draft"] and release["draft"] and release["tag_name"].startswith("untagged-"):
+        api(f"{API}/{plan['id']}", "PATCH", {"tag_name": plan["tag"]})
+        release = api(f"{API}/{plan['id']}")
+    assert release["tag_name"] == plan["tag"], (plan["tag"], release["tag_name"])
     assert release["draft"] == plan["draft"] and release["prerelease"] == plan["prerelease"]
     assert release["immutable"] is False
     return release
@@ -152,8 +155,10 @@ def execute():
     for plan, assets, body in bundle:
         for asset in assets:
             swap(plan, asset)
-        updated = api(f"{API}/{plan['id']}", "PATCH", {"body": body})
-        assert updated["body"].rstrip() == body.rstrip()
+        current = get_release(plan)
+        if (current["body"] or "").rstrip() != body.rstrip():
+            updated = api(f"{API}/{plan['id']}", "PATCH", {"body": body, "tag_name": plan["tag"]})
+            assert updated["body"].rstrip() == body.rstrip()
         print(f"{plan['tag']}: archives, checksum list and release notes updated.", flush=True)
 
     for plan, assets, body in bundle:
@@ -167,6 +172,10 @@ def execute():
                 api(f"{API}/assets/{backup['id']}", "DELETE")
         assert set(by_name(get_release(plan))) == {a["name"] for a in plan["assets"]}
         print(f"{plan['tag']}: final names and digests verified.", flush=True)
+    if api(f"{API}/latest")["tag_name"] != "v1.3":
+        release = next(plan for plan in plans if plan["tag"] == "v1.3")
+        api(f"{API}/{release['id']}", "PATCH", {"make_latest": "true", "tag_name": "v1.3"})
+    assert api(f"{API}/latest")["tag_name"] == "v1.3"
 
 
 if __name__ == "__main__":
