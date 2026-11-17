@@ -308,7 +308,8 @@ class Setup:
             status = response.getcode()
             if response.headers.get('Content-Type'):
                 content_type = response.headers.get_content_type()
-                if content_type.startswith('text/') or content_type in ('application/json', 'application/problem+json'):
+                is_text = content_type.startswith('text/') or content_type in ('application/json', 'application/problem+json')
+                if is_text and content_type not in spec.get('text_content_types', ()):
                     raise OSError(translate('Server liefert {0} statt der erwarteten Datei.', content_type))
             content_length = response.headers.get('Content-Length')
             if status == 206:

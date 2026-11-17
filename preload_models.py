@@ -7,8 +7,8 @@ from tkinter import ttk
 from language import translate
 from methods import (FIRERED_BASE, FIRERED_LIGHTNING, LANCZOS, LICENSES, METHODS, MICROSOFT,
                      QWEN2509_BASE, QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU,
-                     QWEN2511_BASE, QWEN2511_LIGHTNING_4, UPSCALE_LICENSES, UPSCALE_MENU_SECTIONS,
-                     UPSCALING, available_methods)
+                     QWEN2511_BASE, QWEN2511_LIGHTNING_4, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
+                     available_methods)
 from portable_setup import CPU, NVIDIA, Setup, SetupCancelled, compute_label, contained, file_size
 from progress_track import ProgressTrack
 from theme import APP_BG, BORDER, GOLD, MUTED, PANEL_BG, TEXT, checkbox
@@ -124,10 +124,8 @@ class PreloadDialog(tk.Toplevel):
                     request=(method, True, LANCZOS), base=request,
                     indent=OPTION_INDENT, command=self.select_faces,
                 )
-        for heading, upscalers in UPSCALE_MENU_SECTIONS:
-            ttk.Label(right, text=translate(heading), background=PANEL_BG, foreground=GOLD,
-                      font=('TkDefaultFont', 9, 'bold')).pack(anchor='w', pady=(2, 1))
-            for upscaler in upscalers:
+        for upscaler in UPSCALERS:
+            if upscaler != LANCZOS:
                 self.upscalers[upscaler] = self.option(right, upscaler, UPSCALE_LICENSES[upscaler],
                                                        request=(UPSCALING, False, upscaler), spacing=(0, 2))
 

@@ -314,6 +314,9 @@ def check_background_preload(gui, wait_for):
         downloaded.set()
         wait_for(lambda: gui.preload_to_install is not None)
         assert gui.action == 'run' and gui.status.get() == 'Processing test image'
+        assert progress.progress.value == 100
+        assert progress.status.cget('text') == app.translate(
+            'Downloadphase abgeschlossen. Einrichtung startet nach der laufenden Bearbeitung.')
         assert not installing.is_set()
         close_backend.assert_not_called()
 

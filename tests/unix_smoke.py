@@ -19,7 +19,7 @@ import app
 from imaging import exiftool_executable, save_result
 from local_backend import Backend
 from methods import (ANIMESHARP, DDCOLOR_TINY, FIBO2_TURBO, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ, NOMOS2_DAT2, NOMOS8K_DAT,
-                     REALESRGAN_ANIME, ULTRASHARP_LITE, UPSCALING, resolve_upscaler)
+                     REALESRGAN_ANIME, SEEDVR2, ULTRASHARP_LITE, UPSCALING, resolve_upscaler)
 from photo_colors import Colorizer
 from portable_setup import CPU, MACOS, MPS, UNIX_RUNTIME, Setup
 from preload_models import PreloadDialog
@@ -93,18 +93,23 @@ def test_upscaling(source, folder):
         device = client.json('/system_stats')['devices'][0]
         assert device['type'] == compute, device
         check_backend_schemas(client.json('/object_info'))
-        for upscaler, model_file, size, dimensions, filename_label in (
+        upscale_cases = [
             (None, '4xNomos2_hq_mosr.safetensors', DOUBLE_SIZE, (128, 80), 'Nomos2-MoSR'),
             (REALESRGAN_ANIME, 'RealESRGAN_x4plus_anime_6B.pth', QUADRUPLE_SIZE, (256, 160), 'RealESRGAN-Anime-4x'),
             (ANIMESHARP, '4x-AnimeSharp.safetensors', QUADRUPLE_SIZE, (256, 160), 'AnimeSharp-4x'),
             (NOMOS2_DAT2, '4xNomos2_hq_dat2.safetensors', DOUBLE_SIZE, (128, 80), 'Nomos2-DAT2-4x'),
             (NOMOS8K_DAT, '4xNomos8kDAT.safetensors', DOUBLE_SIZE, (128, 80), 'Nomos8kDAT-4x'),
-        ):
+        ]
+        if MACOS:
+            upscale_cases.append((SEEDVR2, 'seedvr2_3b_int8_convrot.safetensors', DOUBLE_SIZE, (128, 80), 'SeedVR2-3B-INT8'))
+        for upscaler, model_file, size, dimensions, filename_label in upscale_cases:
             if upscaler is not None:
                 Setup(root, method=UPSCALING, upscaler=upscaler, compute=compute).ensure()
             definitions = client.json('/object_info')
             models = select_models(definitions, UPSCALING, upscaler)
-            assert models['upscale'] == model_file, models
+            model_key, loader, input_name = (('upscale_seedvr2', 'UNETLoader', 'unet_name') if upscaler == SEEDVR2
+                                             else ('upscale', 'UpscaleModelLoader', 'model_name'))
+            assert models[model_key] == model_file, models
             output, warning = restore(client, models, source, folder, 'PNG', None, '', None, print, lambda: False,
                                       record(UPSCALING, models), method=UPSCALING, upscaler=upscaler,
                                       size_choice=(size, 0), definitions=definitions)
@@ -112,8 +117,9 @@ def test_upscaling(source, folder):
             with Image.open(output) as result:
                 assert result.size == dimensions and 'workflow' in result.info
                 graph = json.loads(result.info['prompt'])
-                assert any(node['class_type'] == 'UpscaleModelLoader' and node['inputs']['model_name'] == model_file
+                assert any(node['class_type'] == loader and node['inputs'][input_name] == model_file
                            for node in graph.values()), graph
+            print(f'{filename_label} on {compute} passed.')
     finally:
         backend.close()
 
@@ -158,4 +164,4 @@ if __name__ == '__main__':
     test_metadata(source, folder / 'output')
     test_colorization(source, folder / 'output')
     test_upscaling(source, folder / 'output')
-    print(f'GUI, ExifTool, DDColor Tiny, Nomos2 HQ MoSR and both anime upscalers on {MPS if MACOS else CPU} passed.')
+    print(f'GUI, ExifTool, DDColor Tiny and upscaling on {MPS if MACOS else CPU} passed.')

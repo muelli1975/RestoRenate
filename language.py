@@ -202,7 +202,8 @@ ENGLISH = {
     'Modelldownloads': 'Model downloads',
     'Modelldownloads …': 'Model downloads …',
     'Dateien für dieses Verfahren werden bereits vorab geladen.': 'Files for this method are already being downloaded.',
-    'Laufzeit wartet auf die laufende Bearbeitung.': 'Runtime setup will start after the current job.',
+    'Downloadphase abgeschlossen. Einrichtung startet nach der laufenden Bearbeitung.':
+        'Download phase complete. Setup will start after the current job.',
     'Laufzeit wird eingerichtet …': 'Setting up the runtime …',
     'Vorab-Laden mit Fehlern ({0}).': 'Model setup finished with errors ({0}).',
     '\nDetails in logs/application.log.': '\nDetails in logs/application.log.',

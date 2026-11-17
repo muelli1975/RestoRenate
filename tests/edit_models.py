@@ -158,6 +158,7 @@ def check_layout(source, language):
                 assert menu.entrycget(heading, graphic) and menu.entrycget(heading, 'compound') == 'none'
             assert menu.entrycget(headings[2], 'value') == app.translate(METHODS[UPSCALING])
             upscale_menu = gui.upscale_menu
+            assert UPSCALERS[:2] == (SEEDVR2, VOSR2)
             assert menu_labels(upscale_menu) == [
                 value for heading, choices in UPSCALE_MENU_SECTIONS
                 for value in (app.translate(heading), *choices)
@@ -187,6 +188,7 @@ def check_layout(source, language):
                 assert button.winfo_width() >= text_width + 28, (button.winfo_width(), text_width)
                 assert gui.footer.winfo_ismapped() and button.winfo_ismapped()
                 upscale_button = gui.upscale_options
+                assert int(upscale_button.cget('width') or 0) == 0
                 upscale_font = ttk.Style(window).lookup(upscale_button.cget('style'), 'font') or 'TkDefaultFont'
                 upscale_width = max(font.Font(window, font=upscale_font).measure(name) for name in UPSCALERS)
                 assert upscale_button.winfo_width() >= upscale_width + 20, (upscale_button.winfo_width(), upscale_width)
@@ -211,6 +213,9 @@ def check_layout(source, language):
             dialog.update_idletasks()
             assert FLUX3 in dialog.methods
             assert tuple(dialog.upscalers) == UPSCALERS[:-1]
+            right_panel = dialog.winfo_children()[0].winfo_children()[1]
+            assert [child.cget('text') for child in right_panel.winfo_children()
+                    if isinstance(child, ttk.Label)] == ['Upscaler']
             assert dialog.winfo_reqheight() <= dialog.winfo_screenheight(), dialog.winfo_reqheight()
             print(f'{language} download dialog: {dialog.winfo_reqwidth()}x{dialog.winfo_reqheight()}.')
         finally:
@@ -247,7 +252,7 @@ def check_compute_settings(directory):
     settings = directory / 'compute-settings.json'
     gpu = MPS if MACOS else NVIDIA
     cpu_standard = (MICROSOFT, NO_RESCALE, LANCZOS)
-    gpu_standard = (FIBO2_TURBO, ULTRA_HD, NOMOS2_HQ)
+    gpu_standard = (FIBO2_TURBO, ULTRA_HD, SEEDVR2)
     with patch.object(app, 'SETTINGS', settings), patch.object(app.messagebox, 'showinfo'):
         settings.write_text(json.dumps({'compute': CPU}), encoding='utf-8')
         with launch() as gui:
@@ -261,6 +266,20 @@ def check_compute_settings(directory):
             gui.save_settings()
         with launch() as gui:
             assert gui.active_compute == gpu and selected(gui) == gpu_standard
+            gui.method.set(app.translate(METHODS[UPSCALING]))
+            gui.choose_method()
+            assert selected(gui) == (UPSCALING, ULTRA_HD, SEEDVR2)
+            gui.load_processing_preset('Standard')
+            assert selected(gui) == gpu_standard
+
+        # An existing 1.2 configuration retains its explicitly selected model.
+        settings.write_text(json.dumps({'compute': gpu, 'processing_by_compute': {'gpu': {
+            'method': FIBO2_TURBO, 'scaling': {'restoration': {'size': ULTRA_HD, 'upscaler': NOMOS2_HQ}},
+        }}}), encoding='utf-8')
+        with launch() as gui:
+            assert selected(gui) == (FIBO2_TURBO, ULTRA_HD, NOMOS2_HQ)
+            assert gui.upscale_options.cget('text') == NOMOS2_HQ
+            assert int(gui.upscale_options.cget('width') or 0) == 0
 
         # A settings file from 1.1 belongs to the device it was saved with.
         settings.write_text(json.dumps({'compute': gpu, 'method': FLUX2,

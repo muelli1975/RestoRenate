@@ -488,6 +488,7 @@
     {
       "path": "models/vosr2/VOSR2/args.json",
       "size": 816,
+      "text_content_types": ["text/plain", "application/json"],
       "sha256": "63b2f423eafae1f684ca860eb8fd0e81aa5fac858397f783d8f337871241c281",
       "url": "https://huggingface.co/CSWRY/VOSR/resolve/f24b3061b7f350b81e1907bdcfc27f71fb4ff3f3/VOSR2/args.json?download=true",
       "repo": "CSWRY/VOSR",
@@ -506,6 +507,7 @@
     {
       "path": "models/vosr2/VOSR2/Qwen-Image-vae-2d/config.json",
       "size": 811,
+      "text_content_types": ["text/plain", "application/json"],
       "sha256": "1e294faf15188e06fcb72ce09652e8fb7368bd77b8dd794b5b39fe77d610681b",
       "url": "https://huggingface.co/CSWRY/VOSR/resolve/f24b3061b7f350b81e1907bdcfc27f71fb4ff3f3/Qwen-Image-vae-2d/config.json?download=true",
       "repo": "CSWRY/VOSR",

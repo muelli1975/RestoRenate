@@ -1,14 +1,16 @@
 """Regression checks for local verification and download approval."""
 from concurrent.futures import ThreadPoolExecutor
+from email.message import Message
 from hashlib import sha256
+from io import BytesIO
 from pathlib import Path
 from shutil import copy2
 from threading import Barrier, Event
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from app import Application
-from methods import DDCOLOR_PAPER, LANCZOS, MICROSOFT
+from methods import DDCOLOR_PAPER, LANCZOS, MICROSOFT, UPSCALING, VOSR2
 from portable_paths import CODE
 from portable_setup import COMFY_CONSTRAINTS, CPU, Setup, SetupCancelled, UNIX_RUNTIME
 
@@ -131,6 +133,35 @@ def check_downloads(root):
     assert fresh.valid(spec) and fresh.valid(other)
     assert fresh.backend_state['setup_signature'] == 'test-signature'
     already_waiting.stream.assert_not_called()
+
+    vosr = Setup(folder, method=UPSCALING, upscaler=VOSR2, compute=CPU, notify=lambda _: None)
+    config_specs = [spec for spec in vosr.models if spec['path'].endswith('.json')]
+    assert {Path(spec['path']).name for spec in config_specs} == {'args.json', 'config.json'}
+    payload = b'{"test":true}'
+
+    def response(content_type, body=payload):
+        result = BytesIO(body)
+        result.headers = Message()
+        result.headers['Content-Type'] = content_type
+        result.headers['Content-Length'] = str(len(body))
+        result.getcode = lambda: 200
+        return result
+
+    for spec, content_type in zip(config_specs, ('text/plain; charset=utf-8', 'application/json'), strict=True):
+        spec = dict(spec, size=len(payload), sha256=sha256(payload).hexdigest())
+        with patch('portable_setup.open_download', return_value=response(content_type)):
+            assert vosr.download(spec).read_bytes() == payload and vosr.valid(spec)
+
+    binary = next(spec for spec in vosr.models if spec['path'].endswith('.safetensors'))
+    for spec, content_type in ((binary, 'text/plain'), (config_specs[0], 'text/html')):
+        with patch('portable_setup.open_download', return_value=response(content_type)):
+            try:
+                vosr.stream(spec, folder / 'rejected-download.part', sha256(), 0, 0)
+            except OSError as exc:
+                assert content_type in str(exc)
+            else:
+                raise AssertionError(f'Unexpected response type was accepted: {content_type}')
+    assert not (folder / 'rejected-download.part').exists()
 
     microsoft = Setup(folder, method=MICROSOFT, faces=True, upscaler=LANCZOS, compute=CPU)
     colorizer = Setup(folder, method=DDCOLOR_PAPER, upscaler=LANCZOS, compute=CPU)

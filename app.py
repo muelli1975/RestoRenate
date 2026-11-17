@@ -100,7 +100,7 @@ VARIANT_COUNTS = {str(count): count for count in range(1, MAX_VARIANTS + 1)}
 BUILTIN_PROCESSING_PRESETS = {
     'Standard': {
         'method': DEFAULT_METHOD, 'preset': DEFAULT_PROMPT_NAME, 'prompt': PRESETS[DEFAULT_PROMPT_NAME], 'variants': 1,
-        'size': ULTRA_HD, 'upscaler': resolve_upscaler(DEFAULT_METHOD),
+        'size': ULTRA_HD, 'upscaler': resolve_upscaler(DEFAULT_METHOD, gpu=True),
     },
 }
 CPU_PROCESSING_PRESETS = {
@@ -468,7 +468,7 @@ class Application:
             row=0, column=0, sticky='ew', padx=(0, 5))
         self.labelled(tk.Label, scaling, 'Zielgröße', bg=PANEL, fg=INK, anchor='w').grid(row=0, column=1, sticky='ew')
         self.upscale_options = ttk.Menubutton(scaling, textvariable=self.upscaler,
-                                              style='Input.TMenubutton', width=1)
+                                              style='Input.TMenubutton')
         self.upscale_menu = SelectionMenu(self.upscale_options, self.upscaler, **dict(menu_colors, disabledforeground=GOLD))
         self.upscale_options.configure(menu=self.upscale_menu)
         self.upscale_options.grid(row=1, column=0, sticky='ew', padx=(0, 5))
@@ -1064,7 +1064,10 @@ class Application:
             if requests and not self.preload_cancelled.is_set():
                 self.preload_to_install = value
                 if self.action:
-                    self.preload_progress.update_status(translate('Laufzeit wartet auf die laufende Bearbeitung.'), percent=0)
+                    self.preload_progress.update_status(
+                        translate('Downloadphase abgeschlossen. Einrichtung startet nach der laufenden Bearbeitung.'),
+                        percent=100 if not failures else None,
+                    )
             else:
                 self.finish_preload(failures)
         elif kind == 'preload_refresh':
@@ -1464,7 +1467,7 @@ class Application:
             values = standard if method == standard['method'] else {}
         self.size.set(translate(method_size(method, values.get('size'))))
         self.side_pixels.set(str(values.get('side_pixels') or 2160))
-        self.upscaler.set(resolve_upscaler(method, values.get('upscaler')))
+        self.upscaler.set(resolve_upscaler(method, values.get('upscaler'), gpu=self.active_compute != CPU))
 
     def size_choice(self):
         return method_size(self.current_method, self.size_ids.get(self.size.get()))

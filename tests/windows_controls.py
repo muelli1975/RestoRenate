@@ -16,10 +16,12 @@ root = Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(root / '_internal'))
 
 import app
-from methods import DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALE_MENU_SECTIONS, UPSCALING, resolve_upscaler
+from methods import (DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, SEEDVR2, ULTRASHARP_LITE, UPSCALE_MENU_SECTIONS,
+                     UPSCALING, resolve_upscaler)
 from field_focus import check_field_focus, field_focus_maps
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
+from sizes import FULL_HD
 
 
 def capture_popup(menu, destination, headings=()):
@@ -92,10 +94,34 @@ def check_native_menus(gui):
             print(f'{language} {name} has {width}px for a {text_width}px label and its checkmark.')
 
 
+def check_closed_upscaler(gui):
+    window, button = gui.window, gui.upscale_options
+    previous_size, previous_upscaler = gui.size.get(), gui.upscaler.get()
+    gui.size.set(app.translate(FULL_HD))
+    gui.upscaler.set(NOMOS2_HQ)
+    gui.update_size_controls()
+    window.update()
+    left, top = button.winfo_rootx(), button.winfo_rooty()
+    box = (left, top, left + button.winfo_width(), top + button.winfo_height())
+    with ImageGrab.grab(box) as labelled:
+        button.configure(textvariable='', text='')
+        window.update()
+        with ImageGrab.grab(box) as blank:
+            bounds = ImageChops.difference(labelled, blank).getbbox()
+        labelled.save(root.parent / 'upscaler-field.png')
+    gui.size.set(previous_size)
+    gui.upscaler.set(previous_upscaler)
+    gui.update_size_controls()
+    style_font = ttk.Style(window).lookup(button.cget('style'), 'font') or 'TkDefaultFont'
+    text_width = font.Font(window, font=style_font).measure(NOMOS2_HQ)
+    assert bounds and bounds[2] - bounds[0] >= text_width - 6, (bounds, text_width)
+
+
 assert resolve_upscaler(UPSCALING) == NOMOS2_HQ
+assert resolve_upscaler(UPSCALING, gpu=True) == SEEDVR2
 assert resolve_upscaler(UPSCALING, ULTRASHARP_LITE) == ULTRASHARP_LITE
 assert resolve_upscaler(DDCOLOR_TINY) == LANCZOS
-assert app.BUILTIN_PROCESSING_PRESETS['Standard']['upscaler'] == NOMOS2_HQ
+assert app.BUILTIN_PROCESSING_PRESETS['Standard']['upscaler'] == SEEDVR2
 
 image_path = root.parent / 'reference.png'
 with Image.new('RGB', (48, 32), '#303030') as image:
@@ -125,6 +151,7 @@ try:
     assert style.lookup('Vertical.TScrollbar', 'arrowcolor') == app.MUTED
     assert style.lookup('Vertical.TScrollbar', 'background', ('active',)) == app.HOVER_BG
     check_field_focus(gui, native_focus)
+    check_closed_upscaler(gui)
     check_native_menus(gui)
 finally:
     window.destroy()

@@ -66,9 +66,9 @@ SEEDVR2 = 'SeedVR2 3B INT8'
 VOSR2 = 'VOSR 2.0'
 VOSR2_BUNDLE = 'VOSR2'
 UPSCALE_MENU_SECTIONS = (
+    ('Detailrekonstruktion', (SEEDVR2, VOSR2)),
     ('Saubere Fotos und Porträts', (NOMOS2_HQ, NOMOS2_DAT2, FACEUP_DAT)),
     ('Kleine und komprimierte Fotos', (NOMOS8K_DAT, REALWEBPHOTO)),
-    ('Detailrekonstruktion', (SEEDVR2, VOSR2)),
     ('Allrounder', (REALESRGAN, SIAX, REMACRI, ULTRASHARP_ORIGINAL, ULTRASHARP, ULTRASHARP_LITE, SWINIR_S)),
     ('Zeichnungen und Anime', (REALESRGAN_ANIME, ANIMESHARP)),
 )
@@ -262,10 +262,12 @@ def uses_comfy(method, upscaler):
     return method not in NATIVE_METHODS or upscaler != LANCZOS
 
 
-def resolve_upscaler(method, upscaler=None):
+def resolve_upscaler(method, upscaler=None, *, gpu=False):
     if upscaler in UPSCALERS:
         return upscaler
-    return LANCZOS if method in COLORIZATION_METHODS else NOMOS2_HQ
+    if method in COLORIZATION_METHODS:
+        return LANCZOS
+    return SEEDVR2 if gpu else NOMOS2_HQ
 
 
 def model_files(method, upscaler=None):
