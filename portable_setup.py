@@ -22,7 +22,7 @@ import zipfile
 from language import translate
 from download_https import open_download
 from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, GGUF_METHODS, MICROSOFT,
-                     QWEN2509_NUNCHAKU, model_specs, resolve_upscaler, uses_comfy)
+                     QWEN2509_NUNCHAKU, VOSR2, model_specs, resolve_upscaler, uses_comfy)
 from nunchaku_setup import (NUNCHAKU_GPU_REQUIRED, install_nunchaku, nunchaku_ready)
 from microsoft_setup import install_microsoft, microsoft_ready
 from portable_paths import CODE, ROOT
@@ -52,6 +52,8 @@ GPU_HINTS = {
 GGUF_NODE = 'ComfyUI-GGUF'
 GGUF_PACKAGE = 'gguf==0.19.0'
 GGUF_SETUP = '6ea2651e7df66d7585f6ffee804b20e92fb38b8a/' + GGUF_PACKAGE
+VOSR2_NODE = 'ComfyUI-VOSR2'
+VOSR2_SETUP = '6a21810b3f4f1a0ffc477c55330db0ac03c671f0-restorenate2'
 RECEIPTS_LOCK = threading.RLock()
 DOWNLOAD_LOCKS = {}
 DOWNLOAD_LOCKS_GUARD = threading.Lock()
@@ -148,7 +150,8 @@ class Setup:
             self.signature += '/' + self.runtime['sha256']
         self.method = method
         self.faces = method == MICROSOFT and faces
-        self.comfy = uses_comfy(method, resolve_upscaler(method, upscaler))
+        self.upscaler = resolve_upscaler(method, upscaler)
+        self.comfy = uses_comfy(method, self.upscaler)
         optional = json.loads((code / 'method_downloads.json').read_text(encoding='utf-8'))
         if UNIX_RUNTIME and method == MICROSOFT:
             optional[MICROSOFT] = [spec for spec in optional[MICROSOFT] if not spec['path'].endswith('.whl')]
@@ -156,7 +159,7 @@ class Setup:
             optional[MICROSOFT] = [
                 spec for spec in optional[MICROSOFT] if not spec['path'].endswith('cp313-cp313-win_amd64.whl')
             ] + optional['microsoft-amd-wheels']
-        self.models = model_specs(self.manifest, optional, method, self.faces, upscaler)
+        self.models = model_specs(self.manifest, optional, method, self.faces, self.upscaler)
         self.microsoft_wheels = [spec for spec in self.models if spec['path'].endswith('.whl')] if method == MICROSOFT else []
         self.nunchaku_runtime = optional['nunchaku-runtime'] if method == QWEN2509_NUNCHAKU else []
         self.colorizer_method = method if method in COLORIZATION_METHODS else None
@@ -305,7 +308,8 @@ class Setup:
             status = response.getcode()
             if response.headers.get('Content-Type'):
                 content_type = response.headers.get_content_type()
-                if content_type.startswith('text/') or content_type in ('application/json', 'application/problem+json'):
+                is_text = content_type.startswith('text/') or content_type in ('application/json', 'application/problem+json')
+                if is_text and content_type not in spec.get('text_content_types', ()):
                     raise OSError(translate('Server liefert {0} statt der erwarteten Datei.', content_type))
             content_length = response.headers.get('Content-Length')
             if status == 206:
@@ -531,12 +535,17 @@ class Setup:
         return (not paths or not self.runtime_ready()
                 or self.backend_state.get('dependencies_signature') != self.signature
                 or (self.method in GGUF_METHODS and not self.gguf_ready(paths[1]))
+                or (self.upscaler == VOSR2 and not self.vosr2_ready(paths[1]))
                 or (bool(self.nunchaku_runtime) and not nunchaku_ready(self, paths[1]))
                 or (self.method == MICROSOFT and not self.microsoft_dependencies_ready()))
 
     def gguf_ready(self, comfy):
         return (self.backend_state.get('gguf_setup') == GGUF_SETUP and
                 (comfy / 'custom_nodes' / GGUF_NODE / '__init__.py').is_file())
+
+    def vosr2_ready(self, comfy):
+        return (self.backend_state.get('vosr2_setup') == VOSR2_SETUP and
+                (comfy / 'custom_nodes' / VOSR2_NODE / '__init__.py').is_file())
 
     def ready(self):
         if self.nunchaku_runtime and (UNIX_RUNTIME or self.compute != NVIDIA):
@@ -548,6 +557,7 @@ class Setup:
         paths = self.paths()
         return (self.backend_state.get('setup_signature') == self.signature and paths is not None and self.runtime_ready() and
                 (self.method not in GGUF_METHODS or self.gguf_ready(paths[1])) and
+                (self.upscaler != VOSR2 or self.vosr2_ready(paths[1])) and
                 (not self.nunchaku_runtime or nunchaku_ready(self, paths[1])) and
                 (self.method != MICROSOFT or (self.microsoft_dependencies_ready() and microsoft_ready(self, paths[1]))))
 
@@ -718,7 +728,8 @@ class Setup:
                     if previous.exists():
                         previous.rename(target)
                     raise
-            for key in ('dependencies_signature', 'setup_signature', 'gguf_setup', 'microsoft_wheels', 'nunchaku_setup'):
+            for key in ('dependencies_signature', 'setup_signature', 'gguf_setup', 'vosr2_setup',
+                        'microsoft_wheels', 'nunchaku_setup'):
                 self.backend_state.pop(key, None)
             self.backend_state['runtime_sha256'] = self.runtime['sha256']
             self.persist()
@@ -740,6 +751,12 @@ class Setup:
             self.persist()
         if self.nunchaku_runtime and not nunchaku_ready(self, comfy):
             install_nunchaku(self, python, comfy)
+        if self.upscaler == VOSR2 and not self.vosr2_ready(comfy):
+            self.notify(translate('VOSR 2.0 wird eingerichtet …'))
+            shutil.copytree(self.root / 'vendor' / VOSR2_NODE, comfy / 'custom_nodes' / VOSR2_NODE,
+                            dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+            self.backend_state['vosr2_setup'] = VOSR2_SETUP
+            self.persist()
         for number, spec in enumerate(self.models, 1):
             self.check()
             self.notify(translate('Modelldatei {0}/{1} wird geprüft …', number, len(self.models)))

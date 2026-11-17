@@ -1,6 +1,6 @@
-# RestoRenate 1.2
+# RestoRenate 1.3
 
-[Downloads und SHA-256](https://github.com/muelli1975/RestoRenate/releases/tag/v1.2) · [English](README.md) · [Anleitung](docs/portable/README_DE.md)
+[Downloads und SHA-256](https://github.com/muelli1975/RestoRenate/releases/latest) · [English](README.md) · [Anleitung](docs/portable/README_DE.md)
 
 RestoRenate restauriert, koloriert und vergrößert Fotos lokal auf dem Rechner. Mit unterstützten Modellen lassen sich Bilder auch per Prompt bearbeiten oder anhand eines zweiten Fotos verändern. Die Oberfläche ist auf Deutsch und Englisch verfügbar.
 
@@ -33,6 +33,10 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 3. **Start** wählen. Über **Modelle vorab laden …** lassen sich mehrere Verfahren gemeinsam einrichten. Optionale Lightning-LoRAs stehen unter ihrem Basismodell.
 4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. Die Navigation zeigt beispielsweise **Ergebnis 1/3**. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild↑ / Bild↓** blättern durch die Ergebnisse.
 
+## Neu in 1.3
+
+Die Upscaler sind nach Einsatzbereich gruppiert. Nomos2 HQ DAT2 und Nomos8kDAT ergänzen die Fotomodelle. SeedVR2 3B INT8 und VOSR 2.0 rekonstruieren Details in einem Verarbeitungsschritt. Alle vier können ein Foto direkt vergrößern oder das Ergebnis einer Restaurierung weiterverarbeiten.
+
 ## Neu in 1.2
 
 **FLUX 3 Image Klein · INT8** bearbeitet Fotos in 16 Schritten mit einem lokalen Prompt-Umschreiber und unterstützt Bild 2. Das Modell steht in den GPU-Modi zur Auswahl. Der optionale Download vom KoalaNation-Spiegel funktioniert ohne Hugging-Face-Konto. RestoRenate prüft die SHA-256-Werte der Originaldateien und verwendet Fibos Textencoder sowie den gemeinsamen FLUX-Bilddecoder weiter. Es gilt die FLUX Kommunity License.
@@ -53,7 +57,7 @@ Standardmäßig landen die Ergebnisse in `output` neben dem gewählten Bild oder
 
 - **Restaurierung und Bearbeitung:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Qwen Image Edit 2509/2511 und FireRed Image Edit 1.1. Unterstützte Edit-Modelle können ein separat drehbares zweites Bild nutzen.
 - **Kolorierung:** DDColor ModelScope, Paper, Artistic und Tiny sowie DeOldify Stable und Artistic. Die Kolorierung läuft auf der CPU. DDColor Paper ist ein optionaler Download.
-- **Hochskalieren:** Nomos2 HQ MoSR ist die Vorgabe für Restaurierung und Hochskalierung. Zur Auswahl stehen auch Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT für Porträts sowie Real-ESRGAN Anime 4× und AnimeSharp 4× für Zeichnungen und Illustrationen.
+- **Hochskalieren:** Nomos2 HQ MoSR 4× ist die GPU-Vorgabe. Das Preset „Detailrekonstruktion“ verwendet VOSR 2.0. Zur Auswahl stehen auch SeedVR2 3B INT8, Nomos2 HQ DAT2, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT für Porträts sowie Real-ESRGAN Anime 4× und AnimeSharp 4× für Zeichnungen und Illustrationen.
 - **Export:** PNG, JPEG mit Qualität 95 und 4:4:4 sowie TIFF mit LZW-Kompression. JPEG und TIFF übernehmen geeignete Metadaten. PNG speichert bei ComfyUI-Verarbeitung den Workflow.
 
 ## Quellcode und Builds

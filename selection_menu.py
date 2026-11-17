@@ -80,10 +80,10 @@ class SelectionMenu(tk.Menu):
         self.add_cascade(label=label, menu=submenu, **self.marker_options)
         self.categories[submenu] = self, self.index('end')
 
-    def add_choice(self, label, value, command, *, menu):
+    def add_choice(self, label, value, command, *, menu, state='normal'):
         options = (dict(selectcolor=GOLD_LIGHT) if self.windowing_system == 'win32'
                    else dict(indicatoron=False, **self.marker_options))
-        menu.add_radiobutton(label=label, value=value, variable=self.selection, command=command,
+        menu.add_radiobutton(label=label, value=value, variable=self.selection, command=command, state=state,
                              **options)
         self.choices[value] = menu, menu.index('end')
 

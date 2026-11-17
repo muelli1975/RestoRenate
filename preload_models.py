@@ -7,8 +7,8 @@ from tkinter import ttk
 from language import translate
 from methods import (FIRERED_BASE, FIRERED_LIGHTNING, LANCZOS, LICENSES, METHODS, MICROSOFT,
                      QWEN2509_BASE, QWEN2509_LIGHTNING_4, QWEN2509_NUNCHAKU,
-                     QWEN2511_BASE, QWEN2511_LIGHTNING_4, UPSCALE_LICENSES, UPSCALERS,
-                     UPSCALING, available_methods)
+                     QWEN2511_BASE, QWEN2511_LIGHTNING_4, UPSCALE_LICENSES, UPSCALERS, UPSCALING,
+                     available_methods)
 from portable_setup import CPU, NVIDIA, Setup, SetupCancelled, compute_label, contained, file_size
 from progress_track import ProgressTrack
 from theme import APP_BG, BORDER, GOLD, MUTED, PANEL_BG, TEXT, checkbox
@@ -127,7 +127,7 @@ class PreloadDialog(tk.Toplevel):
         for upscaler in UPSCALERS:
             if upscaler != LANCZOS:
                 self.upscalers[upscaler] = self.option(right, upscaler, UPSCALE_LICENSES[upscaler],
-                                                       request=(UPSCALING, False, upscaler))
+                                                       request=(UPSCALING, False, upscaler), spacing=(0, 2))
 
         footer = tk.Frame(self, bg=APP_BG, padx=14, pady=10)
         footer.pack(fill='x')
@@ -159,9 +159,9 @@ class PreloadDialog(tk.Toplevel):
                          self.verification_cancelled, self.verification_results)).start()
         self.update_total()
 
-    def option(self, parent, label, license_label, *, request, base=None, indent=0, command=None):
+    def option(self, parent, label, license_label, *, request, base=None, indent=0, command=None, spacing=OPTION_SPACING):
         row = tk.Frame(parent, bg=PANEL_BG)
-        row.pack(fill='x', padx=(indent, 0), pady=OPTION_SPACING)
+        row.pack(fill='x', padx=(indent, 0), pady=spacing)
         setup, _, _ = self.download_plan(request)
         base_files = {spec['path'] for spec in self.download_plan(base)[0].models} if base else set()
         models = [spec for spec in setup.models

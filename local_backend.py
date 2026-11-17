@@ -13,10 +13,11 @@ import uuid
 
 from language import translate
 from cpu_threads import THREAD_VARIABLES, choose_cpu_threads, cpu_thread_override
-from methods import DEFAULT_METHOD, GGUF_METHODS, MICROSOFT, QWEN2509_NUNCHAKU
+from methods import DEFAULT_METHOD, GGUF_METHODS, MICROSOFT, QWEN2509_NUNCHAKU, VOSR2
 from microsoft_setup import NODE_NAME
 from nunchaku_setup import NUNCHAKU_NODE
-from portable_setup import CPU, GGUF_NODE, GPU_HINTS, NVIDIA, ROOT, SetupCancelled, compute_label, contained, local_environment
+from portable_setup import (CPU, GGUF_NODE, GPU_HINTS, NVIDIA, ROOT, VOSR2_NODE, SetupCancelled,
+                            compute_label, contained, local_environment)
 from technical_logs import TechnicalLog, drain_process_log
 
 
@@ -64,14 +65,18 @@ class Backend:
         self.url = None
         self.log_reader = None
         self.method = None
+        self.vosr2 = False
         self.cpu_threads = None
         atexit.register(self.close)
 
-    def start(self, paths, notify=print, cancelled=lambda: False, method=DEFAULT_METHOD):
-        if self.process is not None and self.process.poll() is None and self.method == method:
+    def start(self, paths, notify=print, cancelled=lambda: False, method=DEFAULT_METHOD, upscaler=None):
+        vosr2 = upscaler == VOSR2
+        if (self.process is not None and self.process.poll() is None and
+                self.method == method and self.vosr2 == vosr2):
             return self.url
         self.close()
         self.method = method
+        self.vosr2 = vosr2
         python, comfy = paths
         with socket.socket() as reserve:
             reserve.bind(('127.0.0.1', 0))
@@ -95,12 +100,18 @@ class Backend:
                 '--disable-all-custom-nodes']
         if self.compute == CPU:
             args.append('--cpu')
+        custom_nodes = []
         if method == MICROSOFT:
-            args.extend(('--whitelist-custom-nodes', NODE_NAME))
+            custom_nodes.append(NODE_NAME)
         elif method in GGUF_METHODS:
-            args.extend(('--whitelist-custom-nodes', GGUF_NODE))
+            custom_nodes.append(GGUF_NODE)
         elif method == QWEN2509_NUNCHAKU:
-            args.extend(('--whitelist-custom-nodes', NUNCHAKU_NODE, '--disable-dynamic-vram'))
+            custom_nodes.append(NUNCHAKU_NODE)
+            args.append('--disable-dynamic-vram')
+        if vosr2:
+            custom_nodes.append(VOSR2_NODE)
+        if custom_nodes:
+            args.extend(('--whitelist-custom-nodes', *custom_nodes))
         for name, directory in directories.items():
             args.extend(['--' + name + '-directory', directory])
         log = TechnicalLog(self.root / 'logs/backend.log')

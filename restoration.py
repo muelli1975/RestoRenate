@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 import json
+from math import ceil
 from pathlib import Path
 from xml.etree import ElementTree
 import time
@@ -26,13 +27,13 @@ from looks import apply_look
 from sizes import (NO_RESCALE, limited_size, method_size, needs_enlargement, output_size,
                    restoration_canvas, restoration_size)
 from method_graphs import (
-    RESULT_NODE, append_export, append_upscale,
+    RESULT_NODE, append_export, append_seedvr2, append_upscale, append_vosr2,
     fibo2_graph, flux2_graph, flux3_graph, microsoft_graph, qwen_graph, standalone_upscale_graph,
 )
 from methods import (COLORIZATION_METHODS, DEFAULT_METHOD, FIBO2_TURBO, FIRERED_METHODS, FLUX2, FLUX3,
                      FLUX_METHODS, LANCZOS,
                      METHOD_FILENAME_LABELS, MICROSOFT, NATIVE_METHODS, NUNCHAKU_LOADER, QWEN_METHODS, REALESRGAN,
-                     UPSCALE_FILENAME_LABELS, UPSCALE_FILES, UPSCALE_SCALES,
+                     SEEDVR2, UPSCALE_FILENAME_LABELS, UPSCALE_FILES, UPSCALE_SCALES, VOSR2,
                      TWO_IMAGE_METHODS, UPSCALING, model_files, resolve_upscaler)
 from portable_setup import SetupCancelled, contained
 
@@ -60,13 +61,21 @@ PHASES = {
     'ImageScale': 'Ausgabegröße wird angepasst',
     'UpscaleModelLoader': 'Upscaler wird geladen',
     'ImageUpscaleWithModel': 'Bild wird hochskaliert',
+    'VOSR2ModelLoader': 'Upscaler wird geladen',
+    'VOSR2Upscale': 'Bild wird hochskaliert',
+    'SeedVR2Preprocess': 'Hochskalierung wird vorbereitet',
+    'SeedVR2PostProcessing': 'Hochskalierung wird abgeschlossen',
+    'VAEEncodeTiled': 'Bild wird kodiert',
+    'VAEDecodeTiled': 'Bild wird dekodiert',
     'PreviewImage': 'Vorschau wird erstellt',
 }
 SAMPLER_NODES = ('KSampler', 'SamplerCustomAdvanced')
 STEP_UNITS = {
     'KSampler': 'Schritt', 'SamplerCustomAdvanced': 'Schritt', 'ImageUpscaleWithModel': 'Kachel',
+    'VOSR2Upscale': 'Kachel',
     'FotoRestaurierungMicrosoft': 'Phase', 'FotoRestaurierungGesichter': 'Phase',
 }
+VOSR_PHASES = {'decode': 'Bild wird dekodiert', 'color_alignment': 'Farben werden angeglichen'}
 
 
 
@@ -172,6 +181,11 @@ def report_progress(event, graph, prompt_id, status, progress):
                 return
             progress(100 * value / total)
             status(f'{phase} · {translate(unit)} {value}/{total}')
+    elif kind == 'restorenate_vosr_phase' and node_type == 'VOSR2Upscale':
+        name = data.get('phase')
+        if isinstance(name, str) and name in VOSR_PHASES:
+            progress(None)
+            status(translate(VOSR_PHASES[name]) + ' …')
 
 
 def generate(client, graph, status, cancelled, progress=lambda value: None, node_seconds=None):
@@ -271,15 +285,19 @@ def restoration_graph(method, models, name, size, crop, prompt, seed, scratches,
     return append_export(graph, crop)
 
 
-def processing_settings(record, model_name, graph):
+def processing_settings(record, model_name, graph, upscaler):
     sampling = []
     for node in (graph or {}).values():
         kind, inputs = node['class_type'], node['inputs']
         if kind in ('KSampler', 'Flux2Scheduler', 'CFGGuider', 'KSamplerSelect'):
             sampling.append({'node': kind, **{key: value for key, value in inputs.items()
                              if isinstance(value, (int, float, str, bool))}})
-    used_models = {key: name for key, name in record['models'].items()
-                   if key not in UPSCALE_SCALES or name == model_name}
+    upscale_files = UPSCALE_FILES[upscaler]
+    used_models = {
+        key: name for key, name in record['models'].items()
+        if key not in upscale_files or (model_name not in (None, LANCZOS)
+                                        and (upscaler != REALESRGAN or name == model_name))
+    }
     return {'version': APP_VERSION, 'method': record['method'], 'models': used_models,
             'prompt': record['prompt'], 'seed': record['seed'], 'sampling': sampling,
             'original_size': record['original_size'], 'working_size': record['working_size'],
@@ -329,7 +347,7 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
     def export(image, model_name, graph=None):
         if cancelled():
             raise SetupCancelled(translate('Bearbeitung abgebrochen.'))
-        settings = processing_settings(record, model_name, graph)
+        settings = processing_settings(record, model_name, graph, upscaler)
         labels = []
         if method != UPSCALING:
             labels.append(METHOD_FILENAME_LABELS[method])
@@ -407,21 +425,34 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         current = crop[2:]
         use_model = upscaler != LANCZOS and needs_enlargement(current, expected)
         model_name = LANCZOS if current != expected else None
+        scale = 1
         if use_model:
             if upscaler == REALESRGAN:
                 key = 'esrgan2' if all(end <= 2 * start for start, end in zip(current, expected)) else 'esrgan4'
+            elif upscaler == SEEDVR2:
+                key = 'upscale_seedvr2'
             else:
                 key, = UPSCALE_FILES[upscaler]
-            scale = UPSCALE_SCALES[key]
-            if current[0] * current[1] * scale**2 > 100_000_000:
+            if upscaler == VOSR2:
+                scale = max(ceil(end / start) for start, end in zip(current, expected))
+            elif upscaler != SEEDVR2:
+                scale = UPSCALE_SCALES[key]
+            render_pixels = expected[0] * expected[1] if upscaler == SEEDVR2 else current[0] * current[1] * scale**2
+            if render_pixels > 100_000_000:
                 raise ValueError(translate('Dieses Modell würde intern mehr als 100 Megapixel erzeugen. Wähle Lanczos oder eine kleinere Eingabedatei.'))
             model_name = models[key]
         if native:
-            graph = standalone_upscale_graph(name, model_name)
+            graph = standalone_upscale_graph(name)
         else:
             graph = restoration_graph(method, models, name, record['working_size'], crop, prompt, seed, scratches, faces,
                                       second_image=reference.name if reference is not None else None)
-            if use_model:
+        if use_model:
+            upscale_seed = 42 if seed is None else seed
+            if upscaler == SEEDVR2:
+                append_seedvr2(graph, models, expected, upscale_seed)
+            elif upscaler == VOSR2:
+                append_vosr2(graph, model_name, scale, upscale_seed)
+            else:
                 append_upscale(graph, model_name)
         if choice != NO_RESCALE:
             set_output_size(graph, RESULT_NODE, expected)

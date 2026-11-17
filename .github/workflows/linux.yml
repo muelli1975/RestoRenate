@@ -2,7 +2,7 @@ name: Build and test Linux x64
 
 on:
   push:
-    branches: [linux-preview, unix-gpu-preview, output-folder-preview, main, reference-button-preview, transcora-focus-preview, input-directory-preview, codex/restorenate-1.1, codex/restorenate-1.2-test]
+    branches: [linux-preview, unix-gpu-preview, output-folder-preview, main, reference-button-preview, transcora-focus-preview, input-directory-preview, codex/restorenate-1.1, codex/restorenate-1.2-test, codex/restorenate-1.3-test]
   pull_request:
   workflow_dispatch:
 
@@ -30,14 +30,14 @@ jobs:
           root='package/RestoRenate'
           mkdir dist
           bash scripts/package_unix.sh "$root"
-          tar -C package -czf dist/RestoRenate_1.2_Test_Linux_x64.tar.gz RestoRenate
-          (cd dist && sha256sum RestoRenate_1.2_Test_Linux_x64.tar.gz > SHA256SUMS.txt)
+          tar -C package -czf dist/RestoRenate_1.3_Test_Linux_x64.tar.gz RestoRenate
+          (cd dist && sha256sum RestoRenate_1.3_Test_Linux_x64.tar.gz > SHA256SUMS.txt)
       - name: Run the extracted package on Ubuntu
         shell: bash
         run: |
           set -euo pipefail
           mkdir fresh
-          tar -C fresh -xzf dist/RestoRenate_1.2_Test_Linux_x64.tar.gz
+          tar -C fresh -xzf dist/RestoRenate_1.3_Test_Linux_x64.tar.gz
           mv fresh/RestoRenate "fresh/RestoRenate portable"
           root="$PWD/fresh/RestoRenate portable"
           xvfb-run -a bash -e -c '
@@ -92,7 +92,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tar -xzf RestoRenate_1.2_Test_Linux_x64.tar.gz
+          tar -xzf RestoRenate_1.3_Test_Linux_x64.tar.gz
           "RestoRenate/runtime/python/bin/python3.12" tests/linux_rocm_smoke.py "$PWD/RestoRenate"
       - name: Print setup diagnostics
         if: failure()

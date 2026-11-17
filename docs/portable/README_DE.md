@@ -1,4 +1,4 @@
-# RestoRenate 1.2
+# RestoRenate 1.3
 
 Portable Ausgabe
 
@@ -12,6 +12,8 @@ Modelle, Einstellungen und eigene Presets lassen sich weiterverwenden.
 
 Linux: Das Archiv entpacken und ./Start.sh in einer grafischen Sitzung starten.
 macOS 15+: Die ZIP entpacken und RestoRenate.app aus dem Ordner öffnen.
+Gatekeeper kann beim ersten Start eine Meldung zur ad hoc signierten App zeigen.
+Die Hinweise zum Öffnen stehen im [Apple-Support](https://support.apple.com/de-de/102445).
 Python, Tk und ExifTool sind enthalten. ExifTool verwendet das Perl des Systems.
 
 Ein Bild oder einen Ordner öffnen und ein Verfahren auswählen.
@@ -49,8 +51,10 @@ einem Prompt kennzeichnet das dafür empfohlene Verfahren.
 
 Unter „Presets“ lassen sich das Verfahren, der Prompt, die Varianten und
 die zugehörigen Ausgabe- und Modelleinstellungen speichern. Eingabe und Ausgabeordner
-bleiben beim Laden ausgewählt. Die Startvorgabe und „Standard“ verwenden
-Fibo 2.0 Edit Turbo, "Allround" und Nomos2 HQ MoSR 4×.
+bleiben beim Laden ausgewählt. Die GPU-Startvorgabe und „Standard“ im GPU-Modus
+verwenden Fibo 2.0 Edit Turbo, „Allround“ und Nomos2 HQ MoSR 4×.
+„Detailrekonstruktion“ steht im selben Menü im GPU-Modus zur Auswahl und
+verwendet bei denselben Einstellungen VOSR 2.0 als Upscaler.
 Gespeicherte Einstellungen haben beim Start Vorrang.
 
 Start berechnet und speichert das Ergebnis. Bei Verfahren mit Prompt unter
@@ -136,8 +140,12 @@ arbeitet mit dem Eingabebild. KI-Upscaling wird beim Vergrößern verwendet.
 Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
 Zielgröße an. Die GPU-Voreinstellung für Restaurierung ist Fibo 2.0 Edit Turbo
 mit 2160 px Bildhöhe und Nomos2 HQ MoSR 4×. „Nur hochskalieren“ verwendet
-standardmäßig ebenfalls diese Zielgröße und diesen Upscaler.
+im GPU-Modus dieselbe Voreinstellung für Zielgröße und Upscaler.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
+Das Upscaler-Menü gruppiert die Modelle nach Einsatzbereich.
+Nomos2 HQ MoSR 4× und Nomos2 HQ DAT2 4× sind für saubere Fotos gedacht. Nomos8kDAT 4× ist für kleine
+und komprimierte Fotos gedacht. SeedVR2 3B INT8 und VOSR 2.0 sind
+lokale Verfahren zur Detailrekonstruktion und werden bei Bedarf geladen.
 Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
 gedacht. Beide Modelle werden bei Bedarf heruntergeladen.
 

@@ -123,12 +123,47 @@ def append_upscale(graph, model_name):
     return graph
 
 
-def standalone_upscale_graph(filename, model_name):
-    graph = {
+def append_seedvr2(graph, models, size, seed):
+    preview = graph[RESULT_NODE]['inputs']
+    # SeedVR2 crops to even dimensions. Round up before the common export resize.
+    width, height = (max(16, edge + edge % 2) for edge in size)
+    tiles = dict(tile_size=512, overlap=128, temporal_size=4096, temporal_overlap=8)
+
+    def add(number, kind, **inputs):
+        graph[str(number)] = {'class_type': kind, 'inputs': inputs}
+
+    add(40, 'ImageScale', image=preview['images'], upscale_method='lanczos',
+        width=width, height=height, crop='disabled')
+    add(41, 'SeedVR2Preprocess', resized_images=['40', 0])
+    add(42, 'VAELoader', vae_name=models['upscale_seedvr2_vae'])
+    add(43, 'UNETLoader', unet_name=models['upscale_seedvr2'], weight_dtype='default')
+    add(44, 'VAEEncodeTiled', vae=['42', 0], pixels=['41', 0], **tiles)
+    add(45, 'SeedVR2Conditioning', model=['43', 0], vae_conditioning=['44', 0])
+    add(46, 'KSampler', model=['43', 0], positive=['45', 0], negative=['45', 1],
+        latent_image=['44', 0], seed=seed, steps=1, cfg=1.0, sampler_name='euler',
+        scheduler='simple', denoise=1.0)
+    add(47, 'VAEDecodeTiled', vae=['42', 0], samples=['46', 0], **tiles)
+    add(48, 'SeedVR2PostProcessing', images=['47', 0], original_resized_images=['40', 0],
+        color_correction_method='none')
+    preview['images'] = ['48', 0]
+
+
+def append_vosr2(graph, bundle, scale, seed):
+    preview = graph[RESULT_NODE]['inputs']
+    graph['40'] = {'class_type': 'VOSR2ModelLoader', 'inputs': {'model': bundle, 'dtype': 'default'}}
+    graph['41'] = {'class_type': 'VOSR2Upscale', 'inputs': {
+        'model': ['40', 0], 'image': preview['images'], 'upscale': scale, 'seed': seed % (2**63),
+        'color_alignment': 'wavelet', 'tile_size': 512, 'tile_overlap': 64,
+        'vae_tile_size': 1024, 'vae_tile_overlap': 128,
+    }}
+    preview['images'] = ['41', 0]
+
+
+def standalone_upscale_graph(filename):
+    return {
         '4': {'class_type': 'LoadImage', 'inputs': {'image': filename}},
         RESULT_NODE: {'class_type': 'PreviewImage', 'inputs': {'images': ['4', 0]}},
     }
-    return append_upscale(graph, model_name)
 
 
 def flux2_graph(models, filename, size, prompt, seed, *, second_image=None):
