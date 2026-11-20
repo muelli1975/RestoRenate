@@ -1,62 +1,22 @@
-"""Bilingual descriptions keyed by model identity, shared with RestoRenate."""
+"""Bilingual descriptions for the upscaler menu."""
 import tkinter as tk
 
 from methods import CLEARREALITY, MULTIJPG, PUREPHOTO
 
-# Keep the two portable copies identical so descriptions also work offline.
+# Match Scalerina’s wording for models available in both applications.
 DESCRIPTIONS = {
-    # https://openmodeldb.info/models/2x-LiveActionV1-SPAN
-    "liveaction": (
-        "Für Realfilm und Digitalvideo mit Kompressionsartefakten, Skalierungsunschärfe oder hellen Säumen an Kanten. Erhält Filmkorn. Bei starkem Korn lassen sich feine Details nur begrenzt zurückgewinnen.",
-        "For live-action film and digital video with compression artifacts, resizing blur or edge halos. Preserves grain. Heavy grain can obscure fine detail."),
     # https://openmodeldb.info/models/4x-ClearRealityV1
-    "clearreality": (
+    CLEARREALITY: (
         "Für relativ klare Aufnahmen mit wenig Korn, besonders Gesichter, Haare und Naturmotive. Ziel ist ein weiches, natürliches Ergebnis. Bei geringer Schärfentiefe oder Bokeh können Artefakte entstehen.",
         "For fairly clear shots with little grain, especially faces, hair and nature scenes. Aims for a soft, natural look. Shallow depth of field or bokeh can produce artifacts."),
     # https://openmodeldb.info/models/4x-PurePhoto-span
-    "purephoto": (
+    PUREPHOTO: (
         "Für Amateur- und Profifotos, besonders für Haare und Tierfell. Auch kleine Fotos können gelingen. Als Richtwert nennt der Autor je nach Motiv etwa 300 Pixel an der kürzeren Seite.",
         "For amateur and professional photos, especially hair and fur. Small photos can also work. The author suggests roughly 300 pixels on the shorter side, depending on the subject."),
-    # https://openmodeldb.info/models/4x-Nomos8k-span-otf-medium
-    "nomos": (
-        "Vor allem für Fotos mit Qualitätsverlusten. Medium ist die mittlere der drei Varianten und korrigiert zurückhaltender als Strong.",
-        "Primarily for degraded photos. Medium is the middle of three variants and applies a gentler correction than Strong."),
-    # https://openmodeldb.info/models/4x-Nomos8k-span-otf-strong
-    "nomos_strong": (
-        "Vor allem für Fotos mit stärkeren Qualitätsverlusten. Strong wurde auf die ausgeprägtesten Bildstörungen der drei Varianten trainiert.",
-        "Primarily for more heavily degraded photos. Of the three variants, Strong was trained with the most severe degradations."),
     # https://openmodeldb.info/models/4x-NomosUni-span-multijpg
-    "nomos_multijpg": (
+    MULTIJPG: (
         "Schneller 4×-Allrounder für JPEG-komprimiertes und bereits skaliertes Bildmaterial. Trainiert mit JPEG-Qualitäten bis hinunter zu 40 und mehreren Verfahren zum Verkleinern und Vergrößern.",
         "Fast general-purpose 4× upscaler for JPEG-compressed and previously resized images. Trained with JPEG quality down to 40 and several downsampling and upsampling methods."),
-    # https://github.com/Sirosky/Upscale-Hub/releases/tag/AniSD
-    "anisd": (
-        "Für digital produzierte SD-Anime von DVD oder aus dem Web. Diese SPAN-Variante empfiehlt der Autor als Allrounder. Sie soll typische Störungen mindern und die Zeichnung ohne Überschärfung erhalten.",
-        "For digital SD anime from DVD or the web. The author recommends this SPAN variant for general use. It aims to reduce common defects while preserving the original drawing without oversharpening."),
-    # https://openmodeldb.info/models/2x-NomosUni-compact-otf-medium
-    "nomos_uni": (
-        "Schneller 2×-Allrounder für mäßige JPEG-Kompression, leichtes Rauschen und etwas Unschärfe.",
-        "Fast general-purpose 2× upscaler for moderate JPEG compression, mild noise and slight blur."),
-    # https://openmodeldb.info/models/4x-LSDIRCompactC3
-    "lsdir_c3": (
-        "Vergrößert JPEG-komprimierte Fotos um 4×. Der Autor nennt JPEG-Qualitätswerte von 30 bis 100.",
-        "Enlarges JPEG-compressed photos by 4×. The author gives a JPEG quality range of 30 to 100."),
-    # https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.3.0
-    "real_general": (
-        "Sehr kleines 4×-Modell für allgemeine Motive. Entrauscht stärker als WDN. Die kleine Modellgröße begrenzt die Restaurierungsleistung.",
-        "Very small 4× model for general scenes. Applies stronger denoising than WDN. Its small size limits restoration capacity."),
-    # https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.3.0
-    "real_wdn": (
-        "Sehr kleines 4×-Modell für allgemeine Motive. WDN entrauscht nur schwach und lässt mehr vom ursprünglichen Rauschen stehen.",
-        "Very small 4× model for general scenes. WDN uses weak denoising and retains more of the original noise."),
-    # https://github.com/Sirosky/Upscale-Hub/releases/tag/OpenProteus
-    "openproteus": (
-        "Für hochwertige, rauscharme Realaufnahmen aus Film und Fernsehen in HD oder Full HD. Ziel ist eine originalgetreue Vergrößerung in Richtung 4K, ohne Kanten zu überschärfen.",
-        "For high-quality, low-noise HD or Full HD live-action film and TV. Designed for faithful enlargement toward 4K while avoiding oversharpened edges."),
-    # https://github.com/ckkelvinchan/RealBasicVSR
-    "realbasicvsr": (
-        "Für niedrig aufgelöste Videos mit Rauschen und Artefakten. Bereinigt die Einzelbilder, bevor es Informationen aus aufeinanderfolgenden Bildern zur Detailrekonstruktion nutzt.",
-        "For low-resolution video with noise and artifacts. Cleans each frame before combining information across frames to reconstruct detail."),
     # https://openmodeldb.info/models/4x-Nomos2-hq-mosr
     "Nomos2 HQ MoSR 4×": (
         "Für saubere Fotos, trainiert auf Vorlagen ohne künstliche Qualitätsverluste. Bei sichtbaren JPEG-Artefakten empfiehlt der Autor, sie vor dem Vergrößern zu reduzieren.",
@@ -123,12 +83,6 @@ DESCRIPTIONS = {
 }
 
 
-
-DESCRIPTIONS[CLEARREALITY] = DESCRIPTIONS["clearreality"]
-DESCRIPTIONS[MULTIJPG] = DESCRIPTIONS["nomos_multijpg"]
-DESCRIPTIONS[PUREPHOTO] = DESCRIPTIONS["purephoto"]
-
-
 class ModelHints:
     """Show a non-focusable hint beside the highlighted row or selected control."""
     def __init__(self, control, selected, language):
@@ -184,28 +138,3 @@ class ModelHints:
         menu.bind("<<MenuSelect>>", active, add="+")
         for event in ("<Unmap>", "<Leave>", "<ButtonRelease-1>", "<Escape>"):
             menu.bind(event, self.hide, add="+")
-
-    def bind_combobox(self, keys):
-        combo = self.control
-        popup = combo.tk.call("ttk::combobox::PopdownWindow", str(combo))
-        listing = str(popup) + ".f.l"
-
-        def select(index):
-            if not int(combo.tk.call("winfo", "ismapped", listing)):
-                self.hide()
-                return
-            values = keys()
-            self.schedule(values[int(index)] if str(index).isdigit() and int(index) < len(values) else None)
-
-        def scrolled(y):
-            combo.after_idle(lambda: select(combo.tk.call(listing, "nearest", int(y))))
-
-        scroll_cmd = combo.register(scrolled)
-        select_cmd = combo.register(select)
-        hide_cmd = combo.register(self.hide)
-        for event, script in (("<Motion>", f"{select_cmd} [{listing} nearest %y]"),
-                              ("<MouseWheel>", f"{scroll_cmd} %y"),
-                              ("<KeyRelease>", f"{select_cmd} [{listing} index active]"),
-                              ("<Map>", f"{select_cmd} [{listing} curselection]"),
-                              ("<Unmap>", hide_cmd), ("<Leave>", hide_cmd)):
-            combo.tk.call("bind", listing, event, "+" + script)

@@ -16,6 +16,7 @@ from model_hints import DESCRIPTIONS
 
 manifest = json.loads((root / "download_manifest.json").read_text())
 optional = json.loads((root / "method_downloads.json").read_text())
+assert set(DESCRIPTIONS) == set(UPSCALERS)
 assert all(len(DESCRIPTIONS[name]) == 2 and all(DESCRIPTIONS[name]) for name in UPSCALERS)
 with TemporaryDirectory() as folder, torch.inference_mode():
     for name in (CLEARREALITY, MULTIJPG, PUREPHOTO):
