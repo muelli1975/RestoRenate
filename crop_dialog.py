@@ -68,19 +68,17 @@ class CropDialog(tk.Toplevel):
         self.angle = tk.DoubleVar(self, 0.)
         self.vertical = tk.IntVar(self, 0)
         self.horizontal = tk.IntVar(self, 0)
-        def slider(label, variable, limit, step):
-            control = AlignmentSlider(alignment_bar, label, variable, limit, step, self.change_alignment,
-                                      lambda: self.canvas.focus_set())
-            control.pack(side='left', fill='x', expand=True, padx=(0, 10))
-            return control
+        def slider(column, label, variable, limit, step):
+            return AlignmentSlider(alignment_bar, column, label, variable, limit, step, self.change_alignment,
+                                   lambda: self.canvas.focus_set())
 
-        self.angle_slider = slider('Horizont', self.angle, 5, 0.1)
-        self.vertical_slider = slider('Perspektive', self.vertical, 20, 1)
+        self.angle_slider = slider(0, 'Horizont', self.angle, 5, 0.1)
+        self.vertical_slider = slider(1, 'Perspektive', self.vertical, 20, 1)
         # A quarter turn takes an existing vertical correction onto the horizontal axis.
-        self.side_slider = slider('Horizontale Perspektive', self.horizontal, 20, 1)
-        self.side_slider.pack_forget()
+        self.side_slider = slider(2, 'Horizontale Perspektive', self.horizontal, 20, 1)
+        self.side_slider.set_visible(False)
         self.fit_button = ttk.Button(alignment_bar, text=translate('Ränder einpassen'), command=self.fit_edges)
-        self.fit_button.pack(side='right')
+        self.fit_button.grid(row=1, column=3)
 
         self.canvas = tk.Canvas(self, bg=APP_BG, highlightthickness=0, takefocus=True)
         self.canvas.pack(fill='both', expand=True)
@@ -239,10 +237,7 @@ class CropDialog(tk.Toplevel):
         self.angle.set(-self.alignment.angle)
         self.vertical.set(-self.alignment.vertical)
         self.horizontal.set(-self.alignment.horizontal)
-        if self.alignment.horizontal:
-            self.side_slider.pack(side='left', fill='x', expand=True, before=self.fit_button, padx=(0, 10))
-        else:
-            self.side_slider.pack_forget()
+        self.side_slider.set_visible(bool(self.alignment.horizontal))
 
     def change_alignment(self, _value=None):
         if self.image is None:

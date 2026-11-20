@@ -166,6 +166,17 @@ def check_alignment(directory):
 
         horizon = dialog.angle_slider
         perspective = dialog.vertical_slider
+        def center_y(widget):
+            return widget.winfo_rooty() + widget.winfo_height() / 2
+
+        for controls in ((horizon, perspective), (horizon, perspective, dialog.side_slider)):
+            dialog.side_slider.set_visible(dialog.side_slider in controls)
+            window.update_idletasks()
+            for control in controls:
+                assert control.slider.winfo_ismapped()
+                for widget in (control.slider, control.entry):
+                    assert abs(center_y(widget) - center_y(dialog.fit_button)) <= 1
+        dialog.set_sliders()
         assert horizon.caption.cget('text') == translate('Horizont')
         assert perspective.caption.cget('text') == translate('Perspektive')
         assert horizon.slider.cget('fg_color') == BORDER

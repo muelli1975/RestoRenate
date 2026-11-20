@@ -95,15 +95,18 @@ def bind_slider_reset(slider, enabled, reset):
 class AlignmentSlider(tk.Frame):
     """Signed adjustment with a live preview and locale-aware numeric entry."""
 
-    def __init__(self, parent, label, variable, limit, step, command, focus_preview):
+    def __init__(self, parent, column, label, variable, limit, step, command, focus_preview):
         super().__init__(parent, bg=APP_BG)
         self.variable = variable
         self.limit = limit
         self.step = step
         self.command = command
         self.focus_preview = focus_preview
-        self.caption = tk.Label(self, text=translate(label), bg=APP_BG, fg=TEXT)
-        self.caption.pack(anchor='w')
+        self.column = column
+        self.caption = tk.Label(parent, text=translate(label), bg=APP_BG, fg=TEXT)
+        self.caption.grid(row=0, column=column, sticky='w')
+        self.grid(row=1, column=column, sticky='ew', padx=(0, 10))
+        parent.columnconfigure(column, weight=1)
         self.value = tk.StringVar(self)
         self.entry = ctk.CTkEntry(self, width=60, height=25, textvariable=self.value, justify='right',
                                   fg_color=SECONDARY_BG, bg_color=APP_BG, border_color=BORDER,
@@ -124,6 +127,14 @@ class AlignmentSlider(tk.Frame):
             self.entry.bind(f'<{key}>', lambda event, direction=direction: self.commit(direction))
         variable.trace_add('write', self.sync)
         self.sync()
+
+    def set_visible(self, visible):
+        self.master.columnconfigure(self.column, weight=int(visible))
+        for widget in (self.caption, self):
+            if visible:
+                widget.grid()
+            else:
+                widget.grid_remove()
 
     def enabled(self):
         return self.slider.cget('state') == 'normal'
