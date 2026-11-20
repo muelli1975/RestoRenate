@@ -13,6 +13,7 @@ import tempfile
 import numpy as np
 from PIL import Image, ImageCms, ImageOps, PngImagePlugin
 
+from crop import Alignment
 from language import translate
 from export_metadata import compact, png_metadata
 
@@ -41,6 +42,20 @@ def photo_size(path, *, rotation=0):
         return source.size[::-1] if swap != bool(rotation % 2) else source.size
 
 
+def align_photo(image, alignment, box=None):
+    """Sample the selected part of the correction in a single interpolation."""
+    box = box or (0, 0, *image.size)
+    if alignment == Alignment():
+        return image.crop(box)
+    a, b, c, d, e, f, g, h = alignment.coefficients(image.size)
+    left, top, right, bottom = box
+    z = 1 + g * left + h * top
+    coeffs = tuple(v / z for v in (a, b, a*left + b*top + c,
+                                     d, e, d*left + e*top + f, g, h))
+    return image.transform((right-left, bottom-top), Image.Transform.PERSPECTIVE,
+                           coeffs, Image.Resampling.BICUBIC)
+
+
 def open_photo(path, *, crop=None, rotation=0):
     """Return upright, sRGB pixels and optional original resolution metadata."""
     with Image.open(path) as source:
@@ -53,10 +68,11 @@ def open_photo(path, *, crop=None, rotation=0):
                     3: Image.Transpose.ROTATE_90,
                 }[rotation])
         if crop is not None:
-            with upright:
-                if upright.size != crop.original_size:
-                    raise ValueError(translate('Die Bildgröße hat sich geändert. Bitte den Beschnitt neu wählen.'))
-                upright = upright.crop(crop.box)
+            if upright.size != crop.original_size:
+                raise ValueError(translate('Die Bildgröße hat sich geändert. Bitte den Beschnitt neu wählen.'))
+            if crop.alignment == Alignment():
+                with upright:
+                    upright = upright.crop(crop.box)
         dpi = source.info.get('dpi')
         if dpi and rotation % 2:
             dpi = dpi[::-1]
@@ -75,6 +91,9 @@ def open_photo(path, *, crop=None, rotation=0):
             rgb = upright.convert('RGB')
         if alpha is not None:
             rgb = Image.composite(rgb, Image.new('RGB', rgb.size, 'white'), alpha)
+        if crop is not None and crop.alignment != Alignment():
+            with rgb:
+                rgb = align_photo(rgb, crop.alignment, crop.box)
         rgb.info.clear()
         return rgb, dpi
 

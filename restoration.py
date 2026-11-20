@@ -302,7 +302,8 @@ def processing_settings(record, model_name, graph, upscaler):
             'prompt': record['prompt'], 'seed': record['seed'], 'sampling': sampling,
             'original_size': record['original_size'], 'working_size': record['working_size'],
             'working_crop': record.get('active_crop'), 'output_size': record['output_size'], 'upscaler': model_name,
-            **{key: record[key] for key in ('source_crop', 'source_rotation', 'second_image', 'second_rotation', 'second_crop', 'second_size', 'luts')
+            **{key: record[key] for key in ('source_crop', 'source_alignment', 'source_rotation', 'second_image', 'second_rotation',
+                                            'second_crop', 'second_alignment', 'second_size', 'luts')
                if key in record},
             **{key: record[key] for key in ('scratches', 'faces', 'colorization') if key in record}}
 
@@ -326,7 +327,7 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
     source_size = source_crop.original_size if source_crop else original.size
     record.update(original_size=source_size, output_size=expected)
     if source_crop:
-        record['source_crop'] = source_crop.box
+        record.update(source_crop.record('source'))
     if source_rotation:
         record['source_rotation'] = source_rotation
     if second_image is not None:
@@ -334,7 +335,7 @@ def restore(client, models, source, folder, output_format, exiftool, prompt, see
         if second_rotation:
             record['second_rotation'] = second_rotation
         if second_crop:
-            record['second_crop'] = second_crop.box
+            record.update(second_crop.record('second'))
     if look is not None and look.strength:
         record['luts'] = [look.record()]
     if method == MICROSOFT:
@@ -525,8 +526,8 @@ def export_look_variant(source, base, crop, rotation, folder, output_format, exi
     history = [*history, look.record()]
     settings.update(version=APP_VERSION, luts=history, lut_source=base.name)
     if crop:
-        record.update(source_crop=crop.box, original_size=crop.original_size)
-        settings['source_crop'] = crop.box
+        record.update(original_size=crop.original_size, **crop.record('source'))
+        settings.update(crop.record('source'))
     if rotation:
         settings['source_rotation'] = record['source_rotation'] = rotation
     is_input = base == source

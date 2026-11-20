@@ -1,7 +1,7 @@
 """Crop geometry in upright, full-resolution source pixels."""
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from fractions import Fraction
-from math import sqrt
+from math import ceil, cos, floor, radians, sin, sqrt
 import re
 
 Box = tuple[int, int, int, int]
@@ -29,10 +29,64 @@ def parse_aspect(text: str, size: tuple[int, int]) -> Aspect:
 
 
 @dataclass(frozen=True)
+class Alignment:
+    angle: float = 0.0
+    vertical: int = 0
+    horizontal: int = 0
+
+    def __post_init__(self):
+        if (type(self.angle) not in (int, float) or not -5 <= self.angle <= 5
+                or any(type(v) is not int or abs(v) > 20 for v in (self.vertical, self.horizontal))):
+            raise ValueError('Invalid image alignment')
+
+    def rotated(self):
+        return Alignment(self.angle, self.horizontal, -self.vertical)
+
+    def coefficients(self, size):
+        # Pillow maps from corrected pixel coordinates back to the upright source.
+        cx, cy = size[0] / 2, size[1] / 2
+        # At ±20 the two opposing edges differ in scale by a factor of 1.2.
+        dx, dy = self.horizontal / (220 * cx), self.vertical / (220 * cy)
+        c, s = cos(radians(self.angle)), sin(radians(self.angle))
+        z = 1 - dx * cx - dy * cy
+        return tuple(v / z for v in (
+            c + cx * dx, -s + cx * dy, cx * z - c * cx + s * cy,
+            s + cy * dx, c + cy * dy, cy * z - s * cx - c * cy, dx, dy))
+
+    def fit_box(self, size, box):
+        """Keep this aspect ratio while bringing all four corners inside the photo."""
+        if self == Alignment():
+            return box
+        w, h = size
+        a, b, c, d, e, f, g, k = self.coefficients(size)
+
+        def inside(x, y):
+            z = 1 + g * x + k * y
+            return 0 <= a * x + b * y + c <= w * z and 0 <= d * x + e * y + f <= h * z
+
+        left, top, right, bottom = box
+        corners = ((left, top), (left, bottom), (right, top), (right, bottom))
+        if all(inside(x, y) for x, y in corners):
+            return box
+        lo, hi = 0., 1.
+        for _ in range(32):
+            mid = (lo + hi) / 2
+            if all(inside(w / 2 + (x - w / 2) * mid, h / 2 + (y - h / 2) * mid) for x, y in corners):
+                lo = mid
+            else:
+                hi = mid
+        left, right = ceil(w / 2 + (left - w / 2) * lo), floor(w / 2 + (right - w / 2) * lo)
+        top, bottom = ceil(h / 2 + (top - h / 2) * lo), floor(h / 2 + (bottom - h / 2) * lo)
+        left, top = min(left, w - 1), min(top, h - 1)
+        return left, top, max(left + 1, right), max(top + 1, bottom)
+
+
+@dataclass(frozen=True)
 class CropRegion:
     original_size: tuple[int, int]
     box: Box
     aspect: Aspect | None = None
+    alignment: Alignment = Alignment()
 
     def __post_init__(self):
         if (len(self.original_size) != 2 or len(self.box) != 4
@@ -51,20 +105,28 @@ class CropRegion:
         width, height = self.original_size
         left, top, right, bottom = self.box
         aspect = self.aspect
+        alignment = self.alignment
         for _ in range(turns % 4):
             left, top, right, bottom = height - bottom, left, height - top, right
             width, height = height, width
+            alignment = alignment.rotated()
             if aspect is not None:
                 aspect = aspect[::-1]
-        return CropRegion((width, height), (left, top, right, bottom), aspect)
+        return CropRegion((width, height), (left, top, right, bottom), aspect, alignment)
+
+    def record(self, prefix):
+        data = {prefix + '_crop': self.box}
+        if self.alignment != Alignment():
+            data[prefix + '_alignment'] = asdict(self.alignment)
+        return data
 
     @classmethod
     def from_record(cls, record):
         size, box = record.get('original_size'), record.get('source_crop')
         if isinstance(size, (tuple, list)) and isinstance(box, (tuple, list)):
             try:
-                return cls(tuple(size), tuple(box))
-            except ValueError:
+                return cls(tuple(size), tuple(box), alignment=Alignment(**record.get('source_alignment', {})))
+            except (ValueError, TypeError):
                 pass
         return None
 

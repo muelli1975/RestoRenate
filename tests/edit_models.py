@@ -15,7 +15,7 @@ root = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).reso
 sys.path.insert(0, str(root / '_internal' if (root / '_internal').is_dir() else root))
 
 from export_metadata import editable_workflow, seed_from_metadata
-from methods import (DDCOLOR_TINY, FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ,
+from methods import (CLEARREALITY, PUREPHOTO, DDCOLOR_TINY, FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ,
                      NOMOS2_DAT2, NOMOS8K_DAT, SEEDVR2, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
                      VOSR2, available_methods, model_files)
 from portable_setup import CPU, MACOS, MPS, NVIDIA, Setup
@@ -128,6 +128,57 @@ def check_upscale_graphs(source, directory):
     print('Four upscale models passed both export paths and model-manifest checks.')
 
 
+def check_alignment(directory):
+    import numpy as np
+    from crop import Alignment, CropRegion
+    from crop_dialog import CropDialog
+    from imaging import align_photo, open_photo
+
+    first, second = (directory / name for name in ('lines.png', 'other.png'))
+    y, x = np.indices((120, 240))
+    lines = np.where((x % 20 < 3) | (y % 20 < 3), 80, 230).astype('uint8')
+    image = Image.fromarray(lines).convert('RGB')
+    image.save(first)
+    image.save(second)
+    window = tk.Tk()
+    try:
+        dialog = CropDialog(window, (first, second), {}, first)
+        window.update()
+        dialog.angle.set(2.4)
+        dialog.vertical.set(-16)
+        dialog.change_alignment()
+        window.update()
+        assert dialog.alignment == Alignment(2.4, -16)
+        assert dialog.display.tobytes() == align_photo(dialog.preview_base, dialog.alignment).tobytes()
+        dialog.load_source(1)
+        assert dialog.alignment == Alignment()
+        dialog.load_source(0)
+        assert dialog.alignment == Alignment(2.4, -16)
+        dialog.apply_crop()
+        crop = dialog.result[1][first]
+        assert second not in dialog.result[1] and crop.size[0] < image.width
+        dialog = CropDialog(window, (first,), {first: crop}, first)
+        dialog.reset_crop()
+        dialog.destroy()
+        assert dialog.result is None
+    finally:
+        window.destroy()
+    pixels, _ = open_photo(first, crop=crop)
+    assert pixels.tobytes() == align_photo(image, crop.alignment).crop(crop.box).tobytes()
+    assert pixels.getextrema()[0][0] > 0
+    rotated, _ = open_photo(first, rotation=1, crop=crop.rotated(1))
+    assert rotated.tobytes() == pixels.transpose(Image.Transpose.ROTATE_270).tobytes()
+    models = {}
+    record = dict(method=UPSCALING, models=models, prompt='', seed=None)
+    output, _ = restore(None, models, first, directory, 'PNG', None, '', None, lambda _: None,
+                        lambda: False, record, method=UPSCALING, size_choice=(CUSTOM_SIZE, max(pixels.size)),
+                        upscaler=LANCZOS, source_crop=crop)
+    with Image.open(output) as saved:
+        assert saved.size == pixels.size and saved.convert('RGB').tobytes() == pixels.tobytes()
+    assert CropRegion.from_record(record) == crop
+    assert record['settings']['source_alignment'] == record['source_alignment']
+
+
 def check_vosr_progress():
     graph = {'41': {'class_type': 'VOSR2Upscale'}, '80': {'class_type': 'ImageScale'}}
     statuses, percentages = [], []
@@ -183,7 +234,7 @@ def check_layout(source, language):
             assert tuple(heading for heading, _ in UPSCALE_MENU_SECTIONS[:2]) == (
                 'Saubere Fotos und Porträts', 'Detailrekonstruktion',
             )
-            assert UPSCALERS[0] == NOMOS2_HQ and UPSCALE_MENU_SECTIONS[1][1] == (SEEDVR2, VOSR2)
+            assert UPSCALERS[:2] == (CLEARREALITY, PUREPHOTO) and UPSCALE_MENU_SECTIONS[1][1] == (SEEDVR2, VOSR2)
             assert menu_labels(upscale_menu) == [
                 value for heading, choices in UPSCALE_MENU_SECTIONS
                 for value in (app.translate(heading), *choices)
@@ -372,6 +423,7 @@ if __name__ == '__main__':
         source = Path(directory) / 'reference.png'
         with Image.new('RGB', (200, 120)) as image:
             image.save(source)
+        check_alignment(Path(directory))
         check_upscale_graphs(source, Path(directory))
         for language in ('de', 'en'):
             check_layout(source, language)
