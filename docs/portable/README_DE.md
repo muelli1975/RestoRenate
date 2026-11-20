@@ -24,7 +24,7 @@ ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverh�
 oder „Benutzerdefiniert …“ für ein Verhältnis wie 7:5 wählen. In einem Ordner lässt sich
 jedes Bild einzeln auswählen und beschneiden. „Übernehmen“ zeigt das ausgewählte
 Bild in der Hauptansicht. „Horizont“ und „Perspektive“ richten das Bild an einem 9 × 9-Raster aus.
-Der Wert lässt sich direkt eingeben. Umschalt + Mausrad über Schiene oder Griff ändert den Wert um einen Schritt.
+Der Wert lässt sich direkt eingeben. Strg + Mausrad über Schiene oder Griff ändert den Wert um einen Schritt.
 Ein Doppelklick setzt den jeweiligen Bildbearbeitungsregler auf seinen Standardwert zurück (Horizont 0°, Perspektive 0). Mit dem Fokus auf dem Bild verschieben die Pfeiltasten den Ausschnitt um einen Pixel, mit Strg um fünf Pixel.
 Umschalt + ← / → dreht das Bild um 0,1° nach links / rechts. Umschalt + ↑ / ↓ verbreitert
 die obere / untere Bildkante. Enter übernimmt, Esc verwirft und F1 öffnet die Bedienhilfe.
@@ -219,6 +219,6 @@ verfügbar. Quellen und Lizenz stehen in `THIRD_PARTY.txt`.
 
 Bild 2 kann unabhängig beschnitten und gedreht werden. Den Ausgabeausschnitt bestimmt Bild 1. Zwei Montage-Presets und zusätzliche Satzbausteine stehen im Prompt-Menü bereit.
 
-50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. Ein Doppelklick setzt den Bildbearbeitungsregler für die LUT-Stärke auf seinen Standardwert von 100 % zurück. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
+50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. Strg + Mausrad über Schiene oder Griff ändert die LUT-Stärke um 5 Prozentpunkte. Ein Doppelklick setzt den Bildbearbeitungsregler für die LUT-Stärke auf seinen Standardwert von 100 % zurück. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
 
 JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. Die Quellen und Lizenzen sind unter assets/luts/CREDITS.md dokumentiert.

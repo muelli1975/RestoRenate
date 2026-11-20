@@ -483,16 +483,17 @@ def test_gui(root):
             else:
                 track.event_generate('<MouseWheel>', delta=-120, state=state)
             window.update()
-        wheel_down(0)
-        assert controls.look().strength == 100
-        wheel_down(1)
+        for state in (0, 1):
+            wheel_down(state)
+            assert controls.look().strength == 100
+        wheel_down(4)
         assert controls.look().strength == 95
         for click_time in (1000, 1150):
             track.event_generate('<ButtonPress-1>', x=10, y=8, time=click_time)
             track.event_generate('<ButtonRelease-1>', x=10, y=8, time=click_time + 10)
         window.update()
         assert controls.look().strength == 100
-        wheel_down(1)
+        wheel_down(4)
         assert controls.look().strength == 95
         entry = gui.seed_entry
         entry.focus_set()
@@ -581,7 +582,7 @@ def test_gui(root):
 
         check_help_fit()
         check_slider_rows('Doppelklick', 'Bildbearbeitungsregler auf Standardwert zurücksetzen')
-        check_slider_rows('Umschalt + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen')
+        check_slider_rows('Strg + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen')
         assert {'Ansicht und Ergebnisse', 'LUT', 'Ausschnitt', 'Ansicht einpassen', 'Bild auf / Bild ab', 'Horizont und Perspektive',
                 'Linke Taste + Ziehen im Rahmen', 'Strg + Pfeiltasten', 'Umschalt + ← / →', 'Umschalt + ↑ / ↓'} <= help_labels()
         assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())
@@ -590,7 +591,7 @@ def test_gui(root):
         assert gui.controls_help is help_dialog and help_dialog.title() == 'Controls'
         check_help_fit()
         check_slider_rows('Double click', 'Reset an image editing slider to its default')
-        check_slider_rows('Shift + Mouse wheel', 'Adjust the image editing slider over its track or handle')
+        check_slider_rows('Ctrl + Mouse wheel', 'Adjust the image editing slider over its track or handle')
         assert {'View and results', 'LUT', 'Crop', 'Fit view', 'Page Up / Page Down', 'Horizon and perspective', 'Left-drag inside the frame',
                 'Ctrl + arrow keys', 'Shift + ← / →', 'Shift + ↑ / ↓'} <= help_labels()
         assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())

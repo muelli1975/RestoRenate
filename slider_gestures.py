@@ -1,6 +1,6 @@
-"""Shared mouse gestures for image editing sliders, following StereoFine."""
+"""Shared mouse gestures for all RestoRenate image editing sliders."""
 
-SHIFT_MASK = 0x0001
+CONTROL_MASK = 0x0004
 
 
 def bind_slider_wheel(slider, enabled, step):
@@ -9,7 +9,7 @@ def bind_slider_wheel(slider, enabled, step):
 
     def scroll(event, ticks=None):
         nonlocal remainder
-        if not event.state & SHIFT_MASK or not enabled():
+        if not event.state & CONTROL_MASK or not enabled():
             remainder = 0
             return None
         if ticks is None:

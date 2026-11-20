@@ -4,4 +4,4 @@ Build the portable Windows GUI with PyInstaller in onedir, windowed mode, follow
 
 # Interface conventions
 
-Use StereoFine as the reference for equivalent controls and their German and English names. For signed adjustments, match its centered exposure slider, numeric field, Shift-wheel steps and double-click reset. Check the dialog, the controls guide and both portable guides together when changing a control.
+Use StereoFine as the reference for equivalent controls and their German and English names. For signed adjustments, match its centered exposure slider, numeric field and double-click reset. In RestoRenate use Ctrl + mouse wheel over the track or handle for every image editing slider. Check the dialog, the controls guide and both portable guides together when changing a control.

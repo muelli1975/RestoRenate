@@ -93,7 +93,7 @@ ENGLISH = {
     'Vorheriges / nächstes Ergebnis': 'Previous / next result',
     'LUT ein-/ausschalten': 'Toggle LUT',
     'LUT-Variante gespeichert.': 'LUT variant saved.',
-    'Umschalt + Mausrad': 'Shift + Mouse wheel',
+    'Strg + Mausrad': 'Ctrl + Mouse wheel',
     'Bildbearbeitungsregler über Schiene oder Griff verstellen': 'Adjust the image editing slider over its track or handle',
     'Doppelklick': 'Double click',
     'Bildbearbeitungsregler auf Standardwert zurücksetzen': 'Reset an image editing slider to its default',
