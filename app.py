@@ -32,7 +32,7 @@ from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINT
                             UNIX_RUNTIME, ComputeUnavailable, Setup, SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import PreloadProgress, choose_preloads, format_download_size, preload_label
-from methods import (COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
+from methods import (CLEARREALITY, COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
                      METHODS, METHOD_MENU_SECTIONS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
                      TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING, VOSR2,
                      available_methods, resolve_upscaler, uses_comfy)
@@ -100,7 +100,7 @@ MAX_VARIANTS = 100
 VARIANT_COUNTS = {str(count): count for count in range(1, MAX_VARIANTS + 1)}
 GPU_STANDARD_PRESET = {
     'method': DEFAULT_METHOD, 'preset': DEFAULT_PROMPT_NAME, 'prompt': PRESETS[DEFAULT_PROMPT_NAME], 'variants': 1,
-    'size': ULTRA_HD, 'upscaler': resolve_upscaler(DEFAULT_METHOD),
+    'size': ULTRA_HD, 'upscaler': CLEARREALITY,
 }
 BUILTIN_PROCESSING_PRESETS = {
     'Standard': GPU_STANDARD_PRESET,

@@ -16,7 +16,7 @@ root = Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(root / '_internal'))
 
 import app
-from methods import (DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALE_MENU_SECTIONS,
+from methods import (CLEARREALITY, DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALE_MENU_SECTIONS,
                      UPSCALING, VOSR2, resolve_upscaler)
 from model_hints import DESCRIPTIONS
 from field_focus import check_field_focus, field_focus_maps
@@ -152,7 +152,7 @@ def check_closed_upscaler(gui):
 assert resolve_upscaler(UPSCALING) == NOMOS2_HQ
 assert resolve_upscaler(UPSCALING, ULTRASHARP_LITE) == ULTRASHARP_LITE
 assert resolve_upscaler(DDCOLOR_TINY) == LANCZOS
-assert app.BUILTIN_PROCESSING_PRESETS['Standard']['upscaler'] == NOMOS2_HQ
+assert app.BUILTIN_PROCESSING_PRESETS['Standard']['upscaler'] == CLEARREALITY
 assert app.BUILTIN_PROCESSING_PRESETS['Detailrekonstruktion']['upscaler'] == VOSR2
 
 image_path = root.parent / 'reference.png'

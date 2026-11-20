@@ -341,7 +341,7 @@ def check_compute_settings(directory):
     settings = directory / 'compute-settings.json'
     gpu = MPS if MACOS else NVIDIA
     cpu_standard = (MICROSOFT, NO_RESCALE, LANCZOS)
-    gpu_standard = (FIBO2_TURBO, ULTRA_HD, NOMOS2_HQ)
+    gpu_standard = (FIBO2_TURBO, ULTRA_HD, CLEARREALITY)
     detail_preset = (FIBO2_TURBO, ULTRA_HD, VOSR2)
     with patch.object(app, 'SETTINGS', settings), patch.object(app.messagebox, 'showinfo'):
         settings.write_text(json.dumps({'compute': CPU}), encoding='utf-8')

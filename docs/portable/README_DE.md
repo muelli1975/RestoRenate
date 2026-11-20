@@ -23,7 +23,9 @@ Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …�
 ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverhältnis
 oder „Benutzerdefiniert …“ für ein Verhältnis wie 7:5 wählen. In einem Ordner lässt sich
 jedes Bild einzeln auswählen und beschneiden. „Übernehmen“ zeigt das ausgewählte
-Bild in der Hauptansicht. „Drehen“ dreht das dort angezeigte Eingabebild um
+Bild in der Hauptansicht. „Horizont (°)“ und „Stürzende Linien“ richten das Bild am Raster aus.
+„Ränder einpassen“ verkleinert den gewählten Ausschnitt, bis er vollständig im Bild liegt.
+Die Vorher-Seite des Ergebnisvergleichs zeigt den ausgerichteten Ausschnitt. „Drehen“ dreht das dort angezeigte Eingabebild um
 90° nach links oder rechts oder um 180°. Ein bestehender Beschnitt dreht mit.
 Die App dreht vor dem Beschnitt und der Bearbeitung. Die Originaldatei bleibt
 erhalten. Die Menüsprache folgt beim ersten Start der Systemsprache und
@@ -53,7 +55,7 @@ einem Prompt kennzeichnet das dafür empfohlene Verfahren.
 Unter „Presets“ lassen sich das Verfahren, der Prompt, die Varianten und
 die zugehörigen Ausgabe- und Modelleinstellungen speichern. Eingabe und Ausgabeordner
 bleiben beim Laden ausgewählt. Die GPU-Startvorgabe und „Standard“ im GPU-Modus
-verwenden Fibo 2.0 Edit Turbo, „Allround“ und Nomos2 HQ MoSR 4×.
+verwenden Fibo 2.0 Edit Turbo, „Allround“ und ClearRealityV1 SPAN 4×.
 „Detailrekonstruktion“ steht im selben Menü im GPU-Modus zur Auswahl und
 verwendet bei denselben Einstellungen VOSR 2.0 als Upscaler.
 Gespeicherte Einstellungen haben beim Start Vorrang.
@@ -140,8 +142,8 @@ verwenden eine eingegebene Seitenlänge. Die App hält das Seitenverhältnis.
 arbeitet mit dem Eingabebild. KI-Upscaling wird beim Vergrößern verwendet.
 Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
 Zielgröße an. Die GPU-Voreinstellung für Restaurierung ist Fibo 2.0 Edit Turbo
-mit 2160 px Bildhöhe und Nomos2 HQ MoSR 4×. „Nur hochskalieren“ verwendet
-im GPU-Modus dieselbe Voreinstellung für Zielgröße und Upscaler.
+mit 2160 px Bildhöhe und ClearRealityV1 SPAN 4×. „Nur hochskalieren“ verwendet
+als eigene Vorgabe 2160 px Bildhöhe und Nomos2 HQ MoSR 4×.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
 Das Upscaler-Menü gruppiert die Modelle nach Einsatzbereich.
 Nomos2 HQ MoSR 4× und Nomos2 HQ DAT2 4× sind für saubere Fotos gedacht. Nomos8kDAT 4× ist für kleine
