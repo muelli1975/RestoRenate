@@ -4,7 +4,7 @@ from ctypes import wintypes
 from pathlib import Path
 from queue import Queue
 import sys
-from threading import Thread
+from threading import Event, Thread
 from time import monotonic, sleep
 import tkinter as tk
 from tkinter import font, ttk
@@ -25,7 +25,7 @@ from reference_controls import check_reference_controls
 from sizes import FULL_HD
 
 
-def capture_popup(menu, destination, headings=()):
+def capture_popup(menu, destination, headings=(), *, hover_index=None, hint_seen=None):
     user32 = ctypes.windll.user32
     user32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
     user32.FindWindowW.restype = wintypes.HWND
@@ -33,6 +33,7 @@ def capture_popup(menu, destination, headings=()):
     user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
     result = Queue()
     heading_centers = [(menu.yposition(index) + menu.yposition(index + 1)) // 2 for index in headings]
+    hover_y = (menu.yposition(hover_index) + menu.yposition(hover_index + 1)) // 2 if hover_index is not None else None
     user32.SetCursorPos(0, 0)
 
     def capture():
@@ -52,6 +53,9 @@ def capture_popup(menu, destination, headings=()):
                                 sleep(0.15)
                                 with ImageGrab.grab(box) as hovered:
                                     assert not ImageChops.difference(screenshot, hovered).getbbox(), (destination, y)
+                            if hover_y is not None:
+                                user32.SetCursorPos(bounds.left + screenshot.width // 2, bounds.top + hover_y)
+                                assert hint_seen.wait(3), 'No description appeared for the highlighted model'
                             result.put(screenshot.width)
                             return
                 sleep(0.03)
@@ -64,7 +68,7 @@ def capture_popup(menu, destination, headings=()):
 
     Thread(target=capture, daemon=True).start()
     menu.post(32, 32)
-    width = result.get(timeout=5)
+    width = result.get(timeout=10)
     if isinstance(width, Exception):
         raise width
     return width
@@ -83,18 +87,24 @@ def check_native_menus(gui):
         capture_popup(method_menu, root.parent / f'model-menu-{language}.png', headings)
         upscale_menu = gui.upscale_menu
         assert all(key in DESCRIPTIONS for key in upscale_menu.choices)
-        upscale_menu.activate(upscale_menu.choices[NOMOS2_HQ][1])
-        upscale_menu.event_generate('<<MenuSelect>>')
         hints = gui.upscale_hints
-        assert hints.key == NOMOS2_HQ
-        window.after_cancel(hints.timer)
-        hints.show()
-        label, = hints.window.winfo_children()
-        assert label.cget('text') == DESCRIPTIONS[NOMOS2_HQ][int(language == 'en')]
-        hints.hide()
-        upscale_menu.activate('none')
+        shown = Event()
+        original_show = hints.show
+
+        def observe_hint():
+            original_show()
+            label, = hints.window.winfo_children()
+            if hints.key == NOMOS2_HQ and label.cget('text') == DESCRIPTIONS[NOMOS2_HQ][int(language == 'en')]:
+                shown.set()
+
+        hints.show = observe_hint
         headings = [upscale_menu.index(app.translate(heading)) for heading, _ in UPSCALE_MENU_SECTIONS]
-        capture_popup(upscale_menu, root.parent / f'upscaler-menu-{language}.png', headings)
+        try:
+            capture_popup(upscale_menu, root.parent / f'upscaler-menu-{language}.png', headings,
+                          hover_index=upscale_menu.choices[NOMOS2_HQ][1], hint_seen=shown)
+        finally:
+            hints.show = original_show
+            hints.hide()
         for name, menu in (('model-submenu', method_menu), ('lut-menu', controls.menu)):
             group_font = font.Font(window, font=menu.cget('font'))
             choices = [(group_font.measure(group.entrycget(index, 'label')), group, index)
