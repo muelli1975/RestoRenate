@@ -127,9 +127,9 @@ class CropDialog(tk.Toplevel):
         self.index, self.image = index, image
         self.preview_base = None
         region = self.crops.get(self.sources[index])
-        self.aspects = (None, 'original', *(aspect for aspect in ASPECTS
+        self.aspects = ('original', None, *(aspect for aspect in ASPECTS
                                if aspect[0] <= image.width and aspect[1] <= image.height))
-        labels = (translate('Frei'), translate('Original'), *(f'{w}:{h}' for w, h in self.aspects[2:]))
+        labels = (translate('Original'), translate('Frei'), *(f'{w}:{h}' for w, h in self.aspects[2:]))
         self.aspect_choice.configure(
             values=(*labels, translate('Benutzerdefiniert …')),
             state='readonly',
@@ -261,7 +261,7 @@ class CropDialog(tk.Toplevel):
     def reset_crop(self):
         if self.image is None:
             return
-        self.aspect_choice.current(0)
+        self.aspect_choice.current(self.aspects.index(None))
         self.custom_entry.pack_forget()
         self.aspect = None
         self.drag = None

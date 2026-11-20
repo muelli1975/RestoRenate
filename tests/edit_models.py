@@ -133,6 +133,7 @@ def check_alignment(directory):
     from crop import Alignment, CropRegion, box_size, fit_aspect, resize_box
     from crop_dialog import CropDialog
     from imaging import align_photo, open_photo
+    from language import translate
 
     for size in ((2, 50), (63, 97), (25, 1)):
         solid = Image.new('RGB', size, 'white')
@@ -149,8 +150,9 @@ def check_alignment(directory):
     try:
         dialog = CropDialog(window, (first, second), {}, first)
         window.update()
-        assert dialog.aspect_choice.current() == 0
-        dialog.aspect_choice.set('Original')
+        assert tuple(dialog.aspect_choice['values'][:2]) == ('Original', translate('Frei'))
+        assert dialog.aspect_choice.get() == translate('Frei') and dialog.aspect is None
+        dialog.aspect_choice.current(0)
         dialog.choose_aspect(None)
         assert dialog.aspect == 'original'
         dialog.box = resize_box(dialog.box, image.size, (1, 1), (120, 60), dialog.aspect)
@@ -166,6 +168,7 @@ def check_alignment(directory):
             assert 1 < min(w, h) <= max(w, h) < 100
             assert abs(w * size[1] - h * size[0]) <= max(size)
         dialog.reset_crop()
+        assert dialog.aspect_choice.get() == translate('Frei') and dialog.aspect is None
         dialog.canvas.focus_force()
         window.update()
         def press(sequence):
@@ -185,7 +188,6 @@ def check_alignment(directory):
             grid_lines = [item for item in dialog.canvas.find_withtag('selection') if dialog.canvas.type(item) == 'line']
             # Two strokes per guide, in both directions.
             assert len(grid_lines) == (32 if value else 8)
-        from language import translate
         from theme import BORDER, GOLD, GOLD_LIGHT
 
         horizon = dialog.angle_slider
