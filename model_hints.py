@@ -3,90 +3,118 @@ import tkinter as tk
 
 # Keep the two portable copies identical so descriptions also work offline.
 DESCRIPTIONS = {
+    # https://openmodeldb.info/models/2x-LiveActionV1-SPAN
     "liveaction": (
-        "Für Realfilm. Vergrößert um 2× und lässt Filmkorn weitgehend stehen.",
-        "For live-action footage. Enlarges by 2× and largely preserves film grain."),
+        "Für Realfilm und Digitalvideo mit Kompressionsartefakten, Skalierungsunschärfe oder hellen Säumen an Kanten. Erhält Filmkorn. Bei starkem Korn lassen sich feine Details nur begrenzt zurückgewinnen.",
+        "For live-action film and digital video with compression artifacts, resizing blur or edge halos. Preserves grain. Heavy grain can obscure fine detail."),
+    # https://openmodeldb.info/models/4x-ClearRealityV1
     "clearreality": (
-        "Für relativ klare, körnungsarme Fotos trainiert. Gibt Gesichter, Haare und Naturmotive weich und natürlich wieder. Bei unscharfem Hintergrund können Artefakte entstehen.",
-        "Trained for relatively clear photos with little grain. Gives faces, hair and nature scenes a soft, natural look. Out-of-focus backgrounds can show artifacts."),
+        "Für relativ klare Aufnahmen mit wenig Korn, besonders Gesichter, Haare und Naturmotive. Ziel ist ein weiches, natürliches Ergebnis. Bei geringer Schärfentiefe oder Bokeh können Artefakte entstehen.",
+        "For fairly clear shots with little grain, especially faces, hair and nature scenes. Aims for a soft, natural look. Shallow depth of field or bokeh can produce artifacts."),
+    # https://openmodeldb.info/models/4x-PurePhoto-span
     "purephoto": (
-        "Für Fotos mit erkennbaren Details, besonders Haaren und Fell. Sehr kleine Vorlagen sind je nach Motiv weniger geeignet.",
-        "For photos with discernible detail, especially hair and fur. Very small inputs may be less suitable, depending on the subject."),
+        "Für Amateur- und Profifotos, besonders für Haare und Tierfell. Auch kleine Fotos können gelingen. Als Richtwert nennt der Autor je nach Motiv etwa 300 Pixel an der kürzeren Seite.",
+        "For amateur and professional photos, especially hair and fur. Small photos can also work. The author suggests roughly 300 pixels on the shorter side, depending on the subject."),
+    # https://openmodeldb.info/models/4x-Nomos8k-span-otf-medium
     "nomos": (
-        "Für Fotos mit mäßigen JPEG-Artefakten, Rauschen oder Unschärfe. Vergrößert um 4×.",
-        "For photos with moderate JPEG artifacts, noise or blur. Enlarges by 4×."),
+        "Vor allem für Fotos mit Qualitätsverlusten. Medium ist die mittlere der drei Varianten und korrigiert zurückhaltender als Strong.",
+        "Primarily for degraded photos. Medium is the middle of three variants and applies a gentler correction than Strong."),
+    # https://openmodeldb.info/models/4x-Nomos8k-span-otf-strong
     "nomos_strong": (
-        "Für stärker beeinträchtigte Fotos. Behandelt Kompression, Rauschen und Unschärfe beim Vergrößern um 4×.",
-        "For more heavily degraded photos. Addresses compression, noise and blur while enlarging by 4×."),
+        "Vor allem für Fotos mit stärkeren Qualitätsverlusten. Strong wurde auf die ausgeprägtesten Bildstörungen der drei Varianten trainiert.",
+        "Primarily for more heavily degraded photos. Of the three variants, Strong was trained with the most severe degradations."),
+    # https://github.com/Sirosky/Upscale-Hub/releases/tag/AniSD
     "anisd": (
-        "Für digital produzierte Anime in SD-Auflösung, etwa von DVD oder aus dem Web. Vergrößert um 2×.",
-        "For standard-definition digital anime, including DVD and web sources. Enlarges by 2×."),
+        "Für digital produzierte SD-Anime von DVD oder aus dem Web. Diese SPAN-Variante empfiehlt der Autor als Allrounder. Sie soll typische Störungen mindern und die Zeichnung ohne Überschärfung erhalten.",
+        "For digital SD anime from DVD or the web. The author recommends this SPAN variant for general use. It aims to reduce common defects while preserving the original drawing without oversharpening."),
+    # https://openmodeldb.info/models/2x-NomosUni-compact-otf-medium
     "nomos_uni": (
-        "Für eine schnelle Vergrößerung um 2× bei mäßigen JPEG-Artefakten, leichtem Rauschen oder leichter Unschärfe.",
-        "For fast 2× enlargement of images with moderate JPEG artifacts, mild noise or slight blur."),
+        "Schneller 2×-Allrounder für mäßige JPEG-Kompression, leichtes Rauschen und etwas Unschärfe.",
+        "Fast general-purpose 2× upscaler for moderate JPEG compression, mild noise and slight blur."),
+    # https://openmodeldb.info/models/4x-LSDIRCompactC3
     "lsdir_c3": (
-        "Für JPEG-komprimiertes Bildmaterial. Das kompakte Modell reduziert Kompressionsartefakte beim Vergrößern um 4×.",
-        "For JPEG-compressed material. This compact model reduces compression artifacts while enlarging by 4×."),
+        "Vergrößert JPEG-komprimierte Fotos um 4×. Der Autor nennt JPEG-Qualitätswerte von 30 bis 100.",
+        "Enlarges JPEG-compressed photos by 4×. The author gives a JPEG quality range of 30 to 100."),
+    # https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.3.0
     "real_general": (
-        "Kompaktes 4×-Allroundmodell aus Real-ESRGAN. Reduziert Rauschen stärker als die WDN-Variante.",
-        "Compact general-purpose 4× model from Real-ESRGAN. Applies stronger denoising than the WDN variant."),
+        "Sehr kleines 4×-Modell für allgemeine Motive. Entrauscht stärker als WDN. Die kleine Modellgröße begrenzt die Restaurierungsleistung.",
+        "Very small 4× model for general scenes. Applies stronger denoising than WDN. Its small size limits restoration capacity."),
+    # https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.3.0
     "real_wdn": (
-        "Die schwächer entrauschende Variante von RealESR General v3. Sinnvoll, wenn mehr Textur oder Körnung erhalten bleiben soll.",
-        "The weaker-denoising variant of RealESR General v3. Useful when you want to retain more texture or grain."),
+        "Sehr kleines 4×-Modell für allgemeine Motive. WDN entrauscht nur schwach und lässt mehr vom ursprünglichen Rauschen stehen.",
+        "Very small 4× model for general scenes. WDN uses weak denoising and retains more of the original noise."),
+    # https://github.com/Sirosky/Upscale-Hub/releases/tag/OpenProteus
     "openproteus": (
-        "Kompaktes 2×-Modell für Videomaterial. Geeignet, wenn eine moderate Vergrößerung ausreicht.",
-        "Compact 2× model for video footage. Useful when moderate enlargement is enough."),
+        "Für hochwertige, rauscharme Realaufnahmen aus Film und Fernsehen in HD oder Full HD. Ziel ist eine originalgetreue Vergrößerung in Richtung 4K, ohne Kanten zu überschärfen.",
+        "For high-quality, low-noise HD or Full HD live-action film and TV. Designed for faithful enlargement toward 4K while avoiding oversharpened edges."),
+    # https://github.com/ckkelvinchan/RealBasicVSR
     "realbasicvsr": (
-        "Für niedrig aufgelöste Videos mit realen Bildstörungen. Nutzt mehrere aufeinanderfolgende Videobilder, um Details zu rekonstruieren.",
-        "For low-resolution video with real-world degradation. Uses consecutive frames to reconstruct detail."),
+        "Für niedrig aufgelöste Videos mit Rauschen und Artefakten. Bereinigt die Einzelbilder, bevor es Informationen aus aufeinanderfolgenden Bildern zur Detailrekonstruktion nutzt.",
+        "For low-resolution video with noise and artifacts. Cleans each frame before combining information across frames to reconstruct detail."),
+    # https://openmodeldb.info/models/4x-Nomos2-hq-mosr
     "Nomos2 HQ MoSR 4×": (
-        "Für saubere, detailreiche Fotos. Auf hochwertigen Eingaben trainiert, um vorhandene Details beim Vergrößern zu erhalten.",
-        "For clean, detailed photos. Trained on high-quality inputs to preserve existing detail during enlargement."),
+        "Für saubere Fotos, trainiert auf Vorlagen ohne künstliche Qualitätsverluste. Bei sichtbaren JPEG-Artefakten empfiehlt der Autor, sie vor dem Vergrößern zu reduzieren.",
+        "For clean photos, trained on inputs without added degradation. For visible JPEG artifacts, the author recommends reducing them before enlargement."),
+    # https://openmodeldb.info/models/4x-Nomos2-hq-dat2
     "Nomos2 HQ DAT2 4×": (
-        "DAT2-Variante für hochwertige Fotos mit wenigen Bildstörungen. Für feine Strukturen in bereits sauberen Vorlagen.",
-        "DAT2 variant for high-quality photos with little degradation. Suited to fine structures in already clean inputs."),
+        "Wie die MoSR-Variante für saubere Fotos entwickelt und trainiert. Diese Variante verwendet DAT2 zur vierfachen Vergrößerung.",
+        "Like the MoSR variant, this model was developed and trained for clean photos. It uses DAT2 for 4× enlargement."),
+    # https://openmodeldb.info/models/4x-FaceUpDAT
     "4× FaceUpDAT": (
-        "Für Gesichter in Fotos guter Ausgangsqualität. Auf dem FaceUp-Porträtdatensatz trainiert.",
-        "For faces in photos with good input quality. Trained on the FaceUp portrait dataset."),
+        "Spezialisiert auf Gesichter in Fotos guter Ausgangsqualität. Auf dem FaceUp-Datensatz trainiert.",
+        "Specializes in faces in good-quality photos. Trained on the FaceUp dataset."),
+    # https://huggingface.co/ByteDance-Seed/SeedVR2-3B
     "SeedVR2 3B INT8": (
-        "Generative Restaurierung. Rekonstruiert auch Details, die in kleinen oder beschädigten Vorlagen nur noch angedeutet sind.",
-        "Generative restoration. Reconstructs detail that is only faintly visible in small or degraded inputs."),
+        "Generatives Modell zur Restaurierung von Bildern und Videos in einem Diffusionsschritt. Hier kommt die quantisierte 3B-Variante zum Einsatz.",
+        "Generative model for restoring images and video in a single diffusion step. This app uses the quantized 3B variant."),
+    # https://github.com/cswry/VOSR
     "VOSR 2.0": (
-        "Für anspruchsvolle Detailrekonstruktion aus niedrig aufgelösten Vorlagen. Feine Strukturen können neu entstehen.",
-        "For detailed reconstruction from low-resolution inputs. Fine structures may be newly generated."),
+        "Generatives Modell für Einzelbilder. Rekonstruiert feine Strukturen in einem Schritt allein aus der Bildvorlage.",
+        "Generative model for still images. Reconstructs fine structures in one step using the image alone."),
+    # https://openmodeldb.info/models/4x-Nomos8kDAT
     "Nomos8kDAT 4×": (
-        "Für kleine oder komprimierte Fotos. Verwendet die DAT-Architektur zur Rekonstruktion fotografischer Details.",
-        "For small or compressed photos. Uses the DAT architecture to reconstruct photographic detail."),
+        "Für die vierfache Vergrößerung von Fotos. Beim Training wurden JPEG-Kompression, Unschärfe und Größenänderungen kombiniert.",
+        "For 4× photo enlargement. Training combined JPEG compression, blur and resizing."),
+    # https://openmodeldb.info/models/4x-RealWebPhoto-v4-dat2
     "RealWebPhoto v4": (
-        "Für niedrig aufgelöste Webfotos mit JPEG-Kompression und anderen Bildstörungen.",
-        "For low-resolution web photos with JPEG compression and other degradation."),
+        "Für Webfotos, auch nach mehrfachem Verkleinern und erneuter JPEG- oder WebP-Kompression. Berücksichtigt außerdem Rauschen und optische Unschärfe.",
+        "For web photos, including repeated resizing and JPEG or WebP recompression. Also addresses noise and lens blur."),
+    # https://github.com/xinntao/Real-ESRGAN
     "Real-ESRGAN": (
-        "Allrounder für reale Bildstörungen wie Unschärfe, Rauschen und Kompressionsartefakte.",
-        "General-purpose restoration for real-world blur, noise and compression artifacts."),
+        "Allrounder für die Restaurierung und Vergrößerung realer Aufnahmen. Auf synthetisch erzeugten Bildstörungen trainiert, darunter Unschärfe, Rauschen und Kompression.",
+        "General-purpose restoration and enlargement for real-world imagery. Trained with synthetic degradation, including blur, noise and compression."),
+    # https://openmodeldb.info/models/4x-NMKD-Siax-CX
     "NMKD Siax 4×": (
-        "Allrounder zum Vergrößern fotografischer Vorlagen und Texturen um 4×.",
-        "General-purpose 4× enlargement for photographic images and textures."),
+        "Allrounder für saubere oder leicht komprimierte Vorlagen. Für JPEG nennt der Autor eine Qualitätseinstellung ab etwa 75.",
+        "General-purpose upscaler for clean or lightly compressed inputs. For JPEG, the author suggests a quality setting of about 75 or higher."),
+    # https://openmodeldb.info/models/4x-Remacri
     "Remacri 4×": (
-        "Allroundmodell für Fotos, Illustrationen und Texturen. Vergrößert um 4×.",
-        "General-purpose model for photos, illustrations and textures. Enlarges by 4×."),
+        "Kombiniert mehrere Modelle, darunter Siax und Superscale. Ziel sind mehr Details und weniger Glättung, besonders bei Hautstrukturen.",
+        "Blends several models, including Siax and Superscale. Aims for more detail and less smoothing, particularly on skin."),
+    # https://openmodeldb.info/models/4x-UltraSharp
     "UltraSharp 4×": (
-        "Für eine betont scharfe Wiedergabe von Kanten und Texturen. Besonders bei bereits nachgeschärften Vorlagen auf Säume achten.",
-        "For pronounced edges and textures. Watch for halos on inputs that have already been sharpened."),
+        "Erzeugt ausgeprägte Details und Texturen. Hauptsächlich auf JPEG-Kompression trainiert, auch für stark komprimierte Vorlagen geeignet.",
+        "Produces pronounced detail and texture. Trained mainly on JPEG compression and can also handle heavily compressed inputs."),
+    # https://openmodeldb.info/models/4x-UltraSharpV2
     "UltraSharp V2": (
-        "Für die detailbetonte Vergrößerung realistischer und gerenderter Bilder. Verwendet das große Modell der V2-Reihe.",
-        "For detail-oriented enlargement of realistic and rendered images. Uses the full-sized V2 model."),
+        "Für realistische Motive, Anime, Cartoons, Illustrationen und Kunstwerke. Die Vollversion verwendet DAT2.",
+        "For realistic imagery, anime, cartoons, illustrations and artwork. The full model uses DAT2."),
+    # https://openmodeldb.info/models/4x-UltraSharpV2
     "UltraSharp V2 Lite": (
-        "Leichtere RealPLKSR-Variante von UltraSharp V2. Für detailbetonte Vergrößerung bei geringerem Rechenaufwand.",
-        "Lighter RealPLKSR variant of UltraSharp V2. For detailed enlargement at lower computational cost."),
+        "Lite-Variante der V2-Reihe für realistische Motive, Anime, Cartoons und Illustrationen. Verwendet die kompaktere RealPLKSR-Architektur.",
+        "Lite variant of the V2 family for realistic imagery, anime, cartoons and illustrations. Uses the smaller RealPLKSR architecture."),
+    # https://github.com/JingyunLiang/SwinIR
     "SwinIR-S 4×": (
-        "Kleine SwinIR-Variante für die Vergrößerung um 4×. Rekonstruiert Bildstrukturen mit einem Transformer.",
-        "Small SwinIR variant for 4× enlargement. Uses a transformer to reconstruct image structure."),
+        "Leichte SwinIR-Variante für klassische 4×-Vergrößerung. Auf DIV2K trainiert, für bikubisch verkleinerte Vorlagen.",
+        "Lightweight SwinIR variant for classical 4× enlargement. Trained on DIV2K for inputs reduced with bicubic downsampling."),
+    # https://github.com/xinntao/Real-ESRGAN/blob/master/docs/model_zoo.md
     "Real-ESRGAN Anime 4×": (
-        "Für Anime und Zeichnungen. Das kompakte 6B-Modell ist auf Linien und Farbflächen abgestimmt.",
-        "For anime and drawings. The compact 6B model is tuned for linework and areas of flat color."),
+        "Für Anime-Illustrationen optimierte 4×-Variante. Verwendet ein kleineres Netz mit sechs Modellblöcken.",
+        "A 4× variant optimized for anime illustrations. Uses a smaller network with six model blocks."),
+    # https://openmodeldb.info/models/4x-AnimeSharp
     "AnimeSharp 4×": (
-        "Für scharf gezeichnete Konturen, Anime und Illustrationen. Vergrößert um 4×.",
-        "For crisp linework, anime and illustrations. Enlarges by 4×."),
+        "Für Anime, auch für Schrift einsetzbar. Kombiniert UltraSharp und TextSharp. Laut Autor liegen die Stärken vor allem bei Anime.",
+        "For anime, with support for text as well. Blends UltraSharp and TextSharp. The author reports better results on anime than on text."),
     "Lanczos": (
         "Klassische Skalierung ohne KI. Interpoliert vorhandene Bildpunkte und eignet sich auch für schnelle Größenanpassungen.",
         "Traditional scaling without AI. Interpolates existing pixels and is useful for quick resizing."),
