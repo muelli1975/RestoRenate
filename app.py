@@ -2444,6 +2444,8 @@ def run_gui():
             window.attributes('-alpha', 0.0)
             window.deiconify()
             window.update()
+            if not window.tk.call('info', 'commands', str(window)):
+                return  # The user closed the window while Tk was processing startup events.
             window.attributes('-alpha', 1.0)
             if suppress_transition:
                 window.after(150, set_window_transitions_disabled, window, False)

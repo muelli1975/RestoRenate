@@ -12,7 +12,7 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_SHA256 = {
-    'windows': '665e54ed65af5474aa5653021b263897ba073f9456defe51afb9ed06a9f3240f',
+    'windows': '81c894f560d12d3c91904e2b9417d8add4cd6cec50151c03ae3baf888249ae5b',
     'linux': '98f09666bb138daade9ae4fb4e6a4e46ecc63f2ed6efbe6a043a10a4810226cf',
     'macos': '3e84419d9afec764b19eda741c50c1b931b169cf567c6d6d1ceecf93875ae6bd',
 }
@@ -83,6 +83,9 @@ def build(base, output, platform, smoke_dir, base_sha256=None):
         shutil.copytree(ROOT / 'assets/luts', package / 'assets/luts', dirs_exist_ok=True)
         shutil.copytree(ROOT / 'licenses', package / 'licenses', dirs_exist_ok=True)
         shutil.copytree(ROOT / 'vendor/ComfyUI-VOSR2', package / 'vendor/ComfyUI-VOSR2', dirs_exist_ok=True)
+        if platform == 'windows':
+            from freeze_windows import build_windows_gui
+            build_windows_gui(package)
         if platform == 'macos' and sys.platform == 'darwin':
             bundle = package / 'RestoRenate.app'
             shutil.copy2(ROOT / 'scripts/macos/Info.plist', bundle / 'Contents/Info.plist')
