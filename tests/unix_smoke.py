@@ -18,7 +18,7 @@ sys.path.insert(0, str(root / '_internal'))
 import app
 from imaging import exiftool_executable, save_result
 from local_backend import Backend
-from methods import (ANIMESHARP, DDCOLOR_TINY, FIBO2_TURBO, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ, NOMOS2_DAT2, NOMOS8K_DAT,
+from methods import (ANIMESHARP, DDCOLOR_TINY, FIBO2_TURBO, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ, MULTIJPG, NOMOS8K_DAT,
                      REALESRGAN_ANIME, SEEDVR2, ULTRASHARP_LITE, UPSCALING, resolve_upscaler)
 from photo_colors import Colorizer
 from portable_setup import CPU, MACOS, MPS, UNIX_RUNTIME, Setup
@@ -97,7 +97,7 @@ def test_upscaling(source, folder):
             (None, '4xNomos2_hq_mosr.safetensors', DOUBLE_SIZE, (128, 80), 'Nomos2-MoSR'),
             (REALESRGAN_ANIME, 'RealESRGAN_x4plus_anime_6B.pth', QUADRUPLE_SIZE, (256, 160), 'RealESRGAN-Anime-4x'),
             (ANIMESHARP, '4x-AnimeSharp.safetensors', QUADRUPLE_SIZE, (256, 160), 'AnimeSharp-4x'),
-            (NOMOS2_DAT2, '4xNomos2_hq_dat2.safetensors', DOUBLE_SIZE, (128, 80), 'Nomos2-DAT2-4x'),
+            (MULTIJPG, '4xNomosUni_span_multijpg.safetensors', DOUBLE_SIZE, (128, 80), 'NomosUni-SPAN-MultiJPG-4x'),
             (NOMOS8K_DAT, '4xNomos8kDAT.safetensors', DOUBLE_SIZE, (128, 80), 'Nomos8kDAT-4x'),
         ]
         if MACOS:

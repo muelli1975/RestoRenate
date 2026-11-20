@@ -15,8 +15,8 @@ root = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).reso
 sys.path.insert(0, str(root / '_internal' if (root / '_internal').is_dir() else root))
 
 from export_metadata import editable_workflow, seed_from_metadata
-from methods import (DDCOLOR_TINY, FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ,
-                     NOMOS2_DAT2, NOMOS8K_DAT, SEEDVR2, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
+from methods import (CLEARREALITY, PUREPHOTO, DDCOLOR_TINY, FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ,
+                     MULTIJPG, NOMOS8K_DAT, SEEDVR2, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
                      VOSR2, available_methods, model_files)
 from portable_setup import CPU, MACOS, MPS, NVIDIA, Setup
 from restoration import report_progress, restore, restoration_graph
@@ -97,7 +97,7 @@ def check_backend_schemas(definitions):
 def check_upscale_graphs(source, directory):
     expected = (333, 200)
     choices = {
-        NOMOS2_DAT2: ('ImageUpscaleWithModel', 13, 1),
+        MULTIJPG: ('ImageUpscaleWithModel', 13, 1),
         NOMOS8K_DAT: ('ImageUpscaleWithModel', 13, 1),
         SEEDVR2: ('SeedVR2PostProcessing', 48, 2),
         VOSR2: ('VOSR2Upscale', 41, 5),
@@ -126,6 +126,181 @@ def check_upscale_graphs(source, directory):
                 assert str(node_id) in json.loads(result.info['prompt'])
             assert set(models) <= record['settings']['models'].keys()
     print('Four upscale models passed both export paths and model-manifest checks.')
+
+
+def check_alignment(directory):
+    import numpy as np
+    from crop import Alignment, CropRegion, box_size, fit_aspect, resize_box
+    from crop_dialog import CropDialog
+    from imaging import align_photo, open_photo
+    from language import translate
+
+    for size in ((2, 50), (63, 97), (25, 1)):
+        solid = Image.new('RGB', size, 'white')
+        alignment = Alignment(-5, -20)
+        fitted = alignment.fit_box(size, (0, 0, *size))
+        assert align_photo(solid, alignment, fitted).getextrema()[0] == (255, 255)
+    first, second = (directory / name for name in ('lines.png', 'other.png'))
+    y, x = np.indices((120, 240))
+    lines = np.where((x % 20 < 3) | (y % 20 < 3), 80, 230).astype('uint8')
+    image = Image.fromarray(lines).convert('RGB')
+    image.save(first)
+    image.save(second)
+    window = tk.Tk()
+    try:
+        dialog = CropDialog(window, (first, second), {}, first)
+        window.update()
+        assert tuple(dialog.aspect_choice['values'][:2]) == ('Original', translate('Frei'))
+        assert dialog.aspect_choice.get() == 'Original' and dialog.aspect == 'original'
+        dialog.box = resize_box(dialog.box, image.size, (1, 1), (120, 60), dialog.aspect)
+        assert box_size(dialog.box) == (120, 60)
+        dialog.load_source(1)
+        dialog.load_source(0)
+        assert dialog.aspect_choice.get() == 'Original' and box_size(dialog.box) == (120, 60)
+        turned = dialog.crops[first].rotated(1)
+        assert turned.aspect == 'original' and turned.size == (60, 120)
+        for size in ((1009, 701), (701, 1009)):
+            box = fit_aspect((2, 8, 60, 70), size, 'original')
+            w, h = box_size(box)
+            assert 1 < min(w, h) <= max(w, h) < 100
+            assert abs(w * size[1] - h * size[0]) <= max(size)
+        dialog.aspect_choice.set(translate('Frei'))
+        dialog.choose_aspect(None)
+        dialog.box = (8, 16, 52, 87)
+        dialog.load_source(1)
+        dialog.load_source(0)
+        assert dialog.aspect is None and dialog.box == (8, 16, 52, 87)
+        dialog.reset_crop()
+        assert dialog.aspect_choice.get() == 'Original' and dialog.aspect == 'original'
+        dialog.canvas.focus_force()
+        window.update()
+        def press(sequence):
+            dialog.canvas.event_generate(sequence)
+            window.update()
+        dialog.box = (40, 20, 200, 100)
+        for step, expected in (('Right', (41, 20, 201, 100)), ('Left', (40, 20, 200, 100))):
+            press(f'<{step}>')
+            assert dialog.box == expected and dialog.alignment == Alignment()
+        press('<Control-Down>')
+        assert dialog.box == (40, 25, 200, 105)
+        press('<Control-Up>')
+        assert dialog.box == (40, 20, 200, 100)
+        for key, value in (('Shift-Right', 0.1), ('Shift-Left', 0)):
+            press(f'<{key}>')
+            assert dialog.angle.get() == value and dialog.box == (40, 20, 200, 100)
+            grid_lines = [item for item in dialog.canvas.find_withtag('selection') if dialog.canvas.type(item) == 'line']
+            # Two strokes per guide, in both directions.
+            assert len(grid_lines) == (32 if value else 8)
+        from theme import BORDER, GOLD, GOLD_LIGHT
+
+        horizon = dialog.angle_slider
+        perspective = dialog.vertical_slider
+        def center_y(widget):
+            return widget.winfo_rooty() + widget.winfo_height() / 2
+
+        for controls in ((horizon, perspective), (horizon, perspective, dialog.side_slider)):
+            dialog.side_slider.set_visible(dialog.side_slider in controls)
+            window.update_idletasks()
+            for control in controls:
+                assert control.slider.winfo_ismapped()
+                for widget in (control.slider, control.entry):
+                    assert abs(center_y(widget) - center_y(dialog.fit_button)) <= 1
+        dialog.set_sliders()
+        assert horizon.caption.cget('text') == translate('Horizont')
+        assert perspective.caption.cget('text') == translate('Perspektive')
+        assert horizon.slider.cget('fg_color') == BORDER
+        assert horizon.slider.cget('button_color') == GOLD_LIGHT
+        horizon.value.set('-2,4')
+        horizon.commit()
+        window.update()
+        assert dialog.angle.get() == -2.4 and dialog.alignment.angle == 2.4
+        assert horizon.value.get() == '-2' + translate(',') + '4°'
+        rail = horizon.slider._canvas
+        segment = tk.Canvas.coords(rail, 'centered_progress')
+        assert rail.itemcget('centered_progress', 'fill') == GOLD
+        perspective.set_value(3)
+        for state in (0, 4):
+            if window.tk.call('tk', 'windowingsystem') == 'x11':
+                rail.event_generate('<Button-4>', state=state)
+            else:
+                rail.event_generate('<MouseWheel>', delta=120, state=state)
+            assert dialog.angle.get() == -2.4
+        if window.tk.call('tk', 'windowingsystem') == 'x11':
+            rail.event_generate('<Button-4>', state=1)
+        else:
+            rail.event_generate('<MouseWheel>', delta=120, state=1)
+        window.update()
+        assert dialog.angle.get() == -2.3
+        horizon.set_value(2.4)
+        window.update()
+        assert tk.Canvas.coords(rail, 'centered_progress')[0] == segment[2]
+        for time in (1000, 1150):
+            rail.event_generate('<ButtonPress-1>', x=10, y=8, time=time)
+            rail.event_generate('<ButtonRelease-1>', x=10, y=8, time=time + 10)
+        window.update()
+        assert dialog.angle.get() == 0 and dialog.vertical.get() == 3
+        assert rail.itemcget('centered_progress', 'state') == 'hidden'
+        perspective.set_value(0)
+        band = Image.new('L', (200, 120))
+        band.paste(255, (55, 0, 145, 120))
+        for key, value in (('Shift-Up', 20), ('Shift-Down', -20)):
+            dialog.vertical.set(0)
+            for _ in range(21):
+                dialog.canvas.event_generate(f'<{key}>')
+            window.update()
+            assert dialog.vertical.get() == value
+            frame = np.asarray(align_photo(band, dialog.alignment))
+            top = (frame[15] > 127).sum()
+            bottom = (frame[-16] > 127).sum()
+            assert top > bottom if value > 0 else bottom > top
+        dialog.reset_crop()
+        dialog.angle.set(2.4)
+        dialog.vertical.set(-16)
+        dialog.change_alignment()
+        window.update()
+        assert dialog.alignment == Alignment(-2.4, 16)
+        fitted = dialog.box
+        w, h = box_size(fitted)
+        assert w < image.width and abs(w * image.height - h * image.width) <= max(image.size) / 2
+        dialog.fit_edges()
+        assert dialog.box == fitted
+        dialog.angle.set(0)
+        dialog.vertical.set(0)
+        dialog.change_alignment()
+        assert dialog.box == (0, 0, *image.size)
+        dialog.angle.set(2.4)
+        dialog.vertical.set(-16)
+        dialog.change_alignment()
+        window.update()
+        assert dialog.box == fitted
+        assert dialog.display.tobytes() == align_photo(dialog.preview_base, dialog.alignment).tobytes()
+        dialog.load_source(1)
+        assert dialog.alignment == Alignment()
+        dialog.load_source(0)
+        assert dialog.alignment == Alignment(-2.4, 16)
+        dialog.apply_crop()
+        crop = dialog.result[1][first]
+        assert second not in dialog.result[1] and crop.size[0] < image.width
+        dialog = CropDialog(window, (first,), {first: crop}, first)
+        dialog.reset_crop()
+        dialog.destroy()
+        assert dialog.result is None
+    finally:
+        window.destroy()
+    pixels, _ = open_photo(first, crop=crop)
+    assert pixels.tobytes() == align_photo(image, crop.alignment).crop(crop.box).tobytes()
+    assert pixels.getextrema()[0][0] > 0
+    rotated, _ = open_photo(first, rotation=1, crop=crop.rotated(1))
+    assert rotated.tobytes() == pixels.transpose(Image.Transpose.ROTATE_270).tobytes()
+    models = {}
+    record = dict(method=UPSCALING, models=models, prompt='', seed=None)
+    output, _ = restore(None, models, first, directory, 'PNG', None, '', None, lambda _: None,
+                        lambda: False, record, method=UPSCALING, size_choice=(CUSTOM_SIZE, max(pixels.size)),
+                        upscaler=LANCZOS, source_crop=crop)
+    with Image.open(output) as saved:
+        assert saved.size == pixels.size and saved.convert('RGB').tobytes() == pixels.tobytes()
+    assert CropRegion.from_record(record) == crop
+    assert record['settings']['source_alignment'] == record['source_alignment']
 
 
 def check_vosr_progress():
@@ -183,7 +358,7 @@ def check_layout(source, language):
             assert tuple(heading for heading, _ in UPSCALE_MENU_SECTIONS[:2]) == (
                 'Saubere Fotos und Porträts', 'Detailrekonstruktion',
             )
-            assert UPSCALERS[0] == NOMOS2_HQ and UPSCALE_MENU_SECTIONS[1][1] == (SEEDVR2, VOSR2)
+            assert UPSCALERS[:2] == (CLEARREALITY, PUREPHOTO) and UPSCALE_MENU_SECTIONS[1][1] == (SEEDVR2, VOSR2)
             assert menu_labels(upscale_menu) == [
                 value for heading, choices in UPSCALE_MENU_SECTIONS
                 for value in (app.translate(heading), *choices)
@@ -191,8 +366,8 @@ def check_layout(source, language):
             assert tuple(upscale_menu.choices) == UPSCALERS
             assert all(upscale_menu.entrycget(app.translate(heading), 'state') == 'disabled'
                        for heading, _ in UPSCALE_MENU_SECTIONS)
-            upscale_menu.invoke(NOMOS2_DAT2)
-            assert gui.upscaler.get() == NOMOS2_DAT2 and has_choice_mark(upscale_menu, upscale_menu, NOMOS2_DAT2)
+            upscale_menu.invoke(MULTIJPG)
+            assert gui.upscaler.get() == MULTIJPG and has_choice_mark(upscale_menu, upscale_menu, MULTIJPG)
             flux = menu.nametowidget(menu.entrycget('FLUX', 'menu'))
             assert [flux.entrycget(index, 'value') for index in range(flux.index('end') + 1)] == [METHODS[FLUX2], METHODS[FLUX3]]
             assert menu.entrycget('FLUX', 'image') == str(menu.blank)
@@ -285,7 +460,7 @@ def check_compute_settings(directory):
     settings = directory / 'compute-settings.json'
     gpu = MPS if MACOS else NVIDIA
     cpu_standard = (MICROSOFT, NO_RESCALE, LANCZOS)
-    gpu_standard = (FIBO2_TURBO, ULTRA_HD, NOMOS2_HQ)
+    gpu_standard = (FIBO2_TURBO, ULTRA_HD, CLEARREALITY)
     detail_preset = (FIBO2_TURBO, ULTRA_HD, VOSR2)
     with patch.object(app, 'SETTINGS', settings), patch.object(app.messagebox, 'showinfo'):
         settings.write_text(json.dumps({'compute': CPU}), encoding='utf-8')
@@ -366,12 +541,24 @@ def check_compute_settings(directory):
 
 
 if __name__ == '__main__':
+    if (root / '_internal').is_dir():
+        expected = set()
+        for name in UPSCALERS:
+            if name in (LANCZOS, SEEDVR2, VOSR2):
+                continue
+            setup = Setup(root, method=UPSCALING, upscaler=name, compute=CPU)
+            for spec in setup.models:
+                path = setup.download(spec, local_only=True)
+                assert path and setup.valid(spec), spec['path']
+                expected.add(path)
+        assert set((root / 'models/upscale_models').iterdir()) == expected
     check_graphs()
     check_vosr_progress()
     with TemporaryDirectory() as directory:
         source = Path(directory) / 'reference.png'
         with Image.new('RGB', (200, 120)) as image:
             image.save(source)
+        check_alignment(Path(directory))
         check_upscale_graphs(source, Path(directory))
         for language in ('de', 'en'):
             check_layout(source, language)

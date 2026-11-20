@@ -2,7 +2,7 @@ name: Build and test Windows x64
 
 on:
   push:
-    branches: [main, codex/restorenate-1.1, codex/restorenate-1.2-test, codex/restorenate-1.3-test, release/v1.2-windows]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
-      RR_WINDOWS_ARCHIVE: ${{ github.ref == 'refs/heads/release/v1.2-windows' && 'RestoRenate_1.2_Windows_x64.zip' || 'RestoRenate_1.3_Test_Windows_x64.zip' }}
+      RR_WINDOWS_ARCHIVE: RestoRenate_1.4_Windows_x64.zip
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,7 +42,7 @@ jobs:
         shell: pwsh
         run: |
           $root = (Resolve-Path 'dist/smoke/RestoRenate').Path
-          & ./tests/windows_exe.ps1 $root '1.3'
+          & ./tests/windows_exe.ps1 $root '1.4'
           & "$root/runtime/python/python.exe" -c "import sys; from pathlib import Path; sys.path.insert(0, 'dist/smoke/RestoRenate/_internal'); from portable_paths import ROOT; from portable_setup import Setup; assert (ROOT / 'assets/restorenate.ico').is_file(); assert Setup().root == ROOT"
           if ($LASTEXITCODE -ne 0) { throw 'Portable layout check failed' }
           $guides = @(Get-ChildItem -LiteralPath $root -File -Filter 'README*' | ForEach-Object Name | Sort-Object)
@@ -73,27 +73,3 @@ jobs:
             dist/${{ env.RR_WINDOWS_ARCHIVE }}
             dist/SHA256SUMS.txt
           if-no-files-found: error
-
-  publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v1.2-windows'
-    needs: verify
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: RestoRenate-Windows-x64
-          path: dist
-      - name: Publish the tested Windows release
-        shell: bash
-        run: |
-          set -euo pipefail
-          (cd dist && sha256sum RestoRenate_1.2_Windows_x64.zip > SHA256SUMS.txt)
-          gh release create v1.2 dist/RestoRenate_1.2_Windows_x64.zip dist/SHA256SUMS.txt \
-            --target "$GITHUB_SHA" --title 'RestoRenate 1.2' --latest \
-            --notes-file .github/release-notes/v1.2.md

@@ -1,15 +1,15 @@
-name: Publish RestoRenate 1.3
+name: Publish RestoRenate 1.4
 
 on:
   push:
-    branches: [release/v1.3]
+    branches: [release/v1.4]
 
 permissions:
   actions: read
   contents: write
 
 concurrency:
-  group: restorenate-release-1.3
+  group: restorenate-release-1.4
   cancel-in-progress: false
 
 jobs:
@@ -53,18 +53,18 @@ jobs:
           for platform in windows linux macos; do
             (cd "artifacts/$platform" && sha256sum --check --strict SHA256SUMS.txt)
           done
-          mv artifacts/windows/RestoRenate_1.3_Test_Windows_x64.zip dist/RestoRenate_1.3_Windows_x64.zip
-          mv artifacts/linux/RestoRenate_1.3_Test_Linux_x64.tar.gz dist/RestoRenate_1.3_Linux_x64.tar.gz
-          mv artifacts/macos/RestoRenate_1.3_Test_macOS_AppleSilicon.zip dist/RestoRenate_1.3_macOS_AppleSilicon.zip
-          (cd dist && sha256sum RestoRenate_1.3_* > SHA256SUMS.txt)
+          mv artifacts/windows/RestoRenate_1.4_Windows_x64.zip dist/RestoRenate_1.4_Windows_x64.zip
+          mv artifacts/linux/RestoRenate_1.4_Linux_x64.tar.gz dist/RestoRenate_1.4_Linux_x64.tar.gz
+          mv artifacts/macos/RestoRenate_1.4_macOS_AppleSilicon.zip dist/RestoRenate_1.4_macOS_AppleSilicon.zip
+          (cd dist && sha256sum RestoRenate_1.4_* > SHA256SUMS.txt)
       - name: Verify the uploaded draft before publishing
         shell: bash
         run: |
           set -euo pipefail
-          tag=v1.3
+          tag=v1.4
           download="https://github.com/$GH_REPO/releases/download/$tag"
           notes=release-notes.md
-          cp .github/release-notes/v1.3.md "$notes"
+          cp .github/release-notes/v1.4.md "$notes"
           {
             printf '\n## Downloads and SHA-256\n\n'
             printf '| File | SHA-256 |\n| --- | --- |\n'
@@ -80,7 +80,7 @@ jobs:
           }
           release=$(release_info)
           if [[ "$release" == '{}' ]]; then
-            gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "RestoRenate 1.3" --notes-file "$notes" --draft
+            gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "RestoRenate 1.4" --notes-file "$notes" --draft
           else
             jq -e --arg sha "$GITHUB_SHA" '.draft and .target_commitish == $sha' <<< "$release"
             gh release upload "$tag" dist/* --clobber

@@ -32,7 +32,7 @@ from portable_setup import (AMD, COMPUTE_DEVICES, CPU, DEFAULT_COMPUTE, GPU_HINT
                             UNIX_RUNTIME, ComputeUnavailable, Setup, SetupCancelled, compute_label)
 from nunchaku_setup import NUNCHAKU_CAPABILITIES, NUNCHAKU_GPU_REQUIRED
 from preload_models import PreloadProgress, choose_preloads, format_download_size, preload_label
-from methods import (COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
+from methods import (CLEARREALITY, COLORIZATION_METHODS, COLORIZATION_NAMES, CPU_METHODS, DDCOLOR, DEFAULT_METHOD, LANCZOS, LICENSES,
                      METHODS, METHOD_MENU_SECTIONS, MICROSOFT, NATIVE_METHODS, NO_PROMPT, QWEN2509_NUNCHAKU,
                      TWO_IMAGE_METHODS, UPSCALE_LICENSES, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING, VOSR2,
                      available_methods, resolve_upscaler, uses_comfy)
@@ -42,6 +42,7 @@ from photo_colors import Colorizer
 from progress_track import ProgressTrack
 from prompt_menu import PromptMenu
 from selection_menu import SelectionMenu
+from model_hints import ModelHints
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
                    TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, attach_tooltip, checkbox,
                    set_control_state)
@@ -99,7 +100,7 @@ MAX_VARIANTS = 100
 VARIANT_COUNTS = {str(count): count for count in range(1, MAX_VARIANTS + 1)}
 GPU_STANDARD_PRESET = {
     'method': DEFAULT_METHOD, 'preset': DEFAULT_PROMPT_NAME, 'prompt': PRESETS[DEFAULT_PROMPT_NAME], 'variants': 1,
-    'size': ULTRA_HD, 'upscaler': resolve_upscaler(DEFAULT_METHOD),
+    'size': ULTRA_HD, 'upscaler': CLEARREALITY,
 }
 BUILTIN_PROCESSING_PRESETS = {
     'Standard': GPU_STANDARD_PRESET,
@@ -410,7 +411,13 @@ class Application:
         self.controls.extend((self.language_button, self.processing_button, self.compute_button))
         self.refresh_processing_menu()
 
-        settings_width, panel_gap, body_padding, preview_padding = 374, 10, 14, 9
+        panel_gap, body_padding, preview_padding = 10, 14, 9
+        panel_inset, field_gap = 12, 5
+        style_font = ttk.Style(self.window).lookup('Input.TMenubutton', 'font') or 'TkDefaultFont'
+        menu_font = font.Font(root=self.window, font=style_font)
+        model_width = max(menu_font.measure(name) for name in UPSCALERS) + 28 + field_gap
+        # The upscaler gets ten of nineteen equal shares in the scaling row.
+        settings_width = max(374, 2 * panel_inset + (19 * model_width + 9) // 10)
         self.preview_width_offset = settings_width + panel_gap + 2 * (body_padding + preview_padding)
         body = tk.Frame(self.window, bg=BG, padx=body_padding)
         body.pack(fill='both', expand=True)
@@ -419,7 +426,7 @@ class Application:
         settings_slot = tk.Frame(body, bg=PANEL, width=settings_width)
         settings_slot.grid(row=0, column=0, sticky='ns', padx=(0, panel_gap))
         settings_slot.pack_propagate(False)
-        left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=12, pady=4 if self.compact_window else 10)
+        left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=panel_inset, pady=4 if self.compact_window else 10)
         left.pack(fill='both', expand=True)
         left.grid_columnconfigure(0, weight=1)
         left.grid_rowconfigure(11, weight=1)
@@ -483,7 +490,9 @@ class Application:
                                               style='Input.TMenubutton')
         self.upscale_menu = SelectionMenu(self.upscale_options, self.upscaler, **dict(menu_colors, disabledforeground=GOLD))
         self.upscale_options.configure(menu=self.upscale_menu)
-        self.upscale_options.grid(row=1, column=0, sticky='ew', padx=(0, 5))
+        self.upscale_options.grid(row=1, column=0, sticky='ew', padx=(0, field_gap))
+        self.upscale_hints = ModelHints(self.upscale_options, lambda: self.upscaler.get() if self.size_choice() != NO_RESCALE else None, lambda: self.language)
+        self.upscale_hints.bind_menu(self.upscale_menu)
         self.refresh_upscale_menu()
         size_row = tk.Frame(scaling, bg=PANEL)
         size_row.grid(row=1, column=1, sticky='ew')
@@ -2329,6 +2338,7 @@ class Application:
         if language == self.language or self.action or self.closing:
             return
         preset, size = self.preset_key(), self.size_choice()
+        self.upscale_hints.hide()
         self.language = configure_language(language)
         self.language_button.configure(text=LANGUAGE_LABELS[self.language])
         for widget, label in self.labels.items():

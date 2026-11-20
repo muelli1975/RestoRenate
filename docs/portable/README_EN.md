@@ -1,13 +1,12 @@
-# RestoRenate 1.3
+# RestoRenate 1.4
 
 Portable edition
 
 ## Start and update
 
 Extract the entire ZIP to a short, writable path such as D:\RestoRenate and
-open RestoRenate.exe. To update, close RestoRenate and copy the contents of the
-RestoRenate folder in the ZIP into the existing program folder. Replace the
-program files. Models can be reused. The settings and custom presets are in
+open RestoRenate.exe. To update, close RestoRenate and extract the new package in full into a fresh folder.
+To keep your setup, copy settings.json, existing models and any processing runtimes you already installed. The settings and custom presets are in
 settings.json at the top level of the program folder.
 
 Linux: Extract the archive and run ./Start.sh in a graphical desktop session.
@@ -19,9 +18,16 @@ Python, Tk and ExifTool are included. ExifTool uses the system Perl.
 Open an image or folder and choose a method. Input formats
 include JPEG, PNG, TIFF, WebP, BMP and AVIF. “Crop …” opens a frame with a
 rule-of-thirds grid. Drag inside the frame to move it or drag a handle to
-resize it. Choose “Free,” a fixed ratio or “Custom …” for a ratio such as
-7:5. Each image in a folder can be selected and cropped individually. “Apply”
-shows the selected image in the main view. “Rotate” turns the input shown there
+resize it. “Original” is the default for new images and after “Reset”.
+The crop keeps the input image’s aspect ratio when resized or when the edges are fitted automatically.
+You can also select “Free,” a fixed ratio or “Custom …” for a ratio such as 7:5. Each image in a folder can be selected and cropped individually. “Apply”
+shows the selected image in the main view. Use “Horizon” and “Perspective”
+to align the image to a 9 × 9 grid. You can enter either value directly. Shift + mouse wheel over the track or handle adjusts the slider by one step.
+Double-click an image editing slider to reset it to its default (Horizon 0°, Perspective 0). With focus in the crop preview, the arrow keys move the crop by one pixel. Hold Ctrl to move it by five pixels.
+Shift + ← / → rotates the image 0.1° counterclockwise / clockwise. Shift + ↑ / ↓ widens the
+top / bottom edge. Enter applies the cut, Esc discards it and F1 opens Controls.
+“Fit within image” trims the selection to valid image pixels.
+The before side of the result comparison shows the straightened crop. “Rotate” turns the input shown there
 90° left or right or 180°. An existing crop rotates with it. Rotation takes
 place before cropping and processing. The original file is preserved. The
 app initially uses the system display language. The interface language can
@@ -48,7 +54,7 @@ prompt label indicates the recommended method for that prompt.
 Use “Presets” to save the method, prompt, variants and applicable output
 and model settings. Loading a preset keeps the selected input and output
 folder. The GPU startup settings and the GPU “Default” preset use Fibo 2.0 Edit Turbo,
-“General-purpose restoration” and Nomos2 HQ MoSR 4×. “Detail reconstruction”
+“General-purpose restoration” and ClearRealityV1 SPAN 4×. “Detail reconstruction”
 is available in the same menu in GPU mode and uses VOSR 2.0 with the
 same processing settings. Saved settings take precedence at startup.
 
@@ -126,17 +132,17 @@ edge” use the entered side length. RestoRenate preserves the aspect ratio.
 input image. AI upscaling applies when enlarging the image. Real-ESRGAN
 selects its 2× or 4× model. Lanczos resizes to the exact output dimensions.
 The GPU restoration default is Fibo 2.0 Edit Turbo with a height of 2160 px
-and Nomos2 HQ MoSR 4×. On GPU, “Upscale only” defaults to the same height and upscaler.
+and ClearRealityV1 SPAN 4×. “Upscale only” defaults to 2160 px and Nomos2 HQ MoSR 4×.
 4× FaceUpDAT is designed for portraits with clean source images.
-The upscaler menu groups models by use. Nomos2 HQ MoSR 4× and Nomos2 HQ DAT2 4×
-are intended for clean photos, and Nomos8kDAT 4× is intended for small or
-compressed photos. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail locally
+The upscaler menu groups models by use. Nomos2 HQ MoSR 4× is designed for clean photos. The small and compressed photos group includes
+Nomos8kDAT 4×, RealWebPhoto v4 and NomosUni SPAN MultiJPG 4×. MultiJPG handles JPEG-compressed and previously resized images. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail locally
 and are downloaded on demand.
 Real-ESRGAN Anime 4× and AnimeSharp 4× are intended for drawings and illustrations.
-Both models are downloaded on demand.
+All classic upscaler weights are bundled in `models/upscale_models`, including both Real-ESRGAN scales. The app verifies the local weights on first use and sets up the processing runtime if needed.
 
-The preview uses the saved file. Drag the divider to compare. Use the wheel
-to zoom and drag with the right mouse button to pan. “100 %” or Ctrl+1 shows
+The preview uses the saved file. Drag the divider with the left mouse button to compare before and after.
+After clicking in the preview, you can also move the divider with ← and →.
+Use the wheel to zoom and drag with the middle mouse button to pan the magnified view. “100 %” or Ctrl+1 shows
 the result at actual pixel size, or the input before a result is available.
 Esc and Ctrl+0 fit the view. Under “Results,” use “Previous”, “Next”, Page Up
 or Page Down to browse saved images and variants. Results from the same input
@@ -199,7 +205,7 @@ Choose from 50 StereoFine LUTs. **C** shows the look on the right.
 Hold **C** with the left or right arrow to choose a look, or with the
 up or down arrow to change its strength. **Apply LUT** adds the look to the next
 model run. **Create LUT variant** saves the selected input or result as a new
-numbered file. **F1** opens the controls.
+numbered file. Shift + mouse wheel over the track or handle adjusts LUT strength by 5 percentage points. Double-click the LUT strength slider to reset it to its default of 100%. **F1** opens Controls.
 
 JPEG and TIFF retain compatible source EXIF data and store RestoRenate settings
 in XMP. PNG uses ComfyUI prompt and workflow metadata. See

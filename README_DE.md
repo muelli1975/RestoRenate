@@ -1,4 +1,4 @@
-# RestoRenate 1.3
+# RestoRenate 1.4
 
 [Downloads und SHA-256](https://github.com/muelli1975/RestoRenate/releases/latest) · [English](README.md) · [Anleitung](docs/portable/README_DE.md)
 
@@ -31,7 +31,13 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 1. Ein Foto oder einen Ordner öffnen. Die Eingabe bei Bedarf beschneiden oder drehen.
 2. Ausgabeziel prüfen, Format und Größe wählen, dann ein Verfahren auswählen. Bei Modellen mit Texteingabe den Prompt bearbeiten.
 3. **Start** wählen. Über **Modelle vorab laden …** lassen sich mehrere Verfahren gemeinsam einrichten. Optionale Lightning-LoRAs stehen unter ihrem Basismodell.
-4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. Die Navigation zeigt beispielsweise **Ergebnis 1/3**. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild↑ / Bild↓** blättern durch die Ergebnisse.
+4. Das gespeicherte Ergebnis mit dem Vorher-Nachher-Regler vergleichen. Die Navigation zeigt beispielsweise **Ergebnis 1/3**. **Strg+1** zeigt 100 %, **Esc** passt die Ansicht ein. **Bild auf / Bild ab** blättern durch die Ergebnisse.
+
+## Neu in 1.4
+
+ClearRealityV1 SPAN 4× ist der Upscaler im GPU-Preset „Standard“. PurePhoto SPAN 4× und NomosUni SPAN MultiJPG 4× ergänzen die Auswahl. Die klassischen Modellgewichte sind in allen drei Paketen enthalten. SeedVR2 und VOSR bleiben optionale Downloads.
+
+Im Beschnittdialog lassen sich Horizont und Perspektive vor der Bearbeitung korrigieren. „Original“ hält das Seitenverhältnis des Eingabebildes. Die Bedienhilfe (F1) zeigt die Maus- und Tastatursteuerung auf Deutsch oder Englisch und passt sich der Fensterbreite an.
 
 ## Neu in 1.3
 
@@ -57,7 +63,7 @@ Standardmäßig landen die Ergebnisse in `output` neben dem gewählten Bild oder
 
 - **Restaurierung und Bearbeitung:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Qwen Image Edit 2509/2511 und FireRed Image Edit 1.1. Unterstützte Edit-Modelle können ein separat drehbares zweites Bild nutzen.
 - **Kolorierung:** DDColor ModelScope, Paper, Artistic und Tiny sowie DeOldify Stable und Artistic. Die Kolorierung läuft auf der CPU. DDColor Paper ist ein optionaler Download.
-- **Hochskalieren:** Nomos2 HQ MoSR 4× ist die GPU-Vorgabe. Das Preset „Detailrekonstruktion“ verwendet VOSR 2.0. Zur Auswahl stehen auch SeedVR2 3B INT8, Nomos2 HQ DAT2, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT für Porträts sowie Real-ESRGAN Anime 4× und AnimeSharp 4× für Zeichnungen und Illustrationen.
+- **Hochskalieren:** Das GPU-Preset „Standard“ verwendet ClearRealityV1 SPAN 4×. Das Preset „Detailrekonstruktion“ verwendet VOSR 2.0. Zur Auswahl stehen auch SeedVR2 3B INT8, NomosUni SPAN MultiJPG 4×, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT für Porträts sowie Real-ESRGAN Anime 4× und AnimeSharp 4× für Zeichnungen und Illustrationen.
 - **Export:** PNG, JPEG mit Qualität 95 und 4:4:4 sowie TIFF mit LZW-Kompression. JPEG und TIFF übernehmen geeignete Metadaten. PNG speichert bei ComfyUI-Verarbeitung den Workflow.
 
 ## Quellcode und Builds

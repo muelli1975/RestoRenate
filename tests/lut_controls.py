@@ -417,6 +417,16 @@ def test_gui(root):
                 assert widget.winfo_rooty() + widget.winfo_height() <= pane.winfo_rooty() + pane.winfo_height()
         controls = gui.look_controls
         original = gui.compare.before_image
+        right = 2 if '<Button-2>' in window.event_info('<<ContextMenu>>') else 3
+        middle = 5 - right
+        view = gui.compare
+        view.zoom = 4.0
+        for button in (right, middle):
+            view.event_generate(f'<ButtonPress-{button}>', x=40, y=40)
+            view.event_generate(f'<B{button}-Motion>', x=65, y=65)
+            view.event_generate(f'<ButtonRelease-{button}>', x=65, y=65)
+            assert (view.pan != (0.0, 0.0)) == (button == middle)
+        view.fit(notice_ms=0)
         assert controls.save_button.instate(['disabled'])
         assert controls.choose.instate(['disabled'])
         caption_geometry = gui.result_caption.winfo_rootx(), gui.result_caption.winfo_width()
@@ -475,7 +485,25 @@ def test_gui(root):
         assert controls.look().key == 'classic_cinema' and controls.hover is None
         assert menu.entrycget(cinema_entry, 'image') == str(menu.check) and has_choice_mark(menu, cinema, cinema_index)
         assert menu.entrycget(film_entry, 'image') == str(menu.blank) and not has_choice_mark(menu, film, film_index)
-        controls.step(-5)
+        track = controls.slider._canvas
+        x11 = window.tk.call('tk', 'windowingsystem') == 'x11'
+        def wheel_down(state):
+            if x11:
+                track.event_generate('<Button-5>', state=state)
+            else:
+                track.event_generate('<MouseWheel>', delta=-120, state=state)
+            window.update()
+        for state in (0, 4):
+            wheel_down(state)
+            assert controls.look().strength == 100
+        wheel_down(1)
+        assert controls.look().strength == 95
+        for click_time in (1000, 1150):
+            track.event_generate('<ButtonPress-1>', x=10, y=8, time=click_time)
+            track.event_generate('<ButtonRelease-1>', x=10, y=8, time=click_time + 10)
+        window.update()
+        assert controls.look().strength == 100
+        wheel_down(1)
         assert controls.look().strength == 95
         entry = gui.seed_entry
         entry.focus_set()
@@ -539,11 +567,63 @@ def test_gui(root):
         help_button.invoke()
         help_dialog = gui.controls_help
         assert help_dialog.title() == 'Bedienhilfe'
+        panels = next(child for child in help_dialog.winfo_children() if hasattr(child, 'panels'))
         window.update()
-        gui.change_language('en')
-        assert gui.controls_help is help_dialog and help_dialog.title() == 'Controls'
-        assert any(child.cget('text') == 'Close' for child in help_dialog.winfo_children()
-                   if isinstance(child, ttk.Button))
+        assert panels.canvas.winfo_viewable()
+        assert all(label.winfo_viewable() for label, _ in panels.labels)
+
+        def check_guide(columns, scrolling):
+            window.update()
+            assert panels.canvas.winfo_viewable()
+            assert panels.columns == columns
+            assert bool(panels.scrollbar.winfo_ismapped()) == scrolling
+            assert panels.panels[1].grid_info()['column'] == columns - 1
+            for label, _ in panels.labels:
+                assert label.winfo_ismapped()
+                x = label.winfo_rootx() - panels.canvas.winfo_rootx()
+                assert 0 <= x <= panels.canvas.winfo_width() - label.winfo_width()
+                assert label.winfo_reqwidth() <= label.winfo_width(), (
+                    label.cget('text'), label.winfo_reqwidth(), label.winfo_width(), panels.columns)
+                assert label.winfo_reqheight() <= label.winfo_height()
+                if not scrolling:
+                    y = label.winfo_rooty() - panels.canvas.winfo_rooty()
+                    assert 0 <= y <= panels.canvas.winfo_height() - label.winfo_height()
+            for key, action in (
+                ('Umschalt + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen'),
+                ('Doppelklick', 'Bildbearbeitungsregler auf Standardwert zurücksetzen'),
+            ):
+                matches = [description for shortcut, description in panels.rows
+                           if shortcut.cget('text') == app.translate(key)]
+                assert len(matches) == 1 and matches[0].cget('text') == app.translate(action)
+            labels = {w.cget('text') for w, _ in panels.labels}
+            for source in ('Ansicht und Ergebnisse', 'LUT', 'Ausschnitt', 'Bildbearbeitungsregler',
+                           'Horizont und Perspektive', 'Mit der linken Maustaste im Rahmen ziehen',
+                           'An einem Griff ziehen', '3 × 3 beim Beschneiden, 9 × 9 beim Ausrichten'):
+                assert app.translate(source) in labels
+            assert any(child.cget('text') == app.translate('Schließen') for child in help_dialog.winfo_children()
+                       if isinstance(child, ttk.Button))
+
+        for lang in ('de', 'en'):
+            gui.change_language(lang)
+            assert gui.controls_help is help_dialog and help_dialog.title() == app.translate('Bedienhilfe')
+            help_dialog.geometry('976x680')
+            check_guide(2, False)
+            help_dialog.geometry('520x390')
+            check_guide(1, True)
+            panels.canvas.yview_moveto(0)
+            shortcut = panels.rows[0][0]
+            if window.tk.call('tk', 'windowingsystem') == 'x11':
+                shortcut.event_generate('<Button-5>')
+            else:
+                shortcut.event_generate('<MouseWheel>', delta=-120)
+            window.update()
+            assert panels.canvas.yview()[0] > 0
+            panels.canvas.yview_moveto(1)
+            window.update()
+            assert panels.canvas.yview()[1] == 1.0
+            assert panels.canvas.yview()[0] > 0
+        help_dialog.geometry('976x680')
+        check_guide(2, False)
         help_dialog.destroy()
 
         gui.caption.set('Long file name ' * 40 + 'result.png · 80 × 48 px')

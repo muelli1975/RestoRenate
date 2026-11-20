@@ -1,11 +1,13 @@
 """Crop geometry in upright, full-resolution source pixels."""
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from fractions import Fraction
-from math import sqrt
+from math import ceil, cos, floor, radians, sin, sqrt
+from typing import Literal
 import re
 
 Box = tuple[int, int, int, int]
 Aspect = tuple[int, int]
+AspectChoice = Aspect | Literal['original']
 
 ASPECTS = ((1, 1), (3, 2), (2, 3), (4, 3), (3, 4), (5, 4), (4, 5), (16, 9), (9, 16))
 
@@ -29,10 +31,74 @@ def parse_aspect(text: str, size: tuple[int, int]) -> Aspect:
 
 
 @dataclass(frozen=True)
+class Alignment:
+    angle: float = 0.0
+    vertical: int = 0
+    horizontal: int = 0
+
+    def __post_init__(self):
+        if (type(self.angle) not in (int, float) or not -5 <= self.angle <= 5
+                or any(type(v) is not int or abs(v) > 20 for v in (self.vertical, self.horizontal))):
+            raise ValueError('Invalid image alignment')
+
+    def rotated(self):
+        return Alignment(self.angle, self.horizontal, -self.vertical)
+
+    def coefficients(self, size):
+        # Pillow maps from corrected pixel coordinates back to the upright source.
+        cx, cy = size[0] / 2, size[1] / 2
+        # At ±20 the two opposing edges differ in scale by a factor of 1.2.
+        dx, dy = self.horizontal / (220 * cx), self.vertical / (220 * cy)
+        c, s = cos(radians(self.angle)), sin(radians(self.angle))
+        z = 1 - dx * cx - dy * cy
+        return tuple(v / z for v in (
+            c + cx * dx, -s + cx * dy, cx * z - c * cx + s * cy,
+            s + cy * dx, c + cy * dy, cy * z - s * cx - c * cy, dx, dy))
+
+    def fit_box(self, size, box):
+        """Keep this aspect ratio while bringing all four corners inside the photo."""
+        if self == Alignment():
+            return box
+        w, h = size
+        a, b, c, d, e, f, g, k = self.coefficients(size)
+
+        def fits(candidate):
+            left, top, right, bottom = candidate
+            for x in (left + 0.5, right - 0.5):
+                for y in (top + 0.5, bottom - 0.5):
+                    z = 1 + g * x + k * y
+                    if not (0 <= a * x + b * y + c < w * z and 0 <= d * x + e * y + f < h * z):
+                        return False
+            return True
+
+        def shrink(scale):
+            cx, cy = w / 2, h / 2
+            left = min(w - 1, ceil(cx + (box[0] - cx) * scale))
+            top = min(h - 1, ceil(cy + (box[1] - cy) * scale))
+            right = max(left + 1, floor(cx + (box[2] - cx) * scale))
+            bottom = max(top + 1, floor(cy + (box[3] - cy) * scale))
+            return left, top, right, bottom
+
+        if fits(box):
+            return box
+        lo, hi = 0., 1.
+        best = (w // 2, h // 2, w // 2 + 1, h // 2 + 1)
+        for _ in range(32):
+            mid = (lo + hi) / 2
+            candidate = shrink(mid)
+            if fits(candidate):
+                best, lo = candidate, mid
+            else:
+                hi = mid
+        return best
+
+
+@dataclass(frozen=True)
 class CropRegion:
     original_size: tuple[int, int]
     box: Box
-    aspect: Aspect | None = None
+    aspect: AspectChoice | None = None
+    alignment: Alignment = Alignment()
 
     def __post_init__(self):
         if (len(self.original_size) != 2 or len(self.box) != 4
@@ -51,20 +117,35 @@ class CropRegion:
         width, height = self.original_size
         left, top, right, bottom = self.box
         aspect = self.aspect
+        alignment = self.alignment
         for _ in range(turns % 4):
             left, top, right, bottom = height - bottom, left, height - top, right
             width, height = height, width
-            if aspect is not None:
+            alignment = alignment.rotated()
+            if isinstance(aspect, tuple):
                 aspect = aspect[::-1]
-        return CropRegion((width, height), (left, top, right, bottom), aspect)
+        return CropRegion((width, height), (left, top, right, bottom), aspect, alignment)
+
+    def record(self, prefix):
+        data = {prefix + '_crop': self.box}
+        if self.aspect is not None:
+            data[prefix + '_crop_aspect'] = self.aspect
+        if self.alignment != Alignment():
+            data[prefix + '_alignment'] = asdict(self.alignment)
+        return data
 
     @classmethod
     def from_record(cls, record):
         size, box = record.get('original_size'), record.get('source_crop')
         if isinstance(size, (tuple, list)) and isinstance(box, (tuple, list)):
             try:
-                return cls(tuple(size), tuple(box))
-            except ValueError:
+                aspect = record.get('source_crop_aspect')
+                if isinstance(aspect, (list, tuple)) and len(aspect) == 2 and all(type(n) is int and n > 0 for n in aspect):
+                    aspect = tuple(aspect)
+                elif aspect != 'original':
+                    aspect = None
+                return cls(tuple(size), tuple(box), aspect, Alignment(**record.get('source_alignment', {})))
+            except (ValueError, TypeError):
                 pass
         return None
 
@@ -80,7 +161,15 @@ def move_box(box: Box, size: tuple[int, int], dx: int, dy: int) -> Box:
     return left + dx, top + dy, right + dx, bottom + dy
 
 
-def aspect_size(scale: float, available: tuple[int, int], aspect: Aspect) -> tuple[int, int]:
+def aspect_units(aspect: AspectChoice, size: tuple[int, int]) -> tuple[float, float]:
+    if aspect == 'original':
+        # A large or coprime source ratio must still allow small, pixel-rounded crops.
+        short_side = min(size)
+        return size[0] / short_side, size[1] / short_side
+    return aspect
+
+
+def aspect_size(scale: float, available: tuple[int, int], aspect: tuple[float, float]) -> tuple[int, int]:
     """Fit proportionally before rounding, so the limiting side can touch the image edge."""
     aw, ah = aspect
     max_width, max_height = available
@@ -89,18 +178,18 @@ def aspect_size(scale: float, available: tuple[int, int], aspect: Aspect) -> tup
     return clamp(round(scale * aw), 1, max_width), clamp(round(scale * ah), 1, max_height)
 
 
-def fit_aspect(box: Box, size: tuple[int, int], aspect: Aspect) -> Box:
+def fit_aspect(box: Box, size: tuple[int, int], aspect: AspectChoice) -> Box:
     """Keep the center where possible and round the dimensions to pixels."""
     width, height = box_size(box)
-    aw, ah = aspect
-    width, height = aspect_size(sqrt(width * height / (aw * ah)), size, aspect)
+    aw, ah = aspect_units(aspect, size)
+    width, height = aspect_size(sqrt(width * height / (aw * ah)), size, (aw, ah))
     left = clamp(round((box[0] + box[2] - width) / 2), 0, size[0] - width)
     top = clamp(round((box[1] + box[3] - height) / 2), 0, size[1] - height)
     return left, top, left + width, top + height
 
 
 def resize_box(box: Box, size: tuple[int, int], handle: tuple[int, int],
-               pointer: tuple[int, int], aspect: Aspect | None) -> Box | None:
+               pointer: tuple[int, int], aspect: AspectChoice | None) -> Box | None:
     """Keep the opposite edge or corner anchored during resizing."""
     horizontal, vertical = handle
     x = box[2] if horizontal < 0 else box[0]
@@ -110,7 +199,7 @@ def resize_box(box: Box, size: tuple[int, int], handle: tuple[int, int],
     dx = (pointer[0] - x) * horizontal
     dy = (pointer[1] - y) * vertical
     if aspect:
-        aw, ah = aspect
+        aw, ah = aspect_units(aspect, size)
         if not max_width or not max_height:
             return None
         old_width, old_height = box_size(box)
@@ -120,7 +209,7 @@ def resize_box(box: Box, size: tuple[int, int], handle: tuple[int, int],
         horizontal_change = abs(dx - old_width) / aw
         vertical_change = abs(dy - old_height) / ah
         scale = dx / aw if horizontal_change >= vertical_change else dy / ah
-        width, height = aspect_size(scale, (max_width, max_height), aspect)
+        width, height = aspect_size(scale, (max_width, max_height), (aw, ah))
     else:
         if (horizontal and not max_width) or (vertical and not max_height):
             return None

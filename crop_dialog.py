@@ -4,9 +4,11 @@ from tkinter import messagebox, ttk
 
 from PIL import Image, ImageEnhance, ImageTk
 
-from crop import ASPECTS, CropRegion, box_size, clamp, fit_aspect, move_box, parse_aspect, resize_box
-from imaging import open_photo
+from alignment_slider import AlignmentSlider
+from crop import ASPECTS, Alignment, CropRegion, box_size, clamp, fit_aspect, move_box, parse_aspect, resize_box
+from imaging import align_photo, open_photo
 from language import translate
+from look_controls import controls_dialog
 from theme import APP_BG, GOLD_LIGHT, MUTED
 
 CORNERS = ((-1, -1), (1, -1), (-1, 1), (1, 1))
@@ -23,7 +25,7 @@ class CropDialog(tk.Toplevel):
     def __init__(self, parent, sources, crops, selected, *, rotations=None):
         super().__init__(parent)
         self.transient(parent)
-        self.title(translate('Bild beschneiden'))
+        self.title(translate('Ausrichten und beschneiden'))
         self.configure(bg=APP_BG)
         self.minsize(520, 410)
         width = min(1020, self.winfo_screenwidth() - 80)
@@ -40,6 +42,9 @@ class CropDialog(tk.Toplevel):
         self.drag = None
         self.display = None
         self.display_box = None
+        self.preview_base = None
+        self.alignment = Alignment()
+        self.redraw_job = None
 
         toolbar = tk.Frame(self, bg=APP_BG, padx=12, pady=10)
         toolbar.pack(fill='x')
@@ -58,6 +63,23 @@ class CropDialog(tk.Toplevel):
         self.custom_entry.bind('<Return>', self.enter_custom_aspect)
         self.custom_entry.bind('<FocusOut>', lambda event: self.commit_custom_aspect(report_error=False))
 
+        alignment_bar = tk.Frame(self, bg=APP_BG, padx=12)
+        alignment_bar.pack(fill='x')
+        self.angle = tk.DoubleVar(self, 0.)
+        self.vertical = tk.IntVar(self, 0)
+        self.horizontal = tk.IntVar(self, 0)
+        def slider(column, label, variable, limit, step):
+            return AlignmentSlider(alignment_bar, column, label, variable, limit, step, self.change_alignment,
+                                   lambda: self.canvas.focus_set())
+
+        self.angle_slider = slider(0, 'Horizont', self.angle, 5, 0.1)
+        self.vertical_slider = slider(1, 'Perspektive', self.vertical, 20, 1)
+        # A quarter turn takes an existing vertical correction onto the horizontal axis.
+        self.side_slider = slider(2, 'Horizontale Perspektive', self.horizontal, 20, 1)
+        self.side_slider.set_visible(False)
+        self.fit_button = ttk.Button(alignment_bar, text=translate('Ränder einpassen'), command=self.fit_edges)
+        self.fit_button.grid(row=1, column=3)
+
         self.canvas = tk.Canvas(self, bg=APP_BG, highlightthickness=0, takefocus=True)
         self.canvas.pack(fill='both', expand=True)
         self.canvas.bind('<Configure>', self.draw_image)
@@ -67,6 +89,8 @@ class CropDialog(tk.Toplevel):
         self.canvas.bind('<Motion>', self.hover)
         for key, dx, dy in (('Left', -1, 0), ('Right', 1, 0), ('Up', 0, -1), ('Down', 0, 1)):
             self.canvas.bind(f'<{key}>', lambda event, dx=dx, dy=dy: self.nudge(dx, dy))
+            self.canvas.bind(f'<Control-{key}>', lambda event, dx=dx, dy=dy: self.nudge(5 * dx, 5 * dy))
+            self.canvas.bind(f'<Shift-{key}>', lambda event, dx=dx, dy=dy: self.step_alignment(dx, -dy))
 
         footer = tk.Frame(self, bg=APP_BG, padx=12, pady=10)
         footer.pack(fill='x')
@@ -79,6 +103,7 @@ class CropDialog(tk.Toplevel):
         self.reset_button = ttk.Button(footer, text=translate('Zurücksetzen'), command=self.reset_crop)
         self.reset_button.pack(side='right')
 
+        self.bind('<F1>', self.open_help)
         self.bind('<Escape>', lambda event: self.destroy())
         self.bind('<Return>', lambda event: self.apply_crop())
         self.load_source(self.sources.index(selected))
@@ -94,16 +119,17 @@ class CropDialog(tk.Toplevel):
                 self.apply_button.configure(state='disabled')
                 self.reset_button.configure(state='disabled')
                 self.aspect_choice.configure(state='disabled')
-            messagebox.showerror(translate('Bild beschneiden'), str(exc), parent=self)
+            messagebox.showerror(translate('Ausrichten und beschneiden'), str(exc), parent=self)
             return
         self.store_crop()
         if self.image is not None:
             self.image.close()
         self.index, self.image = index, image
+        self.preview_base = None
         region = self.crops.get(self.sources[index])
-        self.aspects = (None, *(aspect for aspect in ASPECTS
+        self.aspects = ('original', None, *(aspect for aspect in ASPECTS
                                if aspect[0] <= image.width and aspect[1] <= image.height))
-        labels = tuple(translate('Frei') if aspect is None else f'{aspect[0]}:{aspect[1]}' for aspect in self.aspects)
+        labels = (translate('Original'), translate('Frei'), *(f'{w}:{h}' for w, h in self.aspects[2:]))
         self.aspect_choice.configure(
             values=(*labels, translate('Benutzerdefiniert …')),
             state='readonly',
@@ -115,7 +141,9 @@ class CropDialog(tk.Toplevel):
         if region and region.original_size == image.size:
             self.box, self.aspect = region.box, region.aspect
         else:
-            self.box, self.aspect = (0, 0, *image.size), None
+            self.box, self.aspect = (0, 0, *image.size), 'original'
+        self.alignment = region.alignment if region and region.original_size == image.size else Alignment()
+        self.set_sliders()
         if self.aspect in self.aspects:
             self.aspect_choice.current(self.aspects.index(self.aspect))
             self.custom_entry.pack_forget()
@@ -137,11 +165,14 @@ class CropDialog(tk.Toplevel):
     def store_crop(self):
         if self.image is None:
             return
+        for control in (self.angle_slider, self.vertical_slider, self.side_slider):
+            if control.value.get() != control.formatted_value():
+                control.commit()
         source = self.sources[self.index]
-        if self.box == (0, 0, *self.image.size):
+        if self.box == (0, 0, *self.image.size) and self.alignment == Alignment():
             self.crops.pop(source, None)
         else:
-            self.crops[source] = CropRegion(self.image.size, self.box, self.aspect)
+            self.crops[source] = CropRegion(self.image.size, self.box, self.aspect, self.alignment)
 
     def choose_aspect(self, _event):
         index = self.aspect_choice.current()
@@ -159,7 +190,7 @@ class CropDialog(tk.Toplevel):
         self.draw_selection()
 
     def show_custom_aspect(self):
-        width, height = self.aspect or box_size(self.box)
+        width, height = self.image.size if self.aspect == 'original' else self.aspect or box_size(self.box)
         self.custom_entry.delete(0, 'end')
         self.custom_entry.insert(0, f'{width}:{height}')
         self.custom_entry.pack(side='left', padx=(6, 0))
@@ -186,15 +217,75 @@ class CropDialog(tk.Toplevel):
             self.canvas.focus_set()
         return 'break'
 
+    def open_help(self, _event):
+        help_window = controls_dialog(self)
+        help_window.wait_visibility()
+        help_window.grab_set()
+        self.wait_window(help_window)
+        if self.winfo_exists():
+            self.grab_set()
+            self.canvas.focus_set()
+        return 'break'
+
+    def step_alignment(self, roll, perspective):
+        self.angle.set(clamp(round(self.angle.get() + 0.1 * roll, 1), -5, 5))
+        self.vertical.set(clamp(self.vertical.get() + perspective, -20, 20))
+        self.change_alignment()
+        return 'break'
+
+    def set_sliders(self):
+        # The controls express forward corrections. Pillow stores the inverse mapping.
+        self.angle.set(-self.alignment.angle)
+        self.vertical.set(-self.alignment.vertical)
+        self.horizontal.set(-self.alignment.horizontal)
+        self.side_slider.set_visible(bool(self.alignment.horizontal))
+
+    def change_alignment(self, _value=None):
+        if self.image is None:
+            return
+        updated = Alignment(-round(self.angle.get(), 1), -self.vertical.get(), -self.horizontal.get())
+        if updated == self.alignment:
+            return
+        full = (0, 0, *self.image.size)
+        if self.aspect in (None, 'original') and self.box == self.fitted_box(self.alignment, full):
+            self.box = self.fitted_box(updated, full)
+        self.alignment = updated
+        if self.redraw_job is None:
+            self.redraw_job = self.after_idle(self.draw_image)
+
+    def fitted_box(self, alignment, box):
+        safe = alignment.fit_box(self.image.size, box)
+        if self.aspect != 'original':
+            return safe
+        # Fit the original proportions inside the safe area, allowing for whole pixels.
+        w, h = box_size(safe)
+        iw, ih = self.image.size
+        if 2 * abs(w * ih - h * iw) <= max(iw, ih):
+            return safe
+        if w * ih <= h * iw:
+            height = max(1, round(w * ih / iw))
+            top = safe[1] + (h - height) // 2
+            return safe[0], top, safe[2], top + height
+        width = max(1, round(h * iw / ih))
+        left = safe[0] + (w - width) // 2
+        return left, safe[1], left + width, safe[3]
+
+    def fit_edges(self):
+        if self.image is not None:
+            self.box = self.fitted_box(self.alignment, self.box)
+            self.draw_selection()
+
     def reset_crop(self):
         if self.image is None:
             return
-        self.aspect_choice.current(0)
+        self.aspect = 'original'
+        self.aspect_choice.current(self.aspects.index(self.aspect))
         self.custom_entry.pack_forget()
-        self.aspect = None
         self.drag = None
         self.box = (0, 0, *self.image.size)
-        self.draw_selection()
+        self.alignment = Alignment()
+        self.set_sliders()
+        self.draw_image()
 
     def apply_crop(self):
         if self.image is not None and self.commit_custom_aspect():
@@ -203,11 +294,17 @@ class CropDialog(tk.Toplevel):
             self.destroy()
 
     def destroy(self):
+        if self.redraw_job is not None:
+            self.after_cancel(self.redraw_job)
+            self.redraw_job = None
         if self.image is not None:
             self.image.close()
         super().destroy()
 
     def draw_image(self, _event=None):
+        if self.redraw_job is not None:
+            self.after_cancel(self.redraw_job)
+            self.redraw_job = None
         if self.image is None:
             return
         width, height = self.canvas.winfo_width(), self.canvas.winfo_height()
@@ -217,7 +314,10 @@ class CropDialog(tk.Toplevel):
         dw, dh = (max(1, round(length * scale)) for length in self.image.size)
         x, y = (width - dw) // 2, (height - dh) // 2
         self.display_box = x, y, dw, dh
-        self.display = self.image.resize((dw, dh), Image.Resampling.LANCZOS, reducing_gap=3)
+        if self.preview_base is None or self.preview_base.size != (dw, dh):
+            self.preview_base = self.image.resize((dw, dh), Image.Resampling.LANCZOS, reducing_gap=3)
+        self.display = (self.preview_base if self.alignment == Alignment()
+                        else align_photo(self.preview_base, self.alignment))
         dark = ImageEnhance.Brightness(self.display).enhance(0.38)
         self.canvas.delete('all')
         self.background_photo = ImageTk.PhotoImage(dark, master=self.canvas)
@@ -250,9 +350,10 @@ class CropDialog(tk.Toplevel):
         self.canvas.delete('selection')
         self.selection_photo = ImageTk.PhotoImage(selection, master=self.canvas)
         self.canvas.create_image(left, top, image=self.selection_photo, anchor='nw', tags='selection')
-        for step in (1, 2):
-            gx = left + (right - left) * step / 3
-            gy = top + (bottom - top) * step / 3
+        divisions = 9 if self.alignment != Alignment() else 3
+        for step in range(1, divisions):
+            gx = left + (right - left) * step / divisions
+            gy = top + (bottom - top) * step / divisions
             for line in ((gx, top, gx, bottom), (left, gy, right, gy)):
                 self.canvas.create_line(*line, fill='#202020', width=2, tags='selection')
                 self.canvas.create_line(*line, fill='#f3f3f3', tags='selection')

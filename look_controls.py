@@ -7,6 +7,7 @@ import customtkinter as ctk
 from language import translate
 from looks import Look, catalog
 from selection_menu import SelectionMenu
+from slider_gestures import bind_slider_wheel, bind_slider_reset
 from theme import BORDER, DISABLED, GOLD, GOLD_LIGHT, PANEL_BG, SECONDARY_BG, TEXT, attach_tooltip, checkbox, set_control_state
 
 SECTIONS = {
@@ -36,8 +37,6 @@ class LookControls:
         self.used_c = False
         self.result = False
         self.available = False
-        self.wheel_remainder = 0
-        self.resetting_slider = False
         frame = self.frame = tk.Frame(parent, bg=PANEL_BG)
         frame.columnconfigure(0, weight=1)
         row = self.settings = tk.Frame(frame, bg=PANEL_BG)
@@ -70,12 +69,8 @@ class LookControls:
                                        command=app.create_lut_variant, style='Input.TButton')
         self.save_button.grid(row=0, column=1, sticky='e')
         frame.bind('<Configure>', self.fit_actions)
-        self.slider.bind('<Double-Button-1>', self.begin_slider_reset)
-        self.slider.bind('<ButtonRelease-1>', self.finish_slider_reset)
-        self.slider.bind('<MouseWheel>', self.wheel)
-        self.slider.bind('<Button-4>', lambda event: self.wheel(event, 1))
-        self.slider.bind('<Button-5>', lambda event: self.wheel(event, -1))
-        self.slider.bind('<Leave>', self.clear_wheel, add='+')
+        bind_slider_wheel(self.slider, self.can_edit_strength, lambda ticks: self.step(5 * ticks))
+        bind_slider_reset(self.slider, self.can_edit_strength, lambda: self.set_strength(100))
         app.window.bind('<KeyPress>', self.key_press, add='+')
         app.window.bind('<KeyRelease>', self.key_release, add='+')
         app.window.bind('<FocusOut>', self.check_focus, add='+')
@@ -179,7 +174,7 @@ class LookControls:
         self.refresh()
 
     def set_strength(self, value):
-        if self.available and self.enabled.get():
+        if self.can_edit_strength():
             self.strength.set(round(float(value)))
             self.update_kept_look()
             self.refresh()
@@ -187,35 +182,8 @@ class LookControls:
     def step(self, amount):
         self.set_strength(max(0, min(100, round(self.strength.get()) + amount)))
 
-    def begin_slider_reset(self, _event):
-        self.resetting_slider = self.available and self.enabled.get()
-        if self.resetting_slider:
-            return 'break'
-
-    def finish_slider_reset(self, _event):
-        if self.resetting_slider:
-            self.resetting_slider = False
-            self.set_strength(100)
-            return 'break'
-
-    def clear_wheel(self, _event=None):
-        self.wheel_remainder = 0
-
-    def wheel(self, event, ticks=None):
-        if not event.state & 0x0001 or not self.available or not self.enabled.get():
-            self.clear_wheel()
-            return None
-        if ticks is None:
-            delta = event.delta
-            if self.slider.tk.call('tk', 'windowingsystem') == 'win32':
-                delta += self.wheel_remainder
-                ticks = int(delta / 120)
-                self.wheel_remainder = delta - 120 * ticks
-            else:
-                ticks = (delta > 0) - (delta < 0)
-        if ticks:
-            self.step(5 * ticks)
-        return 'break'
+    def can_edit_strength(self):
+        return self.available and self.enabled.get()
 
     @staticmethod
     def is_text_input(widget):
@@ -312,47 +280,195 @@ def open_controls(app):
     if current is not None and current.winfo_exists():
         current.destroy()
         return 'break'
-    dialog = app.controls_help = tk.Toplevel(app.window)
-    dialog.transient(app.window)
+    app.controls_help = controls_dialog(app.window)
+    return 'break'
+
+
+# Sections stay together when the two panels stack on a narrow screen.
+GUIDE_COLUMNS = (
+    (
+        ('Ansicht und Ergebnisse', (
+            ('Trennlinie mit der linken Maustaste ziehen', 'Vorher und Nachher vergleichen'),
+            ('← / →', 'Nach einem Klick ins Vorschaubild die Trennlinie verschieben'),
+            ('Mausrad', 'Ansichtszoom'),
+            ('Mitteltaste + Ziehen', 'Vergrößerte Ansicht verschieben'),
+            ('Strg + 1', '100-%-Ansicht'),
+            ('Z halten', 'Temporäre 100-%-Ansicht'),
+            ('Strg + 0 / Doppelklick / Esc', 'Ansicht einpassen'),
+            ('Bild auf / Bild ab', 'Vorheriges / nächstes Ergebnis'),
+            ('F1', 'Bedienhilfe öffnen oder schließen'),
+        )),
+        ('LUT', (
+            ('C', 'LUT ein-/ausschalten'),
+            ('C halten + ← / →', 'Durch Looks blättern'),
+            ('C halten + ↑ / ↓', 'LUT-Stärke um 5 Prozentpunkte ändern'),
+            ('Beibehalten', 'LUT und Stärke für das nächste Eingabebild übernehmen'),
+        )),
+        ('Bildbearbeitungsregler', (
+            ('Umschalt + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen'),
+            ('Doppelklick', 'Bildbearbeitungsregler auf Standardwert zurücksetzen'),
+        )),
+    ),
+    (
+        ('Ausschnitt', (
+            ('Original (Standard)', 'Seitenverhältnis des Eingabebildes beibehalten'),
+            ('Mit der linken Maustaste im Rahmen ziehen', 'Ausschnitt verschieben'),
+            ('An einem Griff ziehen', 'Größe des Ausschnitts ändern'),
+            ('Pfeiltasten', 'Ausschnitt um 1 px verschieben'),
+            ('Strg + Pfeiltasten', 'Ausschnitt um 5 px verschieben'),
+            ('Ränder einpassen', 'Leere Bildränder aus dem Ausschnitt nehmen'),
+            ('Enter / Esc', 'Im Bild: übernehmen / verwerfen'),
+        )),
+        ('Horizont und Perspektive', (
+            ('Umschalt + ← / →', 'Horizont um 0,1° nach links / rechts drehen'),
+            ('Umschalt + ↑ / ↓', 'Obere / untere Bildkante verbreitern'),
+            ('Zahlenfeld + Enter', 'Eingegebenen Wert anwenden'),
+            ('Raster', '3 × 3 beim Beschneiden, 9 × 9 beim Ausrichten'),
+        )),
+    ),
+)
+
+
+class GuidePanels(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg=PANEL_BG)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+        self.canvas = tk.Canvas(self, bg=PANEL_BG, highlightthickness=0, width=1, height=1)
+        self.canvas.grid(row=0, column=0, sticky='nsew')
+        self.scrollbar = ttk.Scrollbar(self, orient='vertical', command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.body = tk.Frame(self.canvas, bg=PANEL_BG)
+        self.window_item = self.canvas.create_window(0, 0, anchor='nw', window=self.body)
+        self.bold = font.nametofont('TkDefaultFont').copy()
+        self.bold.configure(weight='bold')
+        self.unit = self.bold.measure('0')
+        self.panels = []
+        self.labels = []
+        self.rows = []
+        self.columns = 0
+        self.pending_scroll = None
+        for sections in GUIDE_COLUMNS:
+            panel = tk.Frame(self.body, bg=SECONDARY_BG, padx=10, pady=6)
+            panel.columnconfigure(1, weight=1)
+            self.panels.append(panel)
+            row = 0
+            for heading, entries in sections:
+                if row:
+                    tk.Frame(panel, bg=BORDER, height=1).grid(row=row, column=0, columnspan=2,
+                                                               sticky='ew', pady=(7, 6))
+                    row += 1
+                title = tk.Label(panel, bg=SECONDARY_BG, fg=TEXT, font=self.bold)
+                title.grid(row=row, column=0, columnspan=2, sticky='w', pady=(1, 4))
+                self.labels.append((title, heading))
+                row += 1
+                for key, action in entries:
+                    shortcut = tk.Label(panel, bg=SECONDARY_BG, fg=GOLD_LIGHT, font=self.bold, justify='right',
+                                        padx=0, borderwidth=0, highlightthickness=0)
+                    shortcut.grid(row=row, column=0, sticky='ne', padx=(0, 9))
+                    description = tk.Label(panel, bg=SECONDARY_BG, fg=TEXT, justify='left',
+                                           padx=0, borderwidth=0, highlightthickness=0)
+                    description.grid(row=row, column=1, sticky='nw')
+                    self.labels.extend(((shortcut, key), (description, action)))
+                    self.rows.append((shortcut, description))
+                    row += 1
+                if heading == 'Ausschnitt':
+                    note = tk.Label(panel, bg=SECONDARY_BG, fg=TEXT, justify='left',
+                                    padx=0, borderwidth=0, highlightthickness=0)
+                    note.grid(row=row, column=0, columnspan=2, sticky='w', pady=(4, 0))
+                    self.labels.append((note, 'Pfeiltasten wirken, wenn das Beschnittbild den Fokus hat.'))
+                    self.focus_note = note
+                    row += 1
+        self.canvas.bind('<Configure>', lambda event: self.arrange(event.width, self.winfo_width()))
+        self.body.bind('<Configure>', self.schedule_scroll)
+        parent.bind('<MouseWheel>', self.scroll)
+        parent.bind('<Button-4>', lambda event: self.scroll(event, -1))
+        parent.bind('<Button-5>', lambda event: self.scroll(event, 1))
+
+    def arrange(self, canvas_width, viewport_width):
+        # Use the full viewport to keep the breakpoint stable when the scrollbar appears.
+        columns = 2 if viewport_width >= max(760, 84 * self.unit) else 1
+        if self.columns != columns:
+            self.columns = columns
+            for index, panel in enumerate(self.panels):
+                panel.grid(row=index // columns, column=index % columns, sticky='nsew',
+                           padx=((4, 0) if index else (0, 4)) if columns == 2 else 0,
+                           pady=(8 if index and columns == 1 else 0, 0))
+            for col in range(2):
+                self.body.columnconfigure(col, weight=int(col < columns),
+                                          uniform='guide' if col < columns else '')
+        width = max(60, (canvas_width - 8 * (columns - 1)) // columns - 20)
+        keys = min(19 * self.unit, int(width * .40))
+        self.focus_note.configure(wraplength=width - 4)
+        for key, action in self.rows:
+            key.configure(wraplength=max(24, keys - 12))
+            action.configure(wraplength=max(30, width - keys - 5))
+        self.canvas.itemconfigure(self.window_item, width=canvas_width)
+        self.schedule_scroll()
+
+    def schedule_scroll(self, _event=None):
+        if self.pending_scroll is None:
+            self.pending_scroll = self.after_idle(self.update_scroll)
+
+    def update_scroll(self):
+        self.pending_scroll = None
+        self.canvas.configure(scrollregion=self.canvas.bbox(self.window_item))
+        needed = self.body.winfo_reqheight() > self.canvas.winfo_height()
+        if needed and not self.scrollbar.winfo_manager():
+            self.scrollbar.grid(row=0, column=1, sticky='ns')
+        elif not needed and self.scrollbar.winfo_manager():
+            self.scrollbar.grid_remove()
+            self.canvas.yview_moveto(0)
+
+    def scroll(self, event, steps=None):
+        if not self.scrollbar.winfo_ismapped():
+            return
+        if steps is None:
+            steps = (event.delta < 0) - (event.delta > 0)
+        self.canvas.yview_scroll(steps, 'units')
+        return 'break'
+
+
+def controls_dialog(parent):
+    dialog = tk.Toplevel(parent)
+    dialog.withdraw()
+    dialog.transient(parent)
     dialog.configure(bg=PANEL_BG)
-    dialog.resizable(False, False)
-    body = tk.Frame(dialog, bg=SECONDARY_BG, padx=16, pady=12, highlightthickness=1, highlightbackground=BORDER)
-    body.pack(padx=12, pady=12)
-    shortcuts = (
-        ('C', '', 'LUT ein / aus'),
-        ('C halten', ' + ← / →', 'Look zurück / vor'),
-        ('C halten', ' + ↑ / ↓', 'LUT-Stärke ändern'),
-        ('Umschalt + Mausrad', '', 'LUT-Stärke ändern'),
-        ('Doppelklick auf den Regler', '', 'Auf 100 % zurücksetzen'),
-        ('Z halten', '', '100-%-Ansicht halten'),
-        ('Bild↑ / Bild↓', '', 'Vorheriges / nächstes Ergebnis'),
-        ('F1', '', 'Bedienhilfe öffnen'),
-    )
-    rows = []
-    for row in range(len(shortcuts)):
-        key_label = tk.Label(body, fg=GOLD_LIGHT, bg=SECONDARY_BG)
-        key_label.grid(row=row, column=0, sticky='w', padx=(0, 14), pady=2)
-        description_label = tk.Label(body, fg=TEXT, bg=SECONDARY_BG)
-        description_label.grid(row=row, column=1, sticky='w', pady=2)
-        rows.append((key_label, description_label))
-    hint = tk.Label(body, fg=TEXT, bg=SECONDARY_BG, justify='left', wraplength=380)
-    hint.grid(row=len(shortcuts), column=0, columnspan=2, sticky='w', pady=(8, 0))
+    heading_font = font.nametofont('TkDefaultFont').copy()
+    heading_font.configure(size=17, weight='bold')
+    dialog.heading_font = heading_font
+    heading = tk.Label(dialog, fg=GOLD_LIGHT, bg=PANEL_BG, font=heading_font)
+    heading.pack(anchor='w', padx=16, pady=(10, 6))
     close_button = ttk.Button(dialog, command=dialog.destroy)
-    close_button.pack(pady=(0, 12))
+    close_button.pack(side='bottom', pady=(6, 10))
+    panels = GuidePanels(dialog)
+    panels.pack(fill='both', expand=True, padx=12)
 
     def localize(_event=None):
-        dialog.title(translate('Bedienhilfe'))
-        for (key_label, description_label), (key, suffix, description) in zip(rows, shortcuts):
-            key_label.configure(text=translate(key) + suffix)
-            description_label.configure(text=translate(description))
-        hint.configure(text=translate(
-            '„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.'
-        ))
+        title = translate('Bedienhilfe')
+        dialog.title(title)
+        heading.configure(text=title)
+        for label, text in panels.labels:
+            label.configure(text=translate(text))
         close_button.configure(text=translate('Schließen'))
 
     dialog.bind('<<LanguageChanged>>', localize)
-    localize()
     dialog.bind('<Escape>', lambda _event: dialog.destroy())
     dialog.bind('<F1>', lambda _event: dialog.destroy())
+    localize()
+    width = min(max(900, 110 * panels.unit), dialog.winfo_screenwidth() - 48)
+    height_limit = max(220, dialog.winfo_screenheight() - 88)
+    dialog.minsize(min(400, width), min(250, height_limit))
+    dialog.geometry(f'{width}x{height_limit}')
+    dialog.update_idletasks()
+    # A withdrawn toplevel may not have laid out its canvas yet.
+    panels.arrange(width - 24, width - 24)
+    dialog.update_idletasks()
+    height = min(height_limit, panels.body.winfo_reqheight() + heading.winfo_reqheight()
+                 + close_button.winfo_reqheight() + 38)
+    x = max(0, min(dialog.winfo_screenwidth() - width, parent.winfo_rootx() + (parent.winfo_width() - width) // 2))
+    y = max(0, min(dialog.winfo_screenheight() - height - 48, parent.winfo_rooty() + (parent.winfo_height() - height) // 2))
+    dialog.geometry(f'{width}x{height}+{x}+{y}')
+    dialog.deiconify()
     dialog.focus_set()
-    return 'break'
+    return dialog

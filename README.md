@@ -1,4 +1,4 @@
-# RestoRenate 1.3
+# RestoRenate 1.4
 
 [Downloads and SHA-256](https://github.com/muelli1975/RestoRenate/releases/latest) · [Deutsch](README_DE.md) · [User guide](docs/portable/README_EN.md)
 
@@ -33,6 +33,12 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 3. Select **Start**. Use **Download models …** to prepare multiple methods in one pass. Optional Lightning LoRAs are listed beneath their base models.
 4. Compare the saved result with the before-and-after slider. The navigation shows **Result 1/3**, for example. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
 
+## New in 1.4
+
+The GPU Default preset uses ClearRealityV1 SPAN 4×. PurePhoto SPAN 4× and NomosUni SPAN MultiJPG 4× join the selection. All three packages include the classic upscaler weights. SeedVR2 and VOSR remain optional downloads.
+
+The crop dialog can straighten the horizon and correct perspective before processing. Original keeps the input image’s aspect ratio. The controls guide (F1) groups mouse and keyboard gestures by task and adapts to the window width in English and German.
+
 ## New in 1.3
 
 Upscalers are grouped by use. Nomos2 HQ DAT2 and Nomos8kDAT join the photo models. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail in a single step. All four can upscale a photo directly or process the result of a restoration.
@@ -57,7 +63,7 @@ By default, results go into `output` next to the selected image or inside the se
 
 - **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
 - **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.
-- **Upscaling:** Nomos2 HQ MoSR 4× is the GPU default. The “Detail reconstruction” preset uses VOSR 2.0. The selection also includes SeedVR2 3B INT8, Nomos2 HQ DAT2, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT for portraits, and Real-ESRGAN Anime 4× and AnimeSharp 4× for drawings and illustrations.
+- **Upscaling:** The GPU “Default” preset uses ClearRealityV1 SPAN 4×. The “Detail reconstruction” preset uses VOSR 2.0. The selection also includes SeedVR2 3B INT8, NomosUni SPAN MultiJPG 4×, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT for portraits, and Real-ESRGAN Anime 4× and AnimeSharp 4× for drawings and illustrations.
 - **Export:** PNG, JPEG quality 95 with 4:4:4 chroma and TIFF with LZW compression. JPEG and TIFF copy compatible source metadata. PNG stores a ComfyUI workflow when applicable.
 
 ## Source and builds

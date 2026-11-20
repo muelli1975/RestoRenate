@@ -1,4 +1,4 @@
-# RestoRenate 1.3
+# RestoRenate 1.4
 
 Portable Ausgabe
 
@@ -6,8 +6,8 @@ Portable Ausgabe
 
 Die gesamte ZIP in einen kurzen, beschreibbaren Pfad entpacken, etwa
 D:\RestoRenate, und RestoRenate.exe öffnen. Für ein Update RestoRenate beenden
-und den Inhalt des Ordners RestoRenate aus der ZIP in den bestehenden
-Programmordner kopieren und die Programmdateien ersetzen.
+und das neue Paket vollständig in einen neuen Ordner entpacken. Bei Bedarf settings.json,
+vorhandene Modelle und bereits eingerichtete Rechenlaufzeiten aus der alten Installation übernehmen.
 Modelle lassen sich weiterverwenden. Einstellungen und eigene Presets stehen
 in settings.json direkt im Programmordner.
 
@@ -19,11 +19,18 @@ Python, Tk und ExifTool sind enthalten. ExifTool verwendet das Perl des Systems.
 
 Ein Bild oder einen Ordner öffnen und ein Verfahren auswählen.
 Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …“
-öffnet einen Rahmen mit Drittelraster. Zum Verschieben innerhalb des Rahmens
-ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverhältnis
-oder „Benutzerdefiniert …“ für ein Verhältnis wie 7:5 wählen. In einem Ordner lässt sich
+öffnet einen Rahmen mit Drittel-Raster. Zum Verschieben innerhalb des Rahmens
+ziehen, zur Größenänderung an den Griffen. „Original“ ist bei neuen Bildern und nach „Zurücksetzen“ voreingestellt.
+Der Rahmen behält beim Beschneiden und beim automatischen Einpassen der Ränder das Seitenverhältnis des Eingabebildes bei.
+Zur Wahl stehen auch „Frei“, feste Formate und „Benutzerdefiniert …“ für ein Verhältnis wie 7:5. In einem Ordner lässt sich
 jedes Bild einzeln auswählen und beschneiden. „Übernehmen“ zeigt das ausgewählte
-Bild in der Hauptansicht. „Drehen“ dreht das dort angezeigte Eingabebild um
+Bild in der Hauptansicht. „Horizont“ und „Perspektive“ richten das Bild an einem 9 × 9-Raster aus.
+Der Wert lässt sich direkt eingeben. Umschalt + Mausrad über Schiene oder Griff ändert den Wert um einen Schritt.
+Ein Doppelklick setzt den jeweiligen Bildbearbeitungsregler auf seinen Standardwert zurück (Horizont 0°, Perspektive 0). Mit dem Fokus auf dem Bild verschieben die Pfeiltasten den Ausschnitt um einen Pixel, mit Strg um fünf Pixel.
+Umschalt + ← / → dreht das Bild um 0,1° nach links / rechts. Umschalt + ↑ / ↓ verbreitert
+die obere / untere Bildkante. Enter übernimmt, Esc verwirft und F1 öffnet die Bedienhilfe.
+„Ränder einpassen“ verkleinert den gewählten Ausschnitt, bis er vollständig im Bild liegt.
+Die Vorher-Seite des Ergebnisvergleichs zeigt den ausgerichteten Ausschnitt. „Drehen“ dreht das dort angezeigte Eingabebild um
 90° nach links oder rechts oder um 180°. Ein bestehender Beschnitt dreht mit.
 Die App dreht vor dem Beschnitt und der Bearbeitung. Die Originaldatei bleibt
 erhalten. Die Menüsprache folgt beim ersten Start der Systemsprache und
@@ -53,7 +60,7 @@ einem Prompt kennzeichnet das dafür empfohlene Verfahren.
 Unter „Presets“ lassen sich das Verfahren, der Prompt, die Varianten und
 die zugehörigen Ausgabe- und Modelleinstellungen speichern. Eingabe und Ausgabeordner
 bleiben beim Laden ausgewählt. Die GPU-Startvorgabe und „Standard“ im GPU-Modus
-verwenden Fibo 2.0 Edit Turbo, „Allround“ und Nomos2 HQ MoSR 4×.
+verwenden Fibo 2.0 Edit Turbo, „Allround“ und ClearRealityV1 SPAN 4×.
 „Detailrekonstruktion“ steht im selben Menü im GPU-Modus zur Auswahl und
 verwendet bei denselben Einstellungen VOSR 2.0 als Upscaler.
 Gespeicherte Einstellungen haben beim Start Vorrang.
@@ -140,21 +147,22 @@ verwenden eine eingegebene Seitenlänge. Die App hält das Seitenverhältnis.
 arbeitet mit dem Eingabebild. KI-Upscaling wird beim Vergrößern verwendet.
 Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
 Zielgröße an. Die GPU-Voreinstellung für Restaurierung ist Fibo 2.0 Edit Turbo
-mit 2160 px Bildhöhe und Nomos2 HQ MoSR 4×. „Nur hochskalieren“ verwendet
-im GPU-Modus dieselbe Voreinstellung für Zielgröße und Upscaler.
+mit 2160 px Bildhöhe und ClearRealityV1 SPAN 4×. „Nur hochskalieren“ verwendet
+als eigene Vorgabe 2160 px Bildhöhe und Nomos2 HQ MoSR 4×.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
 Das Upscaler-Menü gruppiert die Modelle nach Einsatzbereich.
-Nomos2 HQ MoSR 4× und Nomos2 HQ DAT2 4× sind für saubere Fotos gedacht. Nomos8kDAT 4× ist für kleine
-und komprimierte Fotos gedacht. SeedVR2 3B INT8 und VOSR 2.0 sind
+Nomos2 HQ MoSR 4× eignet sich für saubere Fotos. Unter „Kleine und komprimierte Fotos“ stehen
+Nomos8kDAT 4×, RealWebPhoto v4 und NomosUni SPAN MultiJPG 4×. MultiJPG eignet sich für JPEG-komprimiertes und bereits skaliertes Bildmaterial. SeedVR2 3B INT8 und VOSR 2.0 sind
 lokale Verfahren zur Detailrekonstruktion und werden bei Bedarf geladen.
 Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
-gedacht. Beide Modelle werden bei Bedarf heruntergeladen.
+gedacht. Alle klassischen Upscaler sind unter `models/upscale_models` im Paket enthalten, einschließlich beider Real-ESRGAN-Größen. Ihre Gewichte werden beim ersten Prüfen lokal erkannt. Die Verarbeitungslaufzeit wird bei Bedarf eingerichtet.
 
-Die Vorschau zeigt die gespeicherte Datei. Zum Vergleichen die Trennlinie
-ziehen. Das Mausrad zoomt, die rechte Maustaste verschiebt die Ansicht.
+Die Vorschau zeigt die gespeicherte Datei. Die Trennlinie mit der linken Maustaste ziehen, um Vorher und Nachher zu vergleichen.
+Nach einem Klick ins Vorschaubild lässt sich die Trennlinie auch mit ← und → verschieben.
+Das Mausrad zoomt. Ziehen mit gedrückter Mitteltaste verschiebt die vergrößerte Ansicht.
 „100 %“ oder Strg+1 zeigt das Ergebnis in Pixelgröße, vor dem ersten Ergebnis
 die Eingabe. Esc und Strg+0 passen die Ansicht ein. Unter „Ergebnisse“ mit
-„Zurück“, „Weiter“ oder Bild↑ und Bild↓ durch fertige Bilder und Varianten
+„Zurück“, „Weiter“ oder Bild auf und Bild ab durch fertige Bilder und Varianten
 blättern. Bei Varianten derselben Eingabe mit gleichem Beschnitt und gleicher Drehung bleiben
 Zoom und Bildausschnitt erhalten. "Ergebnis weiterbearbeiten" übernimmt
 das angezeigte Ergebnis als Eingabebild.
@@ -213,6 +221,6 @@ verfügbar. Quellen und Lizenz stehen in `THIRD_PARTY.txt`.
 
 Bild 2 kann unabhängig beschnitten und gedreht werden. Den Ausgabeausschnitt bestimmt Bild 1. Zwei Montage-Presets und zusätzliche Satzbausteine stehen im Prompt-Menü bereit.
 
-50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
+50 StereoFine-LUTs stehen zur Auswahl. **C** zeigt den Look rechts an, **C** mit Links/Rechts wählt den Look und **C** mit Hoch/Runter ändert seine Stärke. Umschalt + Mausrad über Schiene oder Griff ändert die LUT-Stärke um 5 Prozentpunkte. Ein Doppelklick setzt den Bildbearbeitungsregler für die LUT-Stärke auf seinen Standardwert von 100 % zurück. **LUT anwenden** nimmt den Look in den nächsten Modelllauf auf. **Variante mit LUT erstellen** speichert die gewählte Eingabe oder das Ergebnis als neue Datei mit Folgenummer. **F1** öffnet die Bedienhilfe.
 
 JPEG und TIFF übernehmen geeignete Original-EXIF-Daten und speichern die RestoRenate-Einstellungen in XMP. PNG verwendet die Prompt- und Workflow-Metadaten von ComfyUI. Die Quellen und Lizenzen sind unter assets/luts/CREDITS.md dokumentiert.
