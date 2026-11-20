@@ -142,6 +142,7 @@ Real-ESRGAN Anime 4× and AnimeSharp 4× are intended for drawings and illustrat
 All classic upscaler weights are bundled in `models/upscale_models`, including both Real-ESRGAN scales. The app verifies the local weights on first use and sets up the processing runtime if needed.
 
 The preview uses the saved file. Drag the divider with the left mouse button to compare before and after.
+After clicking in the preview, you can also move the divider with ← and →.
 Use the wheel to zoom and drag with the middle mouse button to pan the magnified view. “100 %” or Ctrl+1 shows
 the result at actual pixel size, or the input before a result is available.
 Esc and Ctrl+0 fit the view. Under “Results,” use “Previous”, “Next”, Page Up

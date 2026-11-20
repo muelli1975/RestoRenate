@@ -289,6 +289,7 @@ GUIDE_COLUMNS = (
     (
         ('Ansicht und Ergebnisse', (
             ('Trennlinie mit der linken Maustaste ziehen', 'Vorher und Nachher vergleichen'),
+            ('← / →', 'Nach einem Klick ins Vorschaubild die Trennlinie verschieben'),
             ('Mausrad', 'Ansichtszoom'),
             ('Mitteltaste + Ziehen', 'Vergrößerte Ansicht verschieben'),
             ('Strg + 1', '100-%-Ansicht'),

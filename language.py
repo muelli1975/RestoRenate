@@ -31,6 +31,7 @@ def translate(message, *values):
 
 ENGLISH = {
     'Ansicht und Ergebnisse': 'View and results',
+    'Nach einem Klick ins Vorschaubild die Trennlinie verschieben': 'Click in the preview, then use the arrow keys to move the divider',
     'Trennlinie mit der linken Maustaste ziehen': 'Drag the divider with the left mouse button',
     'Vorher und Nachher vergleichen': 'Compare before and after',
     'Mausrad': 'Mouse wheel',
