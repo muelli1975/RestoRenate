@@ -558,8 +558,13 @@ def test_gui(root):
         help_dialog = gui.controls_help
         assert help_dialog.title() == 'Bedienhilfe'
         panels = next(child for child in help_dialog.winfo_children() if hasattr(child, 'panels'))
+        window.update()
+        assert panels.canvas.winfo_viewable()
+        assert all(label.winfo_viewable() for label, _ in panels.labels)
+
         def check_guide(columns, scrolling):
             window.update()
+            assert panels.canvas.winfo_viewable()
             assert panels.columns == columns
             assert bool(panels.scrollbar.winfo_ismapped()) == scrolling
             assert panels.panels[1].grid_info()['column'] == columns - 1

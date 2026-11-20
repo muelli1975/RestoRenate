@@ -346,6 +346,7 @@ class GuidePanels(tk.Frame):
         self.labels = []
         self.rows = []
         self.columns = 0
+        self.pending_scroll = None
         for sections in GUIDE_COLUMNS:
             panel = tk.Frame(self.body, bg=SECONDARY_BG, padx=10, pady=6)
             panel.columnconfigure(1, weight=1)
@@ -375,7 +376,7 @@ class GuidePanels(tk.Frame):
                     self.focus_note = note
                     row += 1
         self.canvas.bind('<Configure>', lambda event: self.arrange(event.width, self.winfo_width()))
-        self.body.bind('<Configure>', self.update_scroll)
+        self.body.bind('<Configure>', self.schedule_scroll)
         parent.bind('<MouseWheel>', self.scroll)
         parent.bind('<Button-4>', lambda event: self.scroll(event, -1))
         parent.bind('<Button-5>', lambda event: self.scroll(event, 1))
@@ -399,13 +400,19 @@ class GuidePanels(tk.Frame):
             key.configure(wraplength=max(24, keys - 12))
             action.configure(wraplength=max(30, width - keys - 5))
         self.canvas.itemconfigure(self.window_item, width=canvas_width)
-        self.update_scroll()
+        self.schedule_scroll()
 
-    def update_scroll(self, _event=None):
+    def schedule_scroll(self, _event=None):
+        if self.pending_scroll is None:
+            self.pending_scroll = self.after_idle(self.update_scroll)
+
+    def update_scroll(self):
+        self.pending_scroll = None
         self.canvas.configure(scrollregion=self.canvas.bbox(self.window_item))
-        if self.body.winfo_reqheight() > self.canvas.winfo_height():
+        needed = self.body.winfo_reqheight() > self.canvas.winfo_height()
+        if needed and not self.scrollbar.winfo_manager():
             self.scrollbar.grid(row=0, column=1, sticky='ns')
-        else:
+        elif not needed and self.scrollbar.winfo_manager():
             self.scrollbar.grid_remove()
             self.canvas.yview_moveto(0)
 
