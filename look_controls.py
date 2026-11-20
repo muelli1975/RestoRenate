@@ -333,6 +333,7 @@ def controls_dialog(parent):
         ('Bild↑ / Bild↓', '', 'Vorheriges / nächstes Ergebnis'),
         ('F1', '', 'Bedienhilfe öffnen'),
         ('Pfeiltasten', '', 'Im Beschnittbild: Ausschnitt um 1 px verschieben'),
+        ('Strg + Pfeiltasten', '', 'Im Beschnittbild: Ausschnitt um 5 px verschieben'),
         ('Umschalt', ' + ← / →', 'Im Beschnittbild: Horizont um 0,1° nach links / rechts drehen'),
         ('Umschalt', ' + ↑ / ↓', 'Perspektive: obere / untere Bildkante verbreitern'),
         ('Umschalt + Mausrad', '', 'Beschnittregler um einen Schritt verstellen'),

@@ -23,9 +23,9 @@ Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …�
 ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverhältnis
 oder „Benutzerdefiniert …“ für ein Verhältnis wie 7:5 wählen. In einem Ordner lässt sich
 jedes Bild einzeln auswählen und beschneiden. „Übernehmen“ zeigt das ausgewählte
-Bild in der Hauptansicht. „Horizont“ und „Perspektive“ richten das Bild am Raster aus.
+Bild in der Hauptansicht. „Horizont“ und „Perspektive“ richten das Bild an einem 9 × 9-Raster aus.
 Der Wert lässt sich direkt eingeben. Umschalt + Mausrad über dem Regler ändert ihn um einen Schritt,
-ein Doppelklick auf den Regler setzt ihn auf null. Mit dem Fokus auf dem Bild verschieben die Pfeiltasten den Ausschnitt um einen Pixel.
+ein Doppelklick auf den Regler setzt ihn auf null. Mit dem Fokus auf dem Bild verschieben die Pfeiltasten den Ausschnitt um einen Pixel, mit Strg um fünf Pixel.
 Umschalt + ← / → dreht das Bild um 0,1° nach links / rechts. Umschalt + ↑ / ↓ verbreitert
 die obere / untere Bildkante. Enter übernimmt, Esc verwirft und F1 öffnet die Bedienhilfe.
 „Ränder einpassen“ verkleinert den gewählten Ausschnitt, bis er vollständig im Bild liegt.
@@ -154,7 +154,7 @@ Nomos2 HQ MoSR 4× eignet sich für saubere Fotos. Unter „Kleine und komprimie
 Nomos8kDAT 4×, RealWebPhoto v4 und NomosUni SPAN MultiJPG 4×. MultiJPG eignet sich für JPEG-komprimiertes und bereits skaliertes Bildmaterial. SeedVR2 3B INT8 und VOSR 2.0 sind
 lokale Verfahren zur Detailrekonstruktion und werden bei Bedarf geladen.
 Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
-gedacht. Beide Modelle werden bei Bedarf heruntergeladen.
+gedacht. Alle klassischen Upscaler sind unter `models/upscale_models` im Paket enthalten, einschließlich beider Real-ESRGAN-Größen. Ihre Gewichte werden beim ersten Prüfen lokal erkannt. Die Verarbeitungslaufzeit wird bei Bedarf eingerichtet.
 
 Die Vorschau zeigt die gespeicherte Datei. Zum Vergleichen die Trennlinie
 ziehen. Das Mausrad zoomt, die rechte Maustaste verschiebt die Ansicht.

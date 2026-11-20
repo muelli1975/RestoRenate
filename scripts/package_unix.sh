@@ -43,6 +43,8 @@ git -C "$stage/comfy" fetch --quiet --depth=1 https://github.com/Comfy-Org/Comfy
 mkdir "$root/vendor/ComfyUI"
 git -C "$stage/comfy" archive --format=tar "$comfy_commit" | tar -xf - -C "$root/vendor/ComfyUI"
 
+"$python" -I scripts/bundle_upscalers.py "$root"
+
 chmod +x "$root/Start.sh"
 if [[ $(uname -s) == Darwin ]]; then
     bundle="$root/RestoRenate.app/Contents"

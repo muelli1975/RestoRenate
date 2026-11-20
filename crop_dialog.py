@@ -89,6 +89,7 @@ class CropDialog(tk.Toplevel):
         self.canvas.bind('<Motion>', self.hover)
         for key, dx, dy in (('Left', -1, 0), ('Right', 1, 0), ('Up', 0, -1), ('Down', 0, 1)):
             self.canvas.bind(f'<{key}>', lambda event, dx=dx, dy=dy: self.nudge(dx, dy))
+            self.canvas.bind(f'<Control-{key}>', lambda event, dx=dx, dy=dy: self.nudge(5 * dx, 5 * dy))
             self.canvas.bind(f'<Shift-{key}>', lambda event, dx=dx, dy=dy: self.step_alignment(dx, -dy))
 
         footer = tk.Frame(self, bg=APP_BG, padx=12, pady=10)
@@ -332,7 +333,7 @@ class CropDialog(tk.Toplevel):
         self.canvas.delete('selection')
         self.selection_photo = ImageTk.PhotoImage(selection, master=self.canvas)
         self.canvas.create_image(left, top, image=self.selection_photo, anchor='nw', tags='selection')
-        divisions = 6 if self.alignment != Alignment() else 3
+        divisions = 9 if self.alignment != Alignment() else 3
         for step in range(1, divisions):
             gx = left + (right - left) * step / divisions
             gy = top + (bottom - top) * step / divisions

@@ -158,9 +158,16 @@ def check_alignment(directory):
         for step, expected in (('Right', (41, 20, 201, 100)), ('Left', (40, 20, 200, 100))):
             press(f'<{step}>')
             assert dialog.box == expected and dialog.alignment == Alignment()
+        press('<Control-Down>')
+        assert dialog.box == (40, 25, 200, 105)
+        press('<Control-Up>')
+        assert dialog.box == (40, 20, 200, 100)
         for key, value in (('Shift-Right', 0.1), ('Shift-Left', 0)):
             press(f'<{key}>')
             assert dialog.angle.get() == value and dialog.box == (40, 20, 200, 100)
+            grid_lines = [item for item in dialog.canvas.find_withtag('selection') if dialog.canvas.type(item) == 'line']
+            # Two strokes per guide, in both directions.
+            assert len(grid_lines) == (32 if value else 8)
         from language import translate
         from theme import BORDER, GOLD, GOLD_LIGHT
 
@@ -494,6 +501,17 @@ def check_compute_settings(directory):
 
 
 if __name__ == '__main__':
+    if (root / '_internal').is_dir():
+        expected = set()
+        for name in UPSCALERS:
+            if name in (LANCZOS, SEEDVR2, VOSR2):
+                continue
+            setup = Setup(root, method=UPSCALING, upscaler=name, compute=CPU)
+            for spec in setup.models:
+                path = setup.download(spec, local_only=True)
+                assert path and setup.valid(spec), spec['path']
+                expected.add(path)
+        assert set((root / 'models/upscale_models').iterdir()) == expected
     check_graphs()
     check_vosr_progress()
     with TemporaryDirectory() as directory:

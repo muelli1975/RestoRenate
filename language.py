@@ -59,6 +59,8 @@ ENGLISH = {
     'Umschalt': 'Shift',
     'Beschnittregler um einen Schritt verstellen': 'Adjust the crop slider by one step',
     'Beschnittregler auf 0 zurücksetzen': 'Reset the crop slider to 0',
+    'Strg + Pfeiltasten': 'Ctrl + arrow keys',
+    'Im Beschnittbild: Ausschnitt um 5 px verschieben': 'In the crop preview: move the crop by 5 px',
     'Pfeiltasten': 'Arrow keys',
     'Im Beschnittbild: Ausschnitt um 1 px verschieben': 'In the crop preview: move the crop by 1 px',
     'Im Beschnittbild: Horizont um 0,1° nach links / rechts drehen':

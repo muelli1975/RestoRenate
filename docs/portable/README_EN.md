@@ -22,8 +22,8 @@ rule-of-thirds grid. Drag inside the frame to move it or drag a handle to
 resize it. Choose “Free,” a fixed ratio or “Custom …” for a ratio such as
 7:5. Each image in a folder can be selected and cropped individually. “Apply”
 shows the selected image in the main view. Use “Horizon” and “Perspective”
-to align the image to the grid. You can enter either value directly. Shift + mouse wheel over a slider adjusts it by one step.
-Double-click the slider to reset it to zero. With focus in the crop preview, the arrow keys move the crop by one pixel.
+to align the image to a 9 × 9 grid. You can enter either value directly. Shift + mouse wheel over a slider adjusts it by one step.
+Double-click the slider to reset it to zero. With focus in the crop preview, the arrow keys move the crop by one pixel. Hold Ctrl to move it by five pixels.
 Shift + ← / → rotates the image 0.1° counterclockwise / clockwise. Shift + ↑ / ↓ widens the
 top / bottom edge. Enter applies the cut, Esc discards it and F1 opens the controls guide.
 “Fit within image” trims the selection to valid image pixels.
@@ -138,7 +138,7 @@ The upscaler menu groups models by use. Nomos2 HQ MoSR 4× is designed for clean
 Nomos8kDAT 4×, RealWebPhoto v4 and NomosUni SPAN MultiJPG 4×. MultiJPG handles JPEG-compressed and previously resized images. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail locally
 and are downloaded on demand.
 Real-ESRGAN Anime 4× and AnimeSharp 4× are intended for drawings and illustrations.
-Both models are downloaded on demand.
+All classic upscaler weights are bundled in `models/upscale_models`, including both Real-ESRGAN scales. The app verifies the local weights on first use and sets up the processing runtime if needed.
 
 The preview uses the saved file. Drag the divider to compare. Use the wheel
 to zoom and drag with the right mouse button to pan. “100 %” or Ctrl+1 shows
