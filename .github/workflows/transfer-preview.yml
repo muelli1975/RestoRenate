@@ -1,0 +1,31 @@
+name: Transfer verified portable preview
+on:
+  push:
+    branches: [codex/transfer-classic-preview]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Split verified Windows artifact for transfer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          gh api repos/muelli1975/RestoRenate/actions/artifacts/14648657473/zip > package.zip
+          echo 'c75c8202189577708cb05adad03fe17cf0d55595404a84d3af0c07feea69f2fc  package.zip' | sha256sum -c -
+          split -b 384M -d package.zip rr-part-
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rr-part-00
+          path: rr-part-00
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rr-part-01
+          path: rr-part-01
+          compression-level: 0
+          retention-days: 1
