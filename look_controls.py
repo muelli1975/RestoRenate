@@ -329,26 +329,27 @@ def controls_dialog(parent):
         (
             ('Ansicht und Ergebnisse', (
                 ('Trennlinie ziehen', 'Vorher und Nachher vergleichen'),
-                ('Mausrad', 'Ansicht zoomen'),
-                ('Rechts oder mittig ziehen', 'Vergrößerte Ansicht verschieben'),
+                ('← / →', 'Trennlinie in der Vorschau verschieben'),
+                ('Mausrad', 'Ansichtszoom'),
+                ('Rechte Taste oder Mitteltaste + Ziehen', 'Vergrößerte Ansicht verschieben'),
                 ('Strg + 1', '100-%-Ansicht'),
-                ('Z halten', '100-%-Ansicht halten'),
+                ('Z halten', 'Temporäre 100-%-Ansicht'),
                 ('Strg + 0 / Doppelklick / Esc', 'Ansicht einpassen'),
-                ('Bild↑ / Bild↓', 'Vorheriges / nächstes Ergebnis'),
+                ('Bild auf / Bild ab', 'Vorheriges / nächstes Ergebnis'),
                 ('F1', 'Bedienhilfe öffnen oder schließen'),
             ), None),
             ('LUT', (
-                ('C', 'LUT ein / aus'),
-                ('C halten + ← / →', 'Look zurück / vor'),
-                ('C halten + ↑ / ↓', 'LUT-Stärke ändern'),
-                ('Umschalt + Mausrad', 'Stärke am Regler ändern'),
+                ('C', 'LUT ein-/ausschalten'),
+                ('C halten + ← / →', 'Durch Looks blättern'),
+                ('C halten + ↑ / ↓', 'LUT-Stärke um 5 Prozentpunkte ändern'),
+                ('Umschalt + Mausrad', 'LUT-Stärke um 5 Prozentpunkte ändern'),
                 ('Doppelklick auf den Regler', 'Auf 100 % zurücksetzen'),
             ), '„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.'),
         ),
         (
             ('Ausschnitt', (
-                ('Links im Rahmen ziehen', 'Gesamten Ausschnitt verschieben'),
-                ('Am Griff ziehen', 'Größe des Ausschnitts ändern'),
+                ('Linke Taste + Ziehen im Rahmen', 'Ausschnitt verschieben'),
+                ('Griff ziehen', 'Größe des Ausschnitts ändern'),
                 ('Pfeiltasten', 'Ausschnitt um 1 px verschieben'),
                 ('Strg + Pfeiltasten', 'Ausschnitt um 5 px verschieben'),
                 ('Ränder einpassen', 'Leere Bildränder aus dem Ausschnitt nehmen'),
@@ -360,7 +361,7 @@ def controls_dialog(parent):
                 ('Umschalt + Mausrad', 'Wert am Regler um einen Schritt ändern'),
                 ('Doppelklick auf den Regler', 'Diesen Wert auf 0 zurücksetzen'),
                 ('Zahlenfeld + Enter', 'Eingegebenen Wert anwenden'),
-            ), 'Das Raster teilt den Ausschnitt in 3 × 3 Felder. Bei aktiver Geometriekorrektur sind es 9 × 9.'),
+            ), 'Drittel-Raster (3 × 3) beim Beschneiden, 9 × 9 bei aktivem Horizont- oder Perspektivausgleich.'),
         ),
     )
     width = min(920, dialog.winfo_screenwidth() - 64)

@@ -555,14 +555,14 @@ def test_gui(root):
                 assert 0 <= top <= top + widget.winfo_height() <= help_dialog.winfo_height()
             print('Controls guide dimensions:', help_dialog.winfo_width(), help_dialog.winfo_height())
         check_help_fit()
-        assert {'Ansicht und Ergebnisse', 'LUT', 'Ausschnitt', 'Horizont und Perspektive',
-                'Links im Rahmen ziehen', 'Strg + Pfeiltasten', 'Umschalt + ← / →', 'Umschalt + ↑ / ↓'} <= help_labels()
+        assert {'Ansicht und Ergebnisse', 'LUT', 'Ausschnitt', 'Ansicht einpassen', 'Bild auf / Bild ab', 'Horizont und Perspektive',
+                'Linke Taste + Ziehen im Rahmen', 'Strg + Pfeiltasten', 'Umschalt + ← / →', 'Umschalt + ↑ / ↓'} <= help_labels()
         assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())
         window.update()
         gui.change_language('en')
         assert gui.controls_help is help_dialog and help_dialog.title() == 'Controls'
         check_help_fit()
-        assert {'View and results', 'LUT', 'Crop', 'Horizon and perspective', 'Left-drag inside the frame',
+        assert {'View and results', 'LUT', 'Crop', 'Fit view', 'Page Up / Page Down', 'Horizon and perspective', 'Left-drag inside the frame',
                 'Ctrl + arrow keys', 'Shift + ← / →', 'Shift + ↑ / ↓'} <= help_labels()
         assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())
         assert any(child.cget('text') == 'Close' for child in help_dialog.winfo_children()

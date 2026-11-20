@@ -25,7 +25,7 @@ shows the selected image in the main view. Use “Horizon” and “Perspective�
 to align the image to a 9 × 9 grid. You can enter either value directly. Shift + mouse wheel over a slider adjusts it by one step.
 Double-click the slider to reset it to zero. With focus in the crop preview, the arrow keys move the crop by one pixel. Hold Ctrl to move it by five pixels.
 Shift + ← / → rotates the image 0.1° counterclockwise / clockwise. Shift + ↑ / ↓ widens the
-top / bottom edge. Enter applies the cut, Esc discards it and F1 opens the controls guide.
+top / bottom edge. Enter applies the cut, Esc discards it and F1 opens Controls.
 “Fit within image” trims the selection to valid image pixels.
 The before side of the result comparison shows the straightened crop. “Rotate” turns the input shown there
 90° left or right or 180°. An existing crop rotates with it. Rotation takes
@@ -204,7 +204,7 @@ Choose from 50 StereoFine LUTs. **C** shows the look on the right.
 Hold **C** with the left or right arrow to choose a look, or with the
 up or down arrow to change its strength. **Apply LUT** adds the look to the next
 model run. **Create LUT variant** saves the selected input or result as a new
-numbered file. **F1** opens the controls.
+numbered file. **F1** opens Controls.
 
 JPEG and TIFF retain compatible source EXIF data and store RestoRenate settings
 in XMP. PNG uses ComfyUI prompt and workflow metadata. See
