@@ -557,46 +557,57 @@ def test_gui(root):
         help_button.invoke()
         help_dialog = gui.controls_help
         assert help_dialog.title() == 'Bedienhilfe'
-        body = next(child for child in help_dialog.winfo_children() if isinstance(child, tk.Frame))
-        def help_labels():
-            return {str(widget.cget('text')) for widget in body.winfo_children() if isinstance(widget, tk.Label)}
-        def check_help_fit():
+        panels = next(child for child in help_dialog.winfo_children() if hasattr(child, 'panels'))
+        def check_guide(columns, scrolling):
             window.update()
-            # Fit a 1024 × 768 desktop, leaving space for decorations and taskbar.
-            assert help_dialog.winfo_reqwidth() <= 980, help_dialog.winfo_reqwidth()
-            assert help_dialog.winfo_reqheight() <= 685, help_dialog.winfo_reqheight()
-            for widget in (*body.winfo_children(), *help_dialog.winfo_children()):
-                assert widget.winfo_ismapped()
-                left = widget.winfo_rootx() - help_dialog.winfo_rootx()
-                top = widget.winfo_rooty() - help_dialog.winfo_rooty()
-                assert 0 <= left <= left + widget.winfo_width() <= help_dialog.winfo_width()
-                assert 0 <= top <= top + widget.winfo_height() <= help_dialog.winfo_height()
-            print('Controls guide dimensions:', help_dialog.winfo_width(), help_dialog.winfo_height())
-        def check_slider_rows(gesture, action):
-            keys = [label for label in body.winfo_children() if label.cget('text') == gesture]
-            assert len(keys) == 2, gesture
-            for label in keys:
-                pos = label.grid_info()
-                adjacent, = body.grid_slaves(row=int(pos['row']), column=int(pos['column']) + 1)
-                assert adjacent.cget('text') == action
+            assert panels.columns == columns
+            assert bool(panels.scrollbar.winfo_ismapped()) == scrolling
+            assert panels.panels[1].grid_info()['column'] == columns - 1
+            for label, _ in panels.labels:
+                assert label.winfo_ismapped()
+                x = label.winfo_rootx() - panels.canvas.winfo_rootx()
+                assert 0 <= x <= panels.canvas.winfo_width() - label.winfo_width()
+                assert label.winfo_reqwidth() <= label.winfo_width()
+                assert label.winfo_reqheight() <= label.winfo_height()
+                if not scrolling:
+                    y = label.winfo_rooty() - panels.canvas.winfo_rooty()
+                    assert 0 <= y <= panels.canvas.winfo_height() - label.winfo_height()
+            for key, action in (
+                ('Umschalt + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen'),
+                ('Doppelklick', 'Bildbearbeitungsregler auf Standardwert zurücksetzen'),
+            ):
+                matches = [description for shortcut, description in panels.rows
+                           if shortcut.cget('text') == app.translate(key)]
+                assert len(matches) == 1 and matches[0].cget('text') == app.translate(action)
+            labels = {w.cget('text') for w, _ in panels.labels}
+            for source in ('Ansicht und Ergebnisse', 'LUT', 'Ausschnitt', 'Bildbearbeitungsregler',
+                           'Horizont und Perspektive', 'Mit der linken Maustaste im Rahmen ziehen',
+                           'An einem Griff ziehen', '3 × 3 beim Beschneiden, 9 × 9 beim Ausrichten'):
+                assert app.translate(source) in labels
+            assert any(child.cget('text') == app.translate('Schließen') for child in help_dialog.winfo_children()
+                       if isinstance(child, ttk.Button))
 
-        check_help_fit()
-        check_slider_rows('Doppelklick', 'Bildbearbeitungsregler auf Standardwert zurücksetzen')
-        check_slider_rows('Umschalt + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen')
-        assert {'Ansicht und Ergebnisse', 'LUT', 'Ausschnitt', 'Ansicht einpassen', 'Bild auf / Bild ab', 'Horizont und Perspektive',
-                'Linke Taste + Ziehen im Rahmen', 'Strg + Pfeiltasten', 'Umschalt + ← / →', 'Umschalt + ↑ / ↓'} <= help_labels()
-        assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())
-        window.update()
-        gui.change_language('en')
-        assert gui.controls_help is help_dialog and help_dialog.title() == 'Controls'
-        check_help_fit()
-        check_slider_rows('Double click', 'Reset an image editing slider to its default')
-        check_slider_rows('Shift + Mouse wheel', 'Adjust the image editing slider over its track or handle')
-        assert {'View and results', 'LUT', 'Crop', 'Fit view', 'Page Up / Page Down', 'Horizon and perspective', 'Left-drag inside the frame',
-                'Ctrl + arrow keys', 'Shift + ← / →', 'Shift + ↑ / ↓'} <= help_labels()
-        assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())
-        assert any(child.cget('text') == 'Close' for child in help_dialog.winfo_children()
-                   if isinstance(child, ttk.Button))
+        for lang in ('de', 'en'):
+            gui.change_language(lang)
+            assert gui.controls_help is help_dialog and help_dialog.title() == app.translate('Bedienhilfe')
+            help_dialog.geometry('976x680')
+            check_guide(2, False)
+            help_dialog.geometry('520x390')
+            check_guide(1, True)
+            panels.canvas.yview_moveto(0)
+            shortcut = panels.rows[0][0]
+            if window.tk.call('tk', 'windowingsystem') == 'x11':
+                shortcut.event_generate('<Button-5>')
+            else:
+                shortcut.event_generate('<MouseWheel>', delta=-120)
+            window.update()
+            assert panels.canvas.yview()[0] > 0
+            panels.canvas.yview_moveto(1)
+            window.update()
+            assert panels.canvas.yview()[1] == 1.0
+            assert panels.canvas.yview()[0] > 0
+        help_dialog.geometry('976x680')
+        check_guide(2, False)
         help_dialog.destroy()
 
         gui.caption.set('Long file name ' * 40 + 'result.png · 80 × 48 px')
