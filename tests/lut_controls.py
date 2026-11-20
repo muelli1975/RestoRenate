@@ -554,7 +554,17 @@ def test_gui(root):
                 assert 0 <= left <= left + widget.winfo_width() <= help_dialog.winfo_width()
                 assert 0 <= top <= top + widget.winfo_height() <= help_dialog.winfo_height()
             print('Controls guide dimensions:', help_dialog.winfo_width(), help_dialog.winfo_height())
+        def check_slider_rows(gesture, action):
+            keys = [label for label in body.winfo_children() if label.cget('text') == gesture]
+            assert len(keys) == 2, gesture
+            for label in keys:
+                pos = label.grid_info()
+                adjacent, = body.grid_slaves(row=int(pos['row']), column=int(pos['column']) + 1)
+                assert adjacent.cget('text') == action
+
         check_help_fit()
+        check_slider_rows('Doppelklick', 'Bildbearbeitungsregler auf Standardwert zurücksetzen')
+        check_slider_rows('Umschalt + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen')
         assert {'Ansicht und Ergebnisse', 'LUT', 'Ausschnitt', 'Ansicht einpassen', 'Bild auf / Bild ab', 'Horizont und Perspektive',
                 'Linke Taste + Ziehen im Rahmen', 'Strg + Pfeiltasten', 'Umschalt + ← / →', 'Umschalt + ↑ / ↓'} <= help_labels()
         assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())
@@ -562,6 +572,8 @@ def test_gui(root):
         gui.change_language('en')
         assert gui.controls_help is help_dialog and help_dialog.title() == 'Controls'
         check_help_fit()
+        check_slider_rows('Double click', 'Reset an image editing slider to its default')
+        check_slider_rows('Shift + Mouse wheel', 'Adjust the image editing slider over its track or handle')
         assert {'View and results', 'LUT', 'Crop', 'Fit view', 'Page Up / Page Down', 'Horizon and perspective', 'Left-drag inside the frame',
                 'Ctrl + arrow keys', 'Shift + ← / →', 'Shift + ↑ / ↓'} <= help_labels()
         assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())

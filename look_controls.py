@@ -323,6 +323,10 @@ def controls_dialog(parent):
     dialog.resizable(False, False)
     body = tk.Frame(dialog, bg=SECONDARY_BG, padx=16, pady=12, highlightthickness=1, highlightbackground=BORDER)
     body.pack(padx=12, pady=12)
+    slider_gestures = (
+        ('Umschalt + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen'),
+        ('Doppelklick', 'Bildbearbeitungsregler auf Standardwert zurücksetzen'),
+    )
     # Each column follows one workflow. The same gesture can have different
     # meanings in the comparison pane, the LUT controls and the crop dialog.
     columns = (
@@ -342,8 +346,7 @@ def controls_dialog(parent):
                 ('C', 'LUT ein-/ausschalten'),
                 ('C halten + ← / →', 'Durch Looks blättern'),
                 ('C halten + ↑ / ↓', 'LUT-Stärke um 5 Prozentpunkte ändern'),
-                ('Umschalt + Mausrad', 'LUT-Stärke um 5 Prozentpunkte ändern'),
-                ('Doppelklick auf den Regler', 'Auf 100 % zurücksetzen'),
+                *slider_gestures,
             ), '„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.'),
         ),
         (
@@ -358,8 +361,7 @@ def controls_dialog(parent):
             ('Horizont und Perspektive', (
                 ('Umschalt + ← / →', 'Horizont um 0,1° nach links / rechts drehen'),
                 ('Umschalt + ↑ / ↓', 'Obere / untere Bildkante verbreitern'),
-                ('Umschalt + Mausrad', 'Wert am Regler um einen Schritt ändern'),
-                ('Doppelklick auf den Regler', 'Diesen Wert auf 0 zurücksetzen'),
+                *slider_gestures,
                 ('Zahlenfeld + Enter', 'Eingegebenen Wert anwenden'),
             ), 'Drittel-Raster (3 × 3) beim Beschneiden, 9 × 9 bei aktivem Horizont- oder Perspektivausgleich.'),
         ),
