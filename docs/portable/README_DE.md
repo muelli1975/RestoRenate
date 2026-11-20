@@ -23,8 +23,9 @@ Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …�
 ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverhältnis
 oder „Benutzerdefiniert …“ für ein Verhältnis wie 7:5 wählen. In einem Ordner lässt sich
 jedes Bild einzeln auswählen und beschneiden. „Übernehmen“ zeigt das ausgewählte
-Bild in der Hauptansicht. „Horizont (°)“ und „Stürzende Linien“ richten das Bild am Raster aus.
-Mit dem Fokus auf dem Bild verschieben die Pfeiltasten den Ausschnitt um einen Pixel.
+Bild in der Hauptansicht. „Horizont“ und „Perspektive“ richten das Bild am Raster aus.
+Der Wert lässt sich direkt eingeben. Umschalt + Mausrad über dem Regler ändert ihn um einen Schritt,
+ein Doppelklick auf den Regler setzt ihn auf null. Mit dem Fokus auf dem Bild verschieben die Pfeiltasten den Ausschnitt um einen Pixel.
 Umschalt + ← / → dreht das Bild um 0,1° nach links / rechts. Umschalt + ↑ / ↓ verbreitert
 die obere / untere Bildkante. Enter übernimmt, Esc verwirft und F1 öffnet die Bedienhilfe.
 „Ränder einpassen“ verkleinert den gewählten Ausschnitt, bis er vollständig im Bild liegt.

@@ -4,6 +4,7 @@ from tkinter import messagebox, ttk
 
 from PIL import Image, ImageEnhance, ImageTk
 
+from alignment_slider import AlignmentSlider
 from crop import ASPECTS, Alignment, CropRegion, box_size, clamp, fit_aspect, move_box, parse_aspect, resize_box
 from imaging import align_photo, open_photo
 from language import translate
@@ -67,15 +68,14 @@ class CropDialog(tk.Toplevel):
         self.angle = tk.DoubleVar(self, 0.)
         self.vertical = tk.IntVar(self, 0)
         self.horizontal = tk.IntVar(self, 0)
-        def slider(label, variable, limit, resolution):
-            control = tk.Scale(alignment_bar, label=translate(label), orient='horizontal',
-                               variable=variable, from_=-limit, to=limit, resolution=resolution,
-                               command=self.change_alignment, bg=APP_BG, fg=TEXT, troughcolor=PANEL_BG,
-                               highlightthickness=0, activebackground=GOLD_LIGHT)
+        def slider(label, variable, limit, step):
+            control = AlignmentSlider(alignment_bar, label, variable, limit, step, self.change_alignment,
+                                      lambda: self.canvas.focus_set())
             control.pack(side='left', fill='x', expand=True, padx=(0, 10))
             return control
-        slider('Horizont (°)', self.angle, 5, 0.1)
-        slider('Stürzende Linien', self.vertical, 20, 1)
+
+        self.angle_slider = slider('Horizont', self.angle, 5, 0.1)
+        self.vertical_slider = slider('Perspektive', self.vertical, 20, 1)
         # A quarter turn takes an existing vertical correction onto the horizontal axis.
         self.side_slider = slider('Horizontale Perspektive', self.horizontal, 20, 1)
         self.side_slider.pack_forget()
@@ -166,6 +166,9 @@ class CropDialog(tk.Toplevel):
     def store_crop(self):
         if self.image is None:
             return
+        for control in (self.angle_slider, self.vertical_slider, self.side_slider):
+            if control.value.get() != control.formatted_value():
+                control.commit()
         source = self.sources[self.index]
         if self.box == (0, 0, *self.image.size) and self.alignment == Alignment():
             self.crops.pop(source, None)

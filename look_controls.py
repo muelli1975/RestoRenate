@@ -334,7 +334,9 @@ def controls_dialog(parent):
         ('F1', '', 'Bedienhilfe öffnen'),
         ('Pfeiltasten', '', 'Im Beschnittbild: Ausschnitt um 1 px verschieben'),
         ('Umschalt', ' + ← / →', 'Im Beschnittbild: Horizont um 0,1° nach links / rechts drehen'),
-        ('Umschalt', ' + ↑ / ↓', 'Im Beschnittbild: obere / untere Bildkante verbreitern'),
+        ('Umschalt', ' + ↑ / ↓', 'Perspektive: obere / untere Bildkante verbreitern'),
+        ('Umschalt + Mausrad', '', 'Beschnittregler um einen Schritt verstellen'),
+        ('Doppelklick auf den Regler', '', 'Beschnittregler auf 0 zurücksetzen'),
         ('Enter / Esc', '', 'Im Beschnittbild: übernehmen / verwerfen'),
     )
     rows = []

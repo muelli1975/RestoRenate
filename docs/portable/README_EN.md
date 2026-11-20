@@ -21,8 +21,9 @@ include JPEG, PNG, TIFF, WebP, BMP and AVIF. “Crop …” opens a frame with a
 rule-of-thirds grid. Drag inside the frame to move it or drag a handle to
 resize it. Choose “Free,” a fixed ratio or “Custom …” for a ratio such as
 7:5. Each image in a folder can be selected and cropped individually. “Apply”
-shows the selected image in the main view. Use “Horizon (°)” and “Vertical perspective”
-to align the image to the grid. With focus in the crop preview, the arrow keys move the crop by one pixel.
+shows the selected image in the main view. Use “Horizon” and “Perspective”
+to align the image to the grid. You can enter either value directly. Shift + mouse wheel over a slider adjusts it by one step.
+Double-click the slider to reset it to zero. With focus in the crop preview, the arrow keys move the crop by one pixel.
 Shift + ← / → rotates the image 0.1° counterclockwise / clockwise. Shift + ↑ / ↓ widens the
 top / bottom edge. Enter applies the cut, Esc discards it and F1 opens the controls guide.
 “Fit within image” trims the selection to valid image pixels.

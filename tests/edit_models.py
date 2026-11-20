@@ -161,6 +161,42 @@ def check_alignment(directory):
         for key, value in (('Shift-Right', 0.1), ('Shift-Left', 0)):
             press(f'<{key}>')
             assert dialog.angle.get() == value and dialog.box == (40, 20, 200, 100)
+        from language import translate
+        from theme import BORDER, GOLD, GOLD_LIGHT
+
+        horizon = dialog.angle_slider
+        perspective = dialog.vertical_slider
+        assert horizon.caption.cget('text') == translate('Horizont')
+        assert perspective.caption.cget('text') == translate('Perspektive')
+        assert horizon.slider.cget('fg_color') == BORDER
+        assert horizon.slider.cget('button_color') == GOLD_LIGHT
+        horizon.value.set('-2,4')
+        horizon.commit()
+        window.update()
+        assert dialog.angle.get() == -2.4 and dialog.alignment.angle == 2.4
+        assert horizon.value.get() == '-2' + translate(',') + '4°'
+        rail = horizon.slider._canvas
+        segment = rail.coords('centered_progress')
+        assert rail.itemcget('centered_progress', 'fill') == GOLD
+        perspective.set_value(3)
+        rail.event_generate('<MouseWheel>', delta=120, state=0)
+        assert dialog.angle.get() == -2.4
+        if window.tk.call('tk', 'windowingsystem') == 'x11':
+            rail.event_generate('<Button-4>', state=1)
+        else:
+            rail.event_generate('<MouseWheel>', delta=120, state=1)
+        window.update()
+        assert dialog.angle.get() == -2.3
+        horizon.set_value(2.4)
+        window.update()
+        assert rail.coords('centered_progress')[0] == segment[2]
+        for time in (1000, 1150):
+            rail.event_generate('<ButtonPress-1>', x=10, y=8, time=time)
+            rail.event_generate('<ButtonRelease-1>', x=10, y=8, time=time + 10)
+        window.update()
+        assert dialog.angle.get() == 0 and dialog.vertical.get() == 3
+        assert rail.itemcget('centered_progress', 'state') == 'hidden'
+        perspective.set_value(0)
         band = Image.new('L', (200, 120))
         band.paste(255, (55, 0, 145, 120))
         for key, value in (('Shift-Up', 20), ('Shift-Down', -20)):
