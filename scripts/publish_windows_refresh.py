@@ -85,5 +85,9 @@ def update(folder):
 
 
 if __name__ == "__main__":
-    for path in sorted(Path(sys.argv[1]).glob("*/refresh.json"), reverse=True):
-        update(path.parent)
+    root = Path(sys.argv[1])
+    for version in ("1.3", "1.2", "1.1", "1.0"):
+        if not (root / f"windows-{version}/refresh.json").is_file():
+            raise ValueError(f"Missing tested artifact for {version}")
+    for version in ("1.3", "1.2", "1.1", "1.0"):
+        update(root / f"windows-{version}")
