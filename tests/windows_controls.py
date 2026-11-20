@@ -18,6 +18,7 @@ sys.path.insert(0, str(root / '_internal'))
 import app
 from methods import (DDCOLOR_TINY, LANCZOS, NOMOS2_HQ, ULTRASHARP_LITE, UPSCALE_MENU_SECTIONS,
                      UPSCALING, VOSR2, resolve_upscaler)
+from model_hints import DESCRIPTIONS
 from field_focus import check_field_focus, field_focus_maps
 from output_destination import check_output_destination
 from reference_controls import check_reference_controls
@@ -81,6 +82,17 @@ def check_native_menus(gui):
         headings = [method_menu.index(app.translate(heading)) for heading in ('Bearbeiten', 'Kolorieren')]
         capture_popup(method_menu, root.parent / f'model-menu-{language}.png', headings)
         upscale_menu = gui.upscale_menu
+        assert all(key in DESCRIPTIONS for key in upscale_menu.choices)
+        upscale_menu.activate(upscale_menu.choices[NOMOS2_HQ][1])
+        upscale_menu.event_generate('<<MenuSelect>>')
+        hints = gui.upscale_hints
+        assert hints.key == NOMOS2_HQ
+        window.after_cancel(hints.timer)
+        hints.show()
+        label, = hints.window.winfo_children()
+        assert label.cget('text') == DESCRIPTIONS[NOMOS2_HQ][int(language == 'en')]
+        hints.hide()
+        upscale_menu.activate('none')
         headings = [upscale_menu.index(app.translate(heading)) for heading, _ in UPSCALE_MENU_SECTIONS]
         capture_popup(upscale_menu, root.parent / f'upscaler-menu-{language}.png', headings)
         for name, menu in (('model-submenu', method_menu), ('lut-menu', controls.menu)):
