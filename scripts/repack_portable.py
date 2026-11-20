@@ -83,6 +83,9 @@ def build(base, output, platform, smoke_dir, base_sha256=None):
         shutil.copytree(ROOT / 'assets/luts', package / 'assets/luts', dirs_exist_ok=True)
         shutil.copytree(ROOT / 'licenses', package / 'licenses', dirs_exist_ok=True)
         shutil.copytree(ROOT / 'vendor/ComfyUI-VOSR2', package / 'vendor/ComfyUI-VOSR2', dirs_exist_ok=True)
+        if platform == 'windows':
+            from freeze_windows import build_windows_gui
+            build_windows_gui(package)
         if platform == 'macos' and sys.platform == 'darwin':
             bundle = package / 'RestoRenate.app'
             shutil.copy2(ROOT / 'scripts/macos/Info.plist', bundle / 'Contents/Info.plist')
