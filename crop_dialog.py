@@ -7,6 +7,7 @@ from PIL import Image, ImageEnhance, ImageTk
 from crop import ASPECTS, Alignment, CropRegion, box_size, clamp, fit_aspect, move_box, parse_aspect, resize_box
 from imaging import align_photo, open_photo
 from language import translate
+from look_controls import controls_dialog
 from theme import APP_BG, GOLD_LIGHT, MUTED, PANEL_BG, TEXT
 
 CORNERS = ((-1, -1), (1, -1), (-1, 1), (1, 1))
@@ -90,6 +91,7 @@ class CropDialog(tk.Toplevel):
         self.canvas.bind('<Motion>', self.hover)
         for key, dx, dy in (('Left', -1, 0), ('Right', 1, 0), ('Up', 0, -1), ('Down', 0, 1)):
             self.canvas.bind(f'<{key}>', lambda event, dx=dx, dy=dy: self.nudge(dx, dy))
+            self.canvas.bind(f'<Shift-{key}>', lambda event, dx=dx, dy=dy: self.step_alignment(dx, -dy))
 
         footer = tk.Frame(self, bg=APP_BG, padx=12, pady=10)
         footer.pack(fill='x')
@@ -102,6 +104,7 @@ class CropDialog(tk.Toplevel):
         self.reset_button = ttk.Button(footer, text=translate('Zurücksetzen'), command=self.reset_crop)
         self.reset_button.pack(side='right')
 
+        self.bind('<F1>', self.open_help)
         self.bind('<Escape>', lambda event: self.destroy())
         self.bind('<Return>', lambda event: self.apply_crop())
         self.load_source(self.sources.index(selected))
@@ -212,10 +215,27 @@ class CropDialog(tk.Toplevel):
             self.canvas.focus_set()
         return 'break'
 
+    def open_help(self, _event):
+        help_window = controls_dialog(self)
+        help_window.wait_visibility()
+        help_window.grab_set()
+        self.wait_window(help_window)
+        if self.winfo_exists():
+            self.grab_set()
+            self.canvas.focus_set()
+        return 'break'
+
+    def step_alignment(self, roll, perspective):
+        self.angle.set(clamp(round(self.angle.get() + 0.1 * roll, 1), -5, 5))
+        self.vertical.set(clamp(self.vertical.get() + perspective, -20, 20))
+        self.change_alignment()
+        return 'break'
+
     def set_sliders(self):
-        self.angle.set(self.alignment.angle)
-        self.vertical.set(self.alignment.vertical)
-        self.horizontal.set(self.alignment.horizontal)
+        # The controls express forward corrections. Pillow stores the inverse mapping.
+        self.angle.set(-self.alignment.angle)
+        self.vertical.set(-self.alignment.vertical)
+        self.horizontal.set(-self.alignment.horizontal)
         if self.alignment.horizontal:
             self.side_slider.pack(side='left', fill='x', expand=True, before=self.fit_button, padx=(0, 10))
         else:
@@ -224,7 +244,7 @@ class CropDialog(tk.Toplevel):
     def change_alignment(self, _value=None):
         if self.image is None:
             return
-        updated = Alignment(round(self.angle.get(), 1), self.vertical.get(), self.horizontal.get())
+        updated = Alignment(-round(self.angle.get(), 1), -self.vertical.get(), -self.horizontal.get())
         if updated == self.alignment:
             return
         full = (0, 0, *self.image.size)

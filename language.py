@@ -56,6 +56,14 @@ ENGLISH = {
     'Auf 100 % zurücksetzen': 'Reset to 100%',
     '100-%-Ansicht halten': 'Hold the 100% view',
     'Bedienhilfe öffnen': 'Open controls',
+    'Umschalt': 'Shift',
+    'Pfeiltasten': 'Arrow keys',
+    'Im Beschnittbild: Ausschnitt um 1 px verschieben': 'In the crop preview: move the crop by 1 px',
+    'Im Beschnittbild: Horizont um 0,1° nach links / rechts drehen':
+        'In the crop preview: rotate 0.1° counterclockwise / clockwise',
+    'Im Beschnittbild: obere / untere Bildkante verbreitern':
+        'In the crop preview: widen the top / bottom edge',
+    'Im Beschnittbild: übernehmen / verwerfen': 'In the crop preview: apply / discard',
     'Vorheriges / nächstes Ergebnis': 'Previous / next result',
     'LUT ein / aus': 'Toggle LUT',
     'LUT-Variante gespeichert.': 'LUT variant saved.',

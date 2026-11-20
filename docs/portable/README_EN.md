@@ -22,7 +22,10 @@ rule-of-thirds grid. Drag inside the frame to move it or drag a handle to
 resize it. Choose “Free,” a fixed ratio or “Custom …” for a ratio such as
 7:5. Each image in a folder can be selected and cropped individually. “Apply”
 shows the selected image in the main view. Use “Horizon (°)” and “Vertical perspective”
-to align the image to the grid. “Fit within image” trims the selection to valid image pixels.
+to align the image to the grid. With focus in the crop preview, the arrow keys move the crop by one pixel.
+Shift + ← / → rotates the image 0.1° counterclockwise / clockwise. Shift + ↑ / ↓ widens the
+top / bottom edge. Enter applies the cut, Esc discards it and F1 opens the controls guide.
+“Fit within image” trims the selection to valid image pixels.
 The before side of the result comparison shows the straightened crop. “Rotate” turns the input shown there
 90° left or right or 180°. An existing crop rotates with it. Rotation takes
 place before cropping and processing. The original file is preserved. The

@@ -539,9 +539,14 @@ def test_gui(root):
         help_button.invoke()
         help_dialog = gui.controls_help
         assert help_dialog.title() == 'Bedienhilfe'
+        body = next(child for child in help_dialog.winfo_children() if isinstance(child, tk.Frame))
+        def help_labels():
+            return {str(widget.cget('text')) for widget in body.winfo_children() if isinstance(widget, tk.Label)}
+        assert {'Umschalt + ← / →', 'Umschalt + ↑ / ↓'} <= help_labels()
         window.update()
         gui.change_language('en')
         assert gui.controls_help is help_dialog and help_dialog.title() == 'Controls'
+        assert {'Shift + ← / →', 'Shift + ↑ / ↓'} <= help_labels()
         assert any(child.cget('text') == 'Close' for child in help_dialog.winfo_children()
                    if isinstance(child, ttk.Button))
         help_dialog.destroy()

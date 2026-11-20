@@ -149,16 +149,41 @@ def check_alignment(directory):
     try:
         dialog = CropDialog(window, (first, second), {}, first)
         window.update()
+        dialog.canvas.focus_force()
+        window.update()
+        def press(sequence):
+            dialog.canvas.event_generate(sequence)
+            window.update()
+        dialog.box = (40, 20, 200, 100)
+        for step, expected in (('Right', (41, 20, 201, 100)), ('Left', (40, 20, 200, 100))):
+            press(f'<{step}>')
+            assert dialog.box == expected and dialog.alignment == Alignment()
+        for key, value in (('Shift-Right', 0.1), ('Shift-Left', 0)):
+            press(f'<{key}>')
+            assert dialog.angle.get() == value and dialog.box == (40, 20, 200, 100)
+        band = Image.new('L', (200, 120))
+        band.paste(255, (55, 0, 145, 120))
+        for key, value in (('Shift-Up', 20), ('Shift-Down', -20)):
+            dialog.vertical.set(0)
+            for _ in range(21):
+                dialog.canvas.event_generate(f'<{key}>')
+            window.update()
+            assert dialog.vertical.get() == value
+            frame = np.asarray(align_photo(band, dialog.alignment))
+            top = (frame[15] > 127).sum()
+            bottom = (frame[-16] > 127).sum()
+            assert top > bottom if value > 0 else bottom > top
+        dialog.reset_crop()
         dialog.angle.set(2.4)
         dialog.vertical.set(-16)
         dialog.change_alignment()
         window.update()
-        assert dialog.alignment == Alignment(2.4, -16)
+        assert dialog.alignment == Alignment(-2.4, 16)
         assert dialog.display.tobytes() == align_photo(dialog.preview_base, dialog.alignment).tobytes()
         dialog.load_source(1)
         assert dialog.alignment == Alignment()
         dialog.load_source(0)
-        assert dialog.alignment == Alignment(2.4, -16)
+        assert dialog.alignment == Alignment(-2.4, 16)
         dialog.apply_crop()
         crop = dialog.result[1][first]
         assert second not in dialog.result[1] and crop.size[0] < image.width

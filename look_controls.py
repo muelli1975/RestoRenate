@@ -312,8 +312,13 @@ def open_controls(app):
     if current is not None and current.winfo_exists():
         current.destroy()
         return 'break'
-    dialog = app.controls_help = tk.Toplevel(app.window)
-    dialog.transient(app.window)
+    app.controls_help = controls_dialog(app.window)
+    return 'break'
+
+
+def controls_dialog(parent):
+    dialog = tk.Toplevel(parent)
+    dialog.transient(parent)
     dialog.configure(bg=PANEL_BG)
     dialog.resizable(False, False)
     body = tk.Frame(dialog, bg=SECONDARY_BG, padx=16, pady=12, highlightthickness=1, highlightbackground=BORDER)
@@ -327,6 +332,10 @@ def open_controls(app):
         ('Z halten', '', '100-%-Ansicht halten'),
         ('Bild↑ / Bild↓', '', 'Vorheriges / nächstes Ergebnis'),
         ('F1', '', 'Bedienhilfe öffnen'),
+        ('Pfeiltasten', '', 'Im Beschnittbild: Ausschnitt um 1 px verschieben'),
+        ('Umschalt', ' + ← / →', 'Im Beschnittbild: Horizont um 0,1° nach links / rechts drehen'),
+        ('Umschalt', ' + ↑ / ↓', 'Im Beschnittbild: obere / untere Bildkante verbreitern'),
+        ('Enter / Esc', '', 'Im Beschnittbild: übernehmen / verwerfen'),
     )
     rows = []
     for row in range(len(shortcuts)):
@@ -355,4 +364,4 @@ def open_controls(app):
     dialog.bind('<Escape>', lambda _event: dialog.destroy())
     dialog.bind('<F1>', lambda _event: dialog.destroy())
     dialog.focus_set()
-    return 'break'
+    return dialog
