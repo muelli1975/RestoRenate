@@ -9,7 +9,7 @@ from crop import ASPECTS, Alignment, CropRegion, box_size, clamp, fit_aspect, mo
 from imaging import align_photo, open_photo
 from language import translate
 from look_controls import controls_dialog
-from theme import APP_BG, GOLD_LIGHT, MUTED, PANEL_BG, TEXT
+from theme import APP_BG, GOLD_LIGHT, MUTED
 
 CORNERS = ((-1, -1), (1, -1), (-1, 1), (1, 1))
 EDGES = ((0, -1), (-1, 0), (1, 0), (0, 1))

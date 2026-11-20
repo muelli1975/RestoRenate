@@ -176,7 +176,7 @@ def check_alignment(directory):
         assert dialog.angle.get() == -2.4 and dialog.alignment.angle == 2.4
         assert horizon.value.get() == '-2' + translate(',') + '4°'
         rail = horizon.slider._canvas
-        segment = rail.coords('centered_progress')
+        segment = tk.Canvas.coords(rail, 'centered_progress')
         assert rail.itemcget('centered_progress', 'fill') == GOLD
         perspective.set_value(3)
         rail.event_generate('<MouseWheel>', delta=120, state=0)
@@ -189,7 +189,7 @@ def check_alignment(directory):
         assert dialog.angle.get() == -2.3
         horizon.set_value(2.4)
         window.update()
-        assert rail.coords('centered_progress')[0] == segment[2]
+        assert tk.Canvas.coords(rail, 'centered_progress')[0] == segment[2]
         for time in (1000, 1150):
             rail.event_generate('<ButtonPress-1>', x=10, y=8, time=time)
             rail.event_generate('<ButtonRelease-1>', x=10, y=8, time=time + 10)
