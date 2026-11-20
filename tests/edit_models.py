@@ -197,16 +197,16 @@ def check_alignment(directory):
         segment = tk.Canvas.coords(rail, 'centered_progress')
         assert rail.itemcget('centered_progress', 'fill') == GOLD
         perspective.set_value(3)
-        for state in (0, 1):
+        for state in (0, 4):
             if window.tk.call('tk', 'windowingsystem') == 'x11':
                 rail.event_generate('<Button-4>', state=state)
             else:
                 rail.event_generate('<MouseWheel>', delta=120, state=state)
             assert dialog.angle.get() == -2.4
         if window.tk.call('tk', 'windowingsystem') == 'x11':
-            rail.event_generate('<Button-4>', state=4)
+            rail.event_generate('<Button-4>', state=1)
         else:
-            rail.event_generate('<MouseWheel>', delta=120, state=4)
+            rail.event_generate('<MouseWheel>', delta=120, state=1)
         window.update()
         assert dialog.angle.get() == -2.3
         horizon.set_value(2.4)

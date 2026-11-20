@@ -292,7 +292,7 @@ def controls_dialog(parent):
     body = tk.Frame(dialog, bg=SECONDARY_BG, padx=16, pady=12, highlightthickness=1, highlightbackground=BORDER)
     body.pack(padx=12, pady=12)
     slider_gestures = (
-        ('Strg + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen'),
+        ('Umschalt + Mausrad', 'Bildbearbeitungsregler über Schiene oder Griff verstellen'),
         ('Doppelklick', 'Bildbearbeitungsregler auf Standardwert zurücksetzen'),
     )
     # Each column follows one workflow. The same gesture can have different
