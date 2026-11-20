@@ -542,11 +542,29 @@ def test_gui(root):
         body = next(child for child in help_dialog.winfo_children() if isinstance(child, tk.Frame))
         def help_labels():
             return {str(widget.cget('text')) for widget in body.winfo_children() if isinstance(widget, tk.Label)}
-        assert {'Umschalt + ← / →', 'Umschalt + ↑ / ↓'} <= help_labels()
+        def check_help_fit():
+            window.update()
+            # Fit a 1024 × 768 desktop, leaving space for decorations and taskbar.
+            assert help_dialog.winfo_reqwidth() <= 980, help_dialog.winfo_reqwidth()
+            assert help_dialog.winfo_reqheight() <= 685, help_dialog.winfo_reqheight()
+            for widget in (*body.winfo_children(), *help_dialog.winfo_children()):
+                assert widget.winfo_ismapped()
+                left = widget.winfo_rootx() - help_dialog.winfo_rootx()
+                top = widget.winfo_rooty() - help_dialog.winfo_rooty()
+                assert 0 <= left <= left + widget.winfo_width() <= help_dialog.winfo_width()
+                assert 0 <= top <= top + widget.winfo_height() <= help_dialog.winfo_height()
+            print('Controls guide dimensions:', help_dialog.winfo_width(), help_dialog.winfo_height())
+        check_help_fit()
+        assert {'Ansicht und Ergebnisse', 'LUT', 'Ausschnitt', 'Horizont und Perspektive',
+                'Links im Rahmen ziehen', 'Strg + Pfeiltasten', 'Umschalt + ← / →', 'Umschalt + ↑ / ↓'} <= help_labels()
+        assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())
         window.update()
         gui.change_language('en')
         assert gui.controls_help is help_dialog and help_dialog.title() == 'Controls'
-        assert {'Shift + ← / →', 'Shift + ↑ / ↓'} <= help_labels()
+        check_help_fit()
+        assert {'View and results', 'LUT', 'Crop', 'Horizon and perspective', 'Left-drag inside the frame',
+                'Ctrl + arrow keys', 'Shift + ← / →', 'Shift + ↑ / ↓'} <= help_labels()
+        assert any('9 × 9' in text and '3 × 3' in text for text in help_labels())
         assert any(child.cget('text') == 'Close' for child in help_dialog.winfo_children()
                    if isinstance(child, ttk.Button))
         help_dialog.destroy()

@@ -323,43 +323,80 @@ def controls_dialog(parent):
     dialog.resizable(False, False)
     body = tk.Frame(dialog, bg=SECONDARY_BG, padx=16, pady=12, highlightthickness=1, highlightbackground=BORDER)
     body.pack(padx=12, pady=12)
-    shortcuts = (
-        ('C', '', 'LUT ein / aus'),
-        ('C halten', ' + ← / →', 'Look zurück / vor'),
-        ('C halten', ' + ↑ / ↓', 'LUT-Stärke ändern'),
-        ('Umschalt + Mausrad', '', 'LUT-Stärke ändern'),
-        ('Doppelklick auf den Regler', '', 'Auf 100 % zurücksetzen'),
-        ('Z halten', '', '100-%-Ansicht halten'),
-        ('Bild↑ / Bild↓', '', 'Vorheriges / nächstes Ergebnis'),
-        ('F1', '', 'Bedienhilfe öffnen'),
-        ('Pfeiltasten', '', 'Im Beschnittbild: Ausschnitt um 1 px verschieben'),
-        ('Strg + Pfeiltasten', '', 'Im Beschnittbild: Ausschnitt um 5 px verschieben'),
-        ('Umschalt', ' + ← / →', 'Im Beschnittbild: Horizont um 0,1° nach links / rechts drehen'),
-        ('Umschalt', ' + ↑ / ↓', 'Perspektive: obere / untere Bildkante verbreitern'),
-        ('Umschalt + Mausrad', '', 'Beschnittregler um einen Schritt verstellen'),
-        ('Doppelklick auf den Regler', '', 'Beschnittregler auf 0 zurücksetzen'),
-        ('Enter / Esc', '', 'Im Beschnittbild: übernehmen / verwerfen'),
+    # Each column follows one workflow. The same gesture can have different
+    # meanings in the comparison pane, the LUT controls and the crop dialog.
+    columns = (
+        (
+            ('Ansicht und Ergebnisse', (
+                ('Trennlinie ziehen', 'Vorher und Nachher vergleichen'),
+                ('Mausrad', 'Ansicht zoomen'),
+                ('Rechts oder mittig ziehen', 'Vergrößerte Ansicht verschieben'),
+                ('Strg + 1', '100-%-Ansicht'),
+                ('Z halten', '100-%-Ansicht halten'),
+                ('Strg + 0 / Doppelklick / Esc', 'Ansicht einpassen'),
+                ('Bild↑ / Bild↓', 'Vorheriges / nächstes Ergebnis'),
+                ('F1', 'Bedienhilfe öffnen oder schließen'),
+            ), None),
+            ('LUT', (
+                ('C', 'LUT ein / aus'),
+                ('C halten + ← / →', 'Look zurück / vor'),
+                ('C halten + ↑ / ↓', 'LUT-Stärke ändern'),
+                ('Umschalt + Mausrad', 'Stärke am Regler ändern'),
+                ('Doppelklick auf den Regler', 'Auf 100 % zurücksetzen'),
+            ), '„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.'),
+        ),
+        (
+            ('Ausschnitt', (
+                ('Links im Rahmen ziehen', 'Gesamten Ausschnitt verschieben'),
+                ('Am Griff ziehen', 'Größe des Ausschnitts ändern'),
+                ('Pfeiltasten', 'Ausschnitt um 1 px verschieben'),
+                ('Strg + Pfeiltasten', 'Ausschnitt um 5 px verschieben'),
+                ('Ränder einpassen', 'Leere Bildränder aus dem Ausschnitt nehmen'),
+                ('Enter / Esc', 'Im Bild: übernehmen / verwerfen'),
+            ), 'Pfeiltasten wirken, wenn das Beschnittbild den Fokus hat.'),
+            ('Horizont und Perspektive', (
+                ('Umschalt + ← / →', 'Horizont um 0,1° nach links / rechts drehen'),
+                ('Umschalt + ↑ / ↓', 'Obere / untere Bildkante verbreitern'),
+                ('Umschalt + Mausrad', 'Wert am Regler um einen Schritt ändern'),
+                ('Doppelklick auf den Regler', 'Diesen Wert auf 0 zurücksetzen'),
+                ('Zahlenfeld + Enter', 'Eingegebenen Wert anwenden'),
+            ), 'Das Raster teilt den Ausschnitt in 3 × 3 Felder. Bei aktiver Geometriekorrektur sind es 9 × 9.'),
+        ),
     )
-    rows = []
-    for row in range(len(shortcuts)):
-        key_label = tk.Label(body, fg=GOLD_LIGHT, bg=SECONDARY_BG)
-        key_label.grid(row=row, column=0, sticky='w', padx=(0, 14), pady=2)
-        description_label = tk.Label(body, fg=TEXT, bg=SECONDARY_BG)
-        description_label.grid(row=row, column=1, sticky='w', pady=2)
-        rows.append((key_label, description_label))
-    hint = tk.Label(body, fg=TEXT, bg=SECONDARY_BG, justify='left', wraplength=380)
-    hint.grid(row=len(shortcuts), column=0, columnspan=2, sticky='w', pady=(8, 0))
+    width = min(920, dialog.winfo_screenwidth() - 64)
+    column_width = (width - 76) // 2
+    labels = []
+    heading_font = font.nametofont('TkDefaultFont').copy()
+    heading_font.configure(weight='bold')
+    dialog.heading_font = heading_font
+    for index, sections in enumerate(columns):
+        col = index * 3
+        row = 0
+        for heading, shortcuts, note in sections:
+            label = tk.Label(body, bg=SECONDARY_BG, fg=GOLD_LIGHT, font=heading_font)
+            label.grid(row=row, column=col, columnspan=2, sticky='w', pady=(8 if row else 0, 4))
+            labels.append((label, heading))
+            row += 1
+            for key, action in shortcuts:
+                for offset, text, color, share in ((0, key, GOLD_LIGHT, .43), (1, action, TEXT, .57)):
+                    label = tk.Label(body, fg=color, bg=SECONDARY_BG, justify='left',
+                                     wraplength=int(column_width * share) - 10)
+                    label.grid(row=row, column=col + offset, sticky='nw', padx=(0, 8 if not offset else 0), pady=1)
+                    labels.append((label, text))
+                row += 1
+            if note:
+                label = tk.Label(body, fg=TEXT, bg=SECONDARY_BG, justify='left', wraplength=column_width - 8)
+                label.grid(row=row, column=col, columnspan=2, sticky='nw', pady=(4, 0))
+                labels.append((label, note))
+                row += 1
+    body.columnconfigure(2, minsize=18)
     close_button = ttk.Button(dialog, command=dialog.destroy)
     close_button.pack(pady=(0, 12))
 
     def localize(_event=None):
         dialog.title(translate('Bedienhilfe'))
-        for (key_label, description_label), (key, suffix, description) in zip(rows, shortcuts):
-            key_label.configure(text=translate(key) + suffix)
-            description_label.configure(text=translate(description))
-        hint.configure(text=translate(
-            '„Beibehalten“ schaltet die LUT mit derselben Stärke beim Öffnen des nächsten Eingabebildes wieder ein.'
-        ))
+        for label, text in labels:
+            label.configure(text=translate(text))
         close_button.configure(text=translate('Schließen'))
 
     dialog.bind('<<LanguageChanged>>', localize)
