@@ -1,0 +1,59 @@
+name: Measure compressed classic upscalers
+on:
+  push:
+    branches: [codex/measure-classic-upscalers]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Measure verified weights with the Windows packaging settings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import concurrent.futures
+          import hashlib
+          import json
+          import shutil
+          import subprocess
+          import tempfile
+          import zipfile
+          from pathlib import Path
+          from methods import UPSCALERS, UPSCALING, LANCZOS, SEEDVR2, VOSR2, model_specs
+
+          main = json.loads(Path('download_manifest.json').read_text())
+          optional = json.loads(Path('method_downloads.json').read_text())
+          specs = {s['path']: s for model in UPSCALERS if model not in {LANCZOS, SEEDVR2, VOSR2}
+                   for s in model_specs(main, optional, UPSCALING, upscaler=model)}
+          with tempfile.TemporaryDirectory() as directory:
+              root = Path(directory)
+              def fetch(s):
+                  target = root / s['path']
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  subprocess.run(['curl','-fsSL','--retry','4','--retry-all-errors',
+                                  '--output',str(target),s['url']], check=True)
+                  with target.open('rb') as file:
+                      assert target.stat().st_size == s['size'] and hashlib.file_digest(file,'sha256').hexdigest() == s['sha256'], target.name
+                  return target
+              with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+                  files = sorted(pool.map(fetch, specs.values()))
+              subprocess.run(['gh','run','download','44755544020','-n','RestoRenate-Windows-x64','-D',str(root)],check=True)
+              app, = root.glob('RestoRenate*.zip')
+              base_size = app.stat().st_size
+              model_zip = root / 'models.zip'
+              with zipfile.ZipFile(app,'a',compression=zipfile.ZIP_DEFLATED,compresslevel=4) as combined, zipfile.ZipFile(model_zip,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=4) as pack:
+                  for f in files:
+                      name = f.relative_to(root).as_posix()
+                      combined.write(f, 'RestoRenate/' + name)
+                      pack.write(f, name)
+                  x2 = pack.getinfo('models/upscale_models/RealESRGAN_x2plus.pth').compress_size
+              with zipfile.ZipFile(app) as z:
+                  assert z.testzip() is None
+              report = dict(files=len(files), raw=sum(s['size'] for s in specs.values()), application=base_size, models_zip=model_zip.stat().st_size, combined_zip=app.stat().st_size, x2_deflated=x2)
+              print('SIZE_REPORT', json.dumps(report))
+          PY
