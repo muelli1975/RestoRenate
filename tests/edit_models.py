@@ -134,6 +134,11 @@ def check_alignment(directory):
     from crop_dialog import CropDialog
     from imaging import align_photo, open_photo
 
+    for size in ((2, 50), (63, 97), (25, 1)):
+        solid = Image.new('RGB', size, 'white')
+        alignment = Alignment(-5, -20)
+        fitted = alignment.fit_box(size, (0, 0, *size))
+        assert align_photo(solid, alignment, fitted).getextrema()[0] == (255, 255)
     first, second = (directory / name for name in ('lines.png', 'other.png'))
     y, x = np.indices((120, 240))
     lines = np.where((x % 20 < 3) | (y % 20 < 3), 80, 230).astype('uint8')

@@ -60,25 +60,35 @@ class Alignment:
         w, h = size
         a, b, c, d, e, f, g, k = self.coefficients(size)
 
-        def inside(x, y):
-            z = 1 + g * x + k * y
-            return 0 <= a * x + b * y + c <= w * z and 0 <= d * x + e * y + f <= h * z
+        def fits(candidate):
+            left, top, right, bottom = candidate
+            for x in (left + 0.5, right - 0.5):
+                for y in (top + 0.5, bottom - 0.5):
+                    z = 1 + g * x + k * y
+                    if not (0 <= a * x + b * y + c < w * z and 0 <= d * x + e * y + f < h * z):
+                        return False
+            return True
 
-        left, top, right, bottom = box
-        corners = ((left, top), (left, bottom), (right, top), (right, bottom))
-        if all(inside(x, y) for x, y in corners):
+        def shrink(scale):
+            cx, cy = w / 2, h / 2
+            left = min(w - 1, ceil(cx + (box[0] - cx) * scale))
+            top = min(h - 1, ceil(cy + (box[1] - cy) * scale))
+            right = max(left + 1, floor(cx + (box[2] - cx) * scale))
+            bottom = max(top + 1, floor(cy + (box[3] - cy) * scale))
+            return left, top, right, bottom
+
+        if fits(box):
             return box
         lo, hi = 0., 1.
+        best = (w // 2, h // 2, w // 2 + 1, h // 2 + 1)
         for _ in range(32):
             mid = (lo + hi) / 2
-            if all(inside(w / 2 + (x - w / 2) * mid, h / 2 + (y - h / 2) * mid) for x, y in corners):
-                lo = mid
+            candidate = shrink(mid)
+            if fits(candidate):
+                best, lo = candidate, mid
             else:
                 hi = mid
-        left, right = ceil(w / 2 + (left - w / 2) * lo), floor(w / 2 + (right - w / 2) * lo)
-        top, bottom = ceil(h / 2 + (top - h / 2) * lo), floor(h / 2 + (bottom - h / 2) * lo)
-        left, top = min(left, w - 1), min(top, h - 1)
-        return left, top, max(left + 1, right), max(top + 1, bottom)
+        return best
 
 
 @dataclass(frozen=True)
