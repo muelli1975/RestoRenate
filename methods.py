@@ -56,6 +56,8 @@ ANIMESHARP = 'AnimeSharp 4×'
 REMACRI = 'Remacri 4×'
 REALWEBPHOTO = 'RealWebPhoto v4'
 SIAX = 'NMKD Siax 4×'
+CLEARREALITY = 'ClearRealityV1 SPAN 4×'
+PUREPHOTO = 'PurePhoto SPAN 4×'
 NOMOS2_HQ = 'Nomos2 HQ MoSR 4×'
 NOMOS2_DAT2 = 'Nomos2 HQ DAT2 4×'
 NOMOS8K_DAT = 'Nomos8kDAT 4×'
@@ -66,7 +68,7 @@ SEEDVR2 = 'SeedVR2 3B INT8'
 VOSR2 = 'VOSR 2.0'
 VOSR2_BUNDLE = 'VOSR2'
 UPSCALE_MENU_SECTIONS = (
-    ('Saubere Fotos und Porträts', (NOMOS2_HQ, NOMOS2_DAT2, FACEUP_DAT)),
+    ('Saubere Fotos und Porträts', (NOMOS2_HQ, NOMOS2_DAT2, FACEUP_DAT, CLEARREALITY, PUREPHOTO)),
     ('Detailrekonstruktion', (SEEDVR2, VOSR2)),
     ('Kleine und komprimierte Fotos', (NOMOS8K_DAT, REALWEBPHOTO)),
     ('Allrounder', (REALESRGAN, SIAX, REMACRI, ULTRASHARP_ORIGINAL, ULTRASHARP, ULTRASHARP_LITE, SWINIR_S)),
@@ -74,6 +76,8 @@ UPSCALE_MENU_SECTIONS = (
 )
 UPSCALERS = (*(item for _, group in UPSCALE_MENU_SECTIONS for item in group), LANCZOS)
 UPSCALE_LICENSES = {
+    CLEARREALITY: 'Apache 2.0',
+    PUREPHOTO: 'CC BY-SA 4.0',
     ULTRASHARP_ORIGINAL: 'CC BY-NC-SA 4.0',
     ULTRASHARP: 'CC BY-NC-SA 4.0',
     ULTRASHARP_LITE: 'CC BY-NC-SA 4.0',
@@ -132,6 +136,8 @@ METHOD_FILENAME_LABELS = {
     DEOLDIFY_ARTISTIC: 'DeOldify-Artistic',
 }
 UPSCALE_FILENAME_LABELS = {
+    CLEARREALITY: 'ClearRealityV1-SPAN-4x',
+    PUREPHOTO: 'PurePhoto-SPAN-4x',
     ULTRASHARP_ORIGINAL: 'UltraSharp-4x',
     ULTRASHARP: 'UltraSharp-V2',
     ULTRASHARP_LITE: 'UltraSharp-V2-Lite',
@@ -167,6 +173,8 @@ UPSCALE_LITE = ('UpscaleModelLoader', 'model_name', '4x-UltraSharpV2_Lite.safete
 ESRGAN2 = ('UpscaleModelLoader', 'model_name', 'RealESRGAN_x2plus.pth')
 ESRGAN4 = ('UpscaleModelLoader', 'model_name', 'RealESRGAN_x4plus.safetensors')
 UPSCALE_FILES = {
+    CLEARREALITY: {'upscale': ('UpscaleModelLoader', 'model_name', '4x-ClearRealityV1.safetensors')},
+    PUREPHOTO: {'upscale': ('UpscaleModelLoader', 'model_name', '4xPurePhoto-Span.pth')},
     ULTRASHARP_ORIGINAL: {'upscale': ('UpscaleModelLoader', 'model_name', '4x-UltraSharp.safetensors')},
     ULTRASHARP: {'upscale': UPSCALE},
     ULTRASHARP_LITE: {'upscale_lite': UPSCALE_LITE},

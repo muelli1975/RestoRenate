@@ -1,4 +1,18 @@
 {
+  "span-photo": [
+    {
+      "path": "models/upscale_models/4x-ClearRealityV1.safetensors",
+      "size": 4492232,
+      "sha256": "83a9c8e279e3d07548e2b0d736dc2c73c1736a07072a748ed4fafbba99b44693",
+      "url": "https://huggingface.co/Kim2091/ClearRealityV1/resolve/56f9841c86d054ea19f820341c8f66f0fcaa16af/4x-ClearRealityV1.safetensors"
+    },
+    {
+      "path": "models/upscale_models/4xPurePhoto-Span.pth",
+      "size": 9016490,
+      "sha256": "c689eec59771ed3eaffc10eea933c44fdb9131f83251c51c5bab4cae7c4d3bf2",
+      "url": "https://github.com/starinspace/StarinspaceUpscale/releases/download/Models/4xPurePhoto-Span.pth"
+    }
+  ],
   "fibo2-edit-turbo": [
     {
       "path": "models/diffusion_models/fibo2_edit_turbo_int8_convrot.safetensors",
