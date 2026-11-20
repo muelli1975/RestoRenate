@@ -302,8 +302,8 @@ def processing_settings(record, model_name, graph, upscaler):
             'prompt': record['prompt'], 'seed': record['seed'], 'sampling': sampling,
             'original_size': record['original_size'], 'working_size': record['working_size'],
             'working_crop': record.get('active_crop'), 'output_size': record['output_size'], 'upscaler': model_name,
-            **{key: record[key] for key in ('source_crop', 'source_alignment', 'source_rotation', 'second_image', 'second_rotation',
-                                            'second_crop', 'second_alignment', 'second_size', 'luts')
+            **{key: record[key] for key in ('source_crop', 'source_crop_aspect', 'source_alignment', 'source_rotation', 'second_image', 'second_rotation',
+                                            'second_crop', 'second_crop_aspect', 'second_alignment', 'second_size', 'luts')
                if key in record},
             **{key: record[key] for key in ('scratches', 'faces', 'colorization') if key in record}}
 

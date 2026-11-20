@@ -311,7 +311,7 @@ GUIDE_COLUMNS = (
     ),
     (
         ('Ausschnitt', (
-            ('Original', 'Seitenverhältnis des Eingabebildes beibehalten'),
+            ('Original (Standard)', 'Seitenverhältnis des Eingabebildes beibehalten'),
             ('Mit der linken Maustaste im Rahmen ziehen', 'Ausschnitt verschieben'),
             ('An einem Griff ziehen', 'Größe des Ausschnitts ändern'),
             ('Pfeiltasten', 'Ausschnitt um 1 px verschieben'),

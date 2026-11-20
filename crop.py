@@ -128,6 +128,8 @@ class CropRegion:
 
     def record(self, prefix):
         data = {prefix + '_crop': self.box}
+        if self.aspect is not None:
+            data[prefix + '_crop_aspect'] = self.aspect
         if self.alignment != Alignment():
             data[prefix + '_alignment'] = asdict(self.alignment)
         return data
@@ -137,7 +139,12 @@ class CropRegion:
         size, box = record.get('original_size'), record.get('source_crop')
         if isinstance(size, (tuple, list)) and isinstance(box, (tuple, list)):
             try:
-                return cls(tuple(size), tuple(box), alignment=Alignment(**record.get('source_alignment', {})))
+                aspect = record.get('source_crop_aspect')
+                if isinstance(aspect, (list, tuple)) and len(aspect) == 2 and all(type(n) is int and n > 0 for n in aspect):
+                    aspect = tuple(aspect)
+                elif aspect != 'original':
+                    aspect = None
+                return cls(tuple(size), tuple(box), aspect, Alignment(**record.get('source_alignment', {})))
             except (ValueError, TypeError):
                 pass
         return None

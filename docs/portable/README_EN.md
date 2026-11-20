@@ -19,7 +19,8 @@ Python, Tk and ExifTool are included. ExifTool uses the system Perl.
 Open an image or folder and choose a method. Input formats
 include JPEG, PNG, TIFF, WebP, BMP and AVIF. “Crop …” opens a frame with a
 rule-of-thirds grid. Drag inside the frame to move it or drag a handle to
-resize it. Choose “Original” to keep the input image’s aspect ratio when drawing or resizing the crop.
+resize it. “Original” is the default for new images and after “Reset”.
+The crop keeps the input image’s aspect ratio when resized or when the edges are fitted automatically.
 You can also select “Free,” a fixed ratio or “Custom …” for a ratio such as 7:5. Each image in a folder can be selected and cropped individually. “Apply”
 shows the selected image in the main view. Use “Horizon” and “Perspective”
 to align the image to a 9 × 9 grid. You can enter either value directly. Shift + mouse wheel over the track or handle adjusts the slider by one step.

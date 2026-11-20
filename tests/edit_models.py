@@ -151,10 +151,7 @@ def check_alignment(directory):
         dialog = CropDialog(window, (first, second), {}, first)
         window.update()
         assert tuple(dialog.aspect_choice['values'][:2]) == ('Original', translate('Frei'))
-        assert dialog.aspect_choice.get() == translate('Frei') and dialog.aspect is None
-        dialog.aspect_choice.current(0)
-        dialog.choose_aspect(None)
-        assert dialog.aspect == 'original'
+        assert dialog.aspect_choice.get() == 'Original' and dialog.aspect == 'original'
         dialog.box = resize_box(dialog.box, image.size, (1, 1), (120, 60), dialog.aspect)
         assert box_size(dialog.box) == (120, 60)
         dialog.load_source(1)
@@ -167,8 +164,14 @@ def check_alignment(directory):
             w, h = box_size(box)
             assert 1 < min(w, h) <= max(w, h) < 100
             assert abs(w * size[1] - h * size[0]) <= max(size)
+        dialog.aspect_choice.set(translate('Frei'))
+        dialog.choose_aspect(None)
+        dialog.box = (8, 16, 52, 87)
+        dialog.load_source(1)
+        dialog.load_source(0)
+        assert dialog.aspect is None and dialog.box == (8, 16, 52, 87)
         dialog.reset_crop()
-        assert dialog.aspect_choice.get() == translate('Frei') and dialog.aspect is None
+        assert dialog.aspect_choice.get() == 'Original' and dialog.aspect == 'original'
         dialog.canvas.focus_force()
         window.update()
         def press(sequence):
@@ -256,6 +259,20 @@ def check_alignment(directory):
         dialog.change_alignment()
         window.update()
         assert dialog.alignment == Alignment(-2.4, 16)
+        fitted = dialog.box
+        w, h = box_size(fitted)
+        assert w < image.width and abs(w * image.height - h * image.width) <= max(image.size) / 2
+        dialog.fit_edges()
+        assert dialog.box == fitted
+        dialog.angle.set(0)
+        dialog.vertical.set(0)
+        dialog.change_alignment()
+        assert dialog.box == (0, 0, *image.size)
+        dialog.angle.set(2.4)
+        dialog.vertical.set(-16)
+        dialog.change_alignment()
+        window.update()
+        assert dialog.box == fitted
         assert dialog.display.tobytes() == align_photo(dialog.preview_base, dialog.alignment).tobytes()
         dialog.load_source(1)
         assert dialog.alignment == Alignment()

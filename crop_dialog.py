@@ -141,7 +141,7 @@ class CropDialog(tk.Toplevel):
         if region and region.original_size == image.size:
             self.box, self.aspect = region.box, region.aspect
         else:
-            self.box, self.aspect = (0, 0, *image.size), None
+            self.box, self.aspect = (0, 0, *image.size), 'original'
         self.alignment = region.alignment if region and region.original_size == image.size else Alignment()
         self.set_sliders()
         if self.aspect in self.aspects:
@@ -247,23 +247,40 @@ class CropDialog(tk.Toplevel):
         if updated == self.alignment:
             return
         full = (0, 0, *self.image.size)
-        if self.aspect is None and self.box == self.alignment.fit_box(self.image.size, full):
-            self.box = updated.fit_box(self.image.size, full)
+        if self.aspect in (None, 'original') and self.box == self.fitted_box(self.alignment, full):
+            self.box = self.fitted_box(updated, full)
         self.alignment = updated
         if self.redraw_job is None:
             self.redraw_job = self.after_idle(self.draw_image)
 
+    def fitted_box(self, alignment, box):
+        safe = alignment.fit_box(self.image.size, box)
+        if self.aspect != 'original':
+            return safe
+        # Fit the original proportions inside the safe area, allowing for whole pixels.
+        w, h = box_size(safe)
+        iw, ih = self.image.size
+        if 2 * abs(w * ih - h * iw) <= max(iw, ih):
+            return safe
+        if w * ih <= h * iw:
+            height = max(1, round(w * ih / iw))
+            top = safe[1] + (h - height) // 2
+            return safe[0], top, safe[2], top + height
+        width = max(1, round(h * iw / ih))
+        left = safe[0] + (w - width) // 2
+        return left, safe[1], left + width, safe[3]
+
     def fit_edges(self):
         if self.image is not None:
-            self.box = self.alignment.fit_box(self.image.size, self.box)
+            self.box = self.fitted_box(self.alignment, self.box)
             self.draw_selection()
 
     def reset_crop(self):
         if self.image is None:
             return
-        self.aspect_choice.current(self.aspects.index(None))
+        self.aspect = 'original'
+        self.aspect_choice.current(self.aspects.index(self.aspect))
         self.custom_entry.pack_forget()
-        self.aspect = None
         self.drag = None
         self.box = (0, 0, *self.image.size)
         self.alignment = Alignment()
