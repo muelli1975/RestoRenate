@@ -1,31 +1,14 @@
-name: Transfer verified portable preview
+name: Verify anonymous Windows preview download
 on:
   push:
     branches: [codex/transfer-classic-preview]
-permissions:
-  contents: read
-  actions: read
+permissions: {}
 jobs:
-  transfer:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 4
     steps:
-      - name: Split verified Windows artifact for transfer
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Download the public archive and compare SHA-256
         run: |
-          set -eu
-          gh api repos/muelli1975/RestoRenate/actions/artifacts/14648657473/zip > package.zip
-          echo 'c75c8202189577708cb05adad03fe17cf0d55595404a84d3af0c07feea69f2fc  package.zip' | sha256sum -c -
-          split -b 384M -d package.zip rr-part-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rr-part-00
-          path: rr-part-00
-          compression-level: 0
-          retention-days: 1
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rr-part-01
-          path: rr-part-01
-          compression-level: 0
-          retention-days: 1
+          curl --fail --silent --show-error --location --max-time 180 --output portable.zip 'https://nightly.link/muelli1975/RestoRenate/actions/runs/44774322789/RestoRenate-Windows-x64.zip'
+          echo 'c75c8202189577708cb05adad03fe17cf0d55595404a84d3af0c07feea69f2fc  portable.zip' | sha256sum -c -
