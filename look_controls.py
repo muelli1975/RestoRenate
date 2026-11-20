@@ -7,6 +7,7 @@ import customtkinter as ctk
 from language import translate
 from looks import Look, catalog
 from selection_menu import SelectionMenu
+from slider_gestures import bind_slider_wheel, bind_slider_reset
 from theme import BORDER, DISABLED, GOLD, GOLD_LIGHT, PANEL_BG, SECONDARY_BG, TEXT, attach_tooltip, checkbox, set_control_state
 
 SECTIONS = {
@@ -36,8 +37,6 @@ class LookControls:
         self.used_c = False
         self.result = False
         self.available = False
-        self.wheel_remainder = 0
-        self.resetting_slider = False
         frame = self.frame = tk.Frame(parent, bg=PANEL_BG)
         frame.columnconfigure(0, weight=1)
         row = self.settings = tk.Frame(frame, bg=PANEL_BG)
@@ -70,12 +69,8 @@ class LookControls:
                                        command=app.create_lut_variant, style='Input.TButton')
         self.save_button.grid(row=0, column=1, sticky='e')
         frame.bind('<Configure>', self.fit_actions)
-        self.slider.bind('<Double-Button-1>', self.begin_slider_reset)
-        self.slider.bind('<ButtonRelease-1>', self.finish_slider_reset)
-        self.slider.bind('<MouseWheel>', self.wheel)
-        self.slider.bind('<Button-4>', lambda event: self.wheel(event, 1))
-        self.slider.bind('<Button-5>', lambda event: self.wheel(event, -1))
-        self.slider.bind('<Leave>', self.clear_wheel, add='+')
+        bind_slider_wheel(self.slider, self.can_edit_strength, lambda ticks: self.step(5 * ticks))
+        bind_slider_reset(self.slider, self.can_edit_strength, lambda: self.set_strength(100))
         app.window.bind('<KeyPress>', self.key_press, add='+')
         app.window.bind('<KeyRelease>', self.key_release, add='+')
         app.window.bind('<FocusOut>', self.check_focus, add='+')
@@ -179,7 +174,7 @@ class LookControls:
         self.refresh()
 
     def set_strength(self, value):
-        if self.available and self.enabled.get():
+        if self.can_edit_strength():
             self.strength.set(round(float(value)))
             self.update_kept_look()
             self.refresh()
@@ -187,35 +182,8 @@ class LookControls:
     def step(self, amount):
         self.set_strength(max(0, min(100, round(self.strength.get()) + amount)))
 
-    def begin_slider_reset(self, _event):
-        self.resetting_slider = self.available and self.enabled.get()
-        if self.resetting_slider:
-            return 'break'
-
-    def finish_slider_reset(self, _event):
-        if self.resetting_slider:
-            self.resetting_slider = False
-            self.set_strength(100)
-            return 'break'
-
-    def clear_wheel(self, _event=None):
-        self.wheel_remainder = 0
-
-    def wheel(self, event, ticks=None):
-        if not event.state & 0x0001 or not self.available or not self.enabled.get():
-            self.clear_wheel()
-            return None
-        if ticks is None:
-            delta = event.delta
-            if self.slider.tk.call('tk', 'windowingsystem') == 'win32':
-                delta += self.wheel_remainder
-                ticks = int(delta / 120)
-                self.wheel_remainder = delta - 120 * ticks
-            else:
-                ticks = (delta > 0) - (delta < 0)
-        if ticks:
-            self.step(5 * ticks)
-        return 'break'
+    def can_edit_strength(self):
+        return self.available and self.enabled.get()
 
     @staticmethod
     def is_text_input(widget):

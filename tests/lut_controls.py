@@ -475,7 +475,24 @@ def test_gui(root):
         assert controls.look().key == 'classic_cinema' and controls.hover is None
         assert menu.entrycget(cinema_entry, 'image') == str(menu.check) and has_choice_mark(menu, cinema, cinema_index)
         assert menu.entrycget(film_entry, 'image') == str(menu.blank) and not has_choice_mark(menu, film, film_index)
-        controls.step(-5)
+        track = controls.slider._canvas
+        x11 = window.tk.call('tk', 'windowingsystem') == 'x11'
+        def wheel_down(state):
+            if x11:
+                track.event_generate('<Button-5>', state=state)
+            else:
+                track.event_generate('<MouseWheel>', delta=-120, state=state)
+            window.update()
+        wheel_down(0)
+        assert controls.look().strength == 100
+        wheel_down(1)
+        assert controls.look().strength == 95
+        for click_time in (1000, 1150):
+            track.event_generate('<ButtonPress-1>', x=10, y=8, time=click_time)
+            track.event_generate('<ButtonRelease-1>', x=10, y=8, time=click_time + 10)
+        window.update()
+        assert controls.look().strength == 100
+        wheel_down(1)
         assert controls.look().strength == 95
         entry = gui.seed_entry
         entry.focus_set()
