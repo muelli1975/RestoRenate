@@ -363,15 +363,18 @@ class GuidePanels(tk.Frame):
                 self.labels.append((title, heading))
                 row += 1
                 for key, action in entries:
-                    shortcut = tk.Label(panel, bg=SECONDARY_BG, fg=GOLD_LIGHT, font=self.bold, justify='right')
+                    shortcut = tk.Label(panel, bg=SECONDARY_BG, fg=GOLD_LIGHT, font=self.bold, justify='right',
+                                        padx=0, borderwidth=0, highlightthickness=0)
                     shortcut.grid(row=row, column=0, sticky='ne', padx=(0, 9))
-                    description = tk.Label(panel, bg=SECONDARY_BG, fg=TEXT, justify='left')
+                    description = tk.Label(panel, bg=SECONDARY_BG, fg=TEXT, justify='left',
+                                           padx=0, borderwidth=0, highlightthickness=0)
                     description.grid(row=row, column=1, sticky='nw')
                     self.labels.extend(((shortcut, key), (description, action)))
                     self.rows.append((shortcut, description))
                     row += 1
                 if heading == 'Ausschnitt':
-                    note = tk.Label(panel, bg=SECONDARY_BG, fg=TEXT, justify='left')
+                    note = tk.Label(panel, bg=SECONDARY_BG, fg=TEXT, justify='left',
+                                    padx=0, borderwidth=0, highlightthickness=0)
                     note.grid(row=row, column=0, columnspan=2, sticky='w', pady=(4, 0))
                     self.labels.append((note, 'Pfeiltasten wirken, wenn das Beschnittbild den Fokus hat.'))
                     self.focus_note = note
@@ -389,7 +392,7 @@ class GuidePanels(tk.Frame):
             self.columns = columns
             for index, panel in enumerate(self.panels):
                 panel.grid(row=index // columns, column=index % columns, sticky='nsew',
-                           padx=(8 if index and columns == 2 else 0, 0),
+                           padx=((4, 0) if index else (0, 4)) if columns == 2 else 0,
                            pady=(8 if index and columns == 1 else 0, 0))
             for col in range(2):
                 self.body.columnconfigure(col, weight=int(col < columns),

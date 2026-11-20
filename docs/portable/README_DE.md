@@ -1,4 +1,4 @@
-# RestoRenate 1.3
+# RestoRenate 1.4
 
 Portable Ausgabe
 
@@ -6,8 +6,8 @@ Portable Ausgabe
 
 Die gesamte ZIP in einen kurzen, beschreibbaren Pfad entpacken, etwa
 D:\RestoRenate, und RestoRenate.exe öffnen. Für ein Update RestoRenate beenden
-und den Inhalt des Ordners RestoRenate aus der ZIP in den bestehenden
-Programmordner kopieren und die Programmdateien ersetzen.
+und das neue Paket vollständig in einen neuen Ordner entpacken. Bei Bedarf settings.json,
+vorhandene Modelle und bereits eingerichtete Rechenlaufzeiten aus der alten Installation übernehmen.
 Modelle lassen sich weiterverwenden. Einstellungen und eigene Presets stehen
 in settings.json direkt im Programmordner.
 

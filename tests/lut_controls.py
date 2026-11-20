@@ -582,7 +582,8 @@ def test_gui(root):
                 assert label.winfo_ismapped()
                 x = label.winfo_rootx() - panels.canvas.winfo_rootx()
                 assert 0 <= x <= panels.canvas.winfo_width() - label.winfo_width()
-                assert label.winfo_reqwidth() <= label.winfo_width()
+                assert label.winfo_reqwidth() <= label.winfo_width(), (
+                    label.cget('text'), label.winfo_reqwidth(), label.winfo_width(), panels.columns)
                 assert label.winfo_reqheight() <= label.winfo_height()
                 if not scrolling:
                     y = label.winfo_rooty() - panels.canvas.winfo_rooty()

@@ -1,13 +1,12 @@
-# RestoRenate 1.3
+# RestoRenate 1.4
 
 Portable edition
 
 ## Start and update
 
 Extract the entire ZIP to a short, writable path such as D:\RestoRenate and
-open RestoRenate.exe. To update, close RestoRenate and copy the contents of the
-RestoRenate folder in the ZIP into the existing program folder. Replace the
-program files. Models can be reused. The settings and custom presets are in
+open RestoRenate.exe. To update, close RestoRenate and extract the new package in full into a fresh folder.
+To keep your setup, copy settings.json, existing models and any processing runtimes you already installed. The settings and custom presets are in
 settings.json at the top level of the program folder.
 
 Linux: Extract the archive and run ./Start.sh in a graphical desktop session.

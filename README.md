@@ -1,4 +1,4 @@
-# RestoRenate 1.3
+# RestoRenate 1.4
 
 [Downloads and SHA-256](https://github.com/muelli1975/RestoRenate/releases/latest) · [Deutsch](README_DE.md) · [User guide](docs/portable/README_EN.md)
 
@@ -33,9 +33,15 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 3. Select **Start**. Use **Download models …** to prepare multiple methods in one pass. Optional Lightning LoRAs are listed beneath their base models.
 4. Compare the saved result with the before-and-after slider. The navigation shows **Result 1/3**, for example. Use **Ctrl+1** for 100%, **Esc** to fit the view, and **Page Up / Page Down** to browse results.
 
+## New in 1.4
+
+The GPU Default preset uses ClearRealityV1 SPAN 4×. PurePhoto SPAN 4× and NomosUni SPAN MultiJPG 4× join the selection. All three packages include the classic upscaler weights. SeedVR2 and VOSR remain optional downloads.
+
+The crop dialog can straighten the horizon and correct perspective before processing. Original keeps the input image’s aspect ratio. The controls guide (F1) groups mouse and keyboard gestures by task and adapts to the window width in English and German.
+
 ## New in 1.3
 
-Upscalers are grouped by use. NomosUni SPAN MultiJPG 4× and Nomos8kDAT handle small, compressed photos. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail in a single step. All four can upscale a photo directly or process the result of a restoration.
+Upscalers are grouped by use. Nomos2 HQ DAT2 and Nomos8kDAT join the photo models. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail in a single step. All four can upscale a photo directly or process the result of a restoration.
 
 ## New in 1.2
 
