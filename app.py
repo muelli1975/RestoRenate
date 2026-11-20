@@ -411,7 +411,13 @@ class Application:
         self.controls.extend((self.language_button, self.processing_button, self.compute_button))
         self.refresh_processing_menu()
 
-        settings_width, panel_gap, body_padding, preview_padding = 374, 10, 14, 9
+        panel_gap, body_padding, preview_padding = 10, 14, 9
+        panel_inset, field_gap = 12, 5
+        style_font = ttk.Style(self.window).lookup('Input.TMenubutton', 'font') or 'TkDefaultFont'
+        menu_font = font.Font(root=self.window, font=style_font)
+        model_width = max(menu_font.measure(name) for name in UPSCALERS) + 28 + field_gap
+        # The upscaler gets ten of nineteen equal shares in the scaling row.
+        settings_width = max(374, 2 * panel_inset + (19 * model_width + 9) // 10)
         self.preview_width_offset = settings_width + panel_gap + 2 * (body_padding + preview_padding)
         body = tk.Frame(self.window, bg=BG, padx=body_padding)
         body.pack(fill='both', expand=True)
@@ -420,7 +426,7 @@ class Application:
         settings_slot = tk.Frame(body, bg=PANEL, width=settings_width)
         settings_slot.grid(row=0, column=0, sticky='ns', padx=(0, panel_gap))
         settings_slot.pack_propagate(False)
-        left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=12, pady=4 if self.compact_window else 10)
+        left = self.settings_panel = tk.Frame(settings_slot, bg=PANEL, padx=panel_inset, pady=4 if self.compact_window else 10)
         left.pack(fill='both', expand=True)
         left.grid_columnconfigure(0, weight=1)
         left.grid_rowconfigure(11, weight=1)
@@ -484,7 +490,7 @@ class Application:
                                               style='Input.TMenubutton')
         self.upscale_menu = SelectionMenu(self.upscale_options, self.upscaler, **dict(menu_colors, disabledforeground=GOLD))
         self.upscale_options.configure(menu=self.upscale_menu)
-        self.upscale_options.grid(row=1, column=0, sticky='ew', padx=(0, 5))
+        self.upscale_options.grid(row=1, column=0, sticky='ew', padx=(0, field_gap))
         self.upscale_hints = ModelHints(self.upscale_options, lambda: self.upscaler.get() if self.size_choice() != NO_RESCALE else None, lambda: self.language)
         self.upscale_hints.bind_menu(self.upscale_menu)
         self.refresh_upscale_menu()
