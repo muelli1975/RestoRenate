@@ -7,8 +7,8 @@ DESCRIPTIONS = {
         "Für Realfilm. Vergrößert um 2× und lässt Filmkorn weitgehend stehen.",
         "For live-action footage. Enlarges by 2× and largely preserves film grain."),
     "clearreality": (
-        "Für relativ klare, wenig körnige Fotos. Gibt Gesichter, Haare und Naturmotive weich und natürlich wieder. Bei Bokeh können Artefakte entstehen.",
-        "For fairly clear photos with little grain. Gives faces, hair and nature scenes a soft, natural look. Bokeh can show artifacts."),
+        "Für relativ klare, körnungsarme Fotos trainiert. Gibt Gesichter, Haare und Naturmotive weich und natürlich wieder. Bei unscharfem Hintergrund können Artefakte entstehen.",
+        "Trained for relatively clear photos with little grain. Gives faces, hair and nature scenes a soft, natural look. Out-of-focus backgrounds can show artifacts."),
     "purephoto": (
         "Für Fotos mit erkennbaren Details, besonders Haaren und Fell. Sehr kleine Vorlagen sind je nach Motiv weniger geeignet.",
         "For photos with discernible detail, especially hair and fur. Very small inputs may be less suitable, depending on the subject."),
@@ -37,8 +37,8 @@ DESCRIPTIONS = {
         "Kompaktes 2×-Modell für Videomaterial. Geeignet, wenn eine moderate Vergrößerung ausreicht.",
         "Compact 2× model for video footage. Useful when moderate enlargement is enough."),
     "realbasicvsr": (
-        "Für niedrig aufgelöste Videos mit realen Bildstörungen. Nutzt mehrere aufeinanderfolgende Bilder zur Rekonstruktion von Details.",
-        "For low-resolution footage with real-world degradation. Uses consecutive frames to reconstruct detail."),
+        "Für niedrig aufgelöste Videos mit realen Bildstörungen. Nutzt mehrere aufeinanderfolgende Videobilder, um Details zu rekonstruieren.",
+        "For low-resolution video with real-world degradation. Uses consecutive frames to reconstruct detail."),
     "Nomos2 HQ MoSR 4×": (
         "Für saubere, detailreiche Fotos. Auf hochwertigen Eingaben trainiert, um vorhandene Details beim Vergrößern zu erhalten.",
         "For clean, detailed photos. Trained on high-quality inputs to preserve existing detail during enlargement."),
@@ -82,8 +82,8 @@ DESCRIPTIONS = {
         "Kleine SwinIR-Variante für die Vergrößerung um 4×. Rekonstruiert Bildstrukturen mit einem Transformer.",
         "Small SwinIR variant for 4× enlargement. Uses a transformer to reconstruct image structure."),
     "Real-ESRGAN Anime 4×": (
-        "Für Anime und gezeichnete Bilder. Das kompakte 6B-Modell ist auf Linien und Farbflächen abgestimmt.",
-        "For anime and drawn images. The compact 6B model is tuned for linework and areas of flat color."),
+        "Für Anime und Zeichnungen. Das kompakte 6B-Modell ist auf Linien und Farbflächen abgestimmt.",
+        "For anime and drawings. The compact 6B model is tuned for linework and areas of flat color."),
     "AnimeSharp 4×": (
         "Für scharf gezeichnete Konturen, Anime und Illustrationen. Vergrößert um 4×.",
         "For crisp linework, anime and illustrations. Enlarges by 4×."),
