@@ -417,6 +417,16 @@ def test_gui(root):
                 assert widget.winfo_rooty() + widget.winfo_height() <= pane.winfo_rooty() + pane.winfo_height()
         controls = gui.look_controls
         original = gui.compare.before_image
+        right = 2 if '<Button-2>' in window.event_info('<<ContextMenu>>') else 3
+        middle = 5 - right
+        view = gui.compare
+        view.zoom = 4.0
+        for button in (right, middle):
+            view.event_generate(f'<ButtonPress-{button}>', x=40, y=40)
+            view.event_generate(f'<B{button}-Motion>', x=65, y=65)
+            view.event_generate(f'<ButtonRelease-{button}>', x=65, y=65)
+            assert (view.pan != (0.0, 0.0)) == (button == middle)
+        view.fit(notice_ms=0)
         assert controls.save_button.instate(['disabled'])
         assert controls.choose.instate(['disabled'])
         caption_geometry = gui.result_caption.winfo_rootx(), gui.result_caption.winfo_width()

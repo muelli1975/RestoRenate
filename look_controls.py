@@ -288,10 +288,9 @@ def open_controls(app):
 GUIDE_COLUMNS = (
     (
         ('Ansicht und Ergebnisse', (
-            ('Trennlinie ziehen', 'Vorher und Nachher vergleichen'),
-            ('← / →', 'Trennlinie in der Vorschau verschieben'),
+            ('Trennlinie mit der linken Maustaste ziehen', 'Vorher und Nachher vergleichen'),
             ('Mausrad', 'Ansichtszoom'),
-            ('Rechte Taste oder Mitteltaste + Ziehen', 'Vergrößerte Ansicht verschieben'),
+            ('Mitteltaste + Ziehen', 'Vergrößerte Ansicht verschieben'),
             ('Strg + 1', '100-%-Ansicht'),
             ('Z halten', 'Temporäre 100-%-Ansicht'),
             ('Strg + 0 / Doppelklick / Esc', 'Ansicht einpassen'),

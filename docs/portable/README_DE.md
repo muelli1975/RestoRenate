@@ -157,8 +157,8 @@ lokale Verfahren zur Detailrekonstruktion und werden bei Bedarf geladen.
 Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
 gedacht. Alle klassischen Upscaler sind unter `models/upscale_models` im Paket enthalten, einschließlich beider Real-ESRGAN-Größen. Ihre Gewichte werden beim ersten Prüfen lokal erkannt. Die Verarbeitungslaufzeit wird bei Bedarf eingerichtet.
 
-Die Vorschau zeigt die gespeicherte Datei. Zum Vergleichen die Trennlinie
-ziehen. Das Mausrad zoomt, die rechte Maustaste verschiebt die Ansicht.
+Die Vorschau zeigt die gespeicherte Datei. Die Trennlinie mit der linken Maustaste ziehen, um Vorher und Nachher zu vergleichen.
+Das Mausrad zoomt. Ziehen mit gedrückter Mitteltaste verschiebt die vergrößerte Ansicht.
 „100 %“ oder Strg+1 zeigt das Ergebnis in Pixelgröße, vor dem ersten Ergebnis
 die Eingabe. Esc und Strg+0 passen die Ansicht ein. Unter „Ergebnisse“ mit
 „Zurück“, „Weiter“ oder Bild auf und Bild ab durch fertige Bilder und Varianten

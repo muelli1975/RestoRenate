@@ -58,10 +58,10 @@ class Comparison(tk.Canvas):
         self.bind('<B1-Motion>', self.divide)
         self.bind('<Motion>', self.hover)
         self.bind('<Leave>', lambda event: self.configure(cursor=''))
-        self.bind('<ButtonPress-3>', self.pan_start)
-        self.bind('<B3-Motion>', self.pan_move)
-        self.bind('<ButtonPress-2>', self.pan_start)
-        self.bind('<B2-Motion>', self.pan_move)
+        # Tk 8.6 on Aqua assigns button 3 to the physical middle button.
+        middle = 3 if '<ButtonRelease-3>' in self.event_info('<<PasteSelection>>') else 2
+        self.bind(f'<ButtonPress-{middle}>', self.pan_start)
+        self.bind(f'<B{middle}-Motion>', self.pan_move)
         self.bind('<MouseWheel>', self.wheel)
         self.bind('<Button-4>', self.wheel)
         self.bind('<Button-5>', self.wheel)

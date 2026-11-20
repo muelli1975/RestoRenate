@@ -30,13 +30,12 @@ def translate(message, *values):
 
 
 ENGLISH = {
-    'Trennlinie in der Vorschau verschieben': 'Move the divider in the preview',
     'Ansicht und Ergebnisse': 'View and results',
-    'Trennlinie ziehen': 'Drag the divider',
+    'Trennlinie mit der linken Maustaste ziehen': 'Drag the divider with the left mouse button',
     'Vorher und Nachher vergleichen': 'Compare before and after',
     'Mausrad': 'Mouse wheel',
     'Ansichtszoom': 'View zoom',
-    'Rechte Taste oder Mitteltaste + Ziehen': 'Right- or middle-button drag',
+    'Mitteltaste + Ziehen': 'Middle-button drag',
     'Vergrößerte Ansicht verschieben': 'Pan magnified view',
     'Strg + 1': 'Ctrl + 1',
     '100-%-Ansicht': '100% view',
