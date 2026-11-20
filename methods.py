@@ -59,7 +59,7 @@ SIAX = 'NMKD Siax 4×'
 CLEARREALITY = 'ClearRealityV1 SPAN 4×'
 PUREPHOTO = 'PurePhoto SPAN 4×'
 NOMOS2_HQ = 'Nomos2 HQ MoSR 4×'
-NOMOS2_DAT2 = 'Nomos2 HQ DAT2 4×'
+MULTIJPG = 'NomosUni SPAN MultiJPG 4×'
 NOMOS8K_DAT = 'Nomos8kDAT 4×'
 FACEUP_DAT = '4× FaceUpDAT'
 SWINIR_S = 'SwinIR-S 4×'
@@ -68,9 +68,9 @@ SEEDVR2 = 'SeedVR2 3B INT8'
 VOSR2 = 'VOSR 2.0'
 VOSR2_BUNDLE = 'VOSR2'
 UPSCALE_MENU_SECTIONS = (
-    ('Saubere Fotos und Porträts', (CLEARREALITY, PUREPHOTO, NOMOS2_HQ, NOMOS2_DAT2, FACEUP_DAT)),
+    ('Saubere Fotos und Porträts', (CLEARREALITY, PUREPHOTO, NOMOS2_HQ, FACEUP_DAT)),
     ('Detailrekonstruktion', (SEEDVR2, VOSR2)),
-    ('Kleine und komprimierte Fotos', (NOMOS8K_DAT, REALWEBPHOTO)),
+    ('Kleine und komprimierte Fotos', (NOMOS8K_DAT, REALWEBPHOTO, MULTIJPG)),
     ('Allrounder', (REALESRGAN, SIAX, REMACRI, ULTRASHARP_ORIGINAL, ULTRASHARP, ULTRASHARP_LITE, SWINIR_S)),
     ('Zeichnungen und Anime', (REALESRGAN_ANIME, ANIMESHARP)),
 )
@@ -88,7 +88,7 @@ UPSCALE_LICENSES = {
     REALWEBPHOTO: 'CC BY 4.0',
     SIAX: 'WTFPL',
     NOMOS2_HQ: 'CC BY 4.0',
-    NOMOS2_DAT2: 'CC BY 4.0',
+    MULTIJPG: 'CC BY 4.0',
     NOMOS8K_DAT: 'CC BY 4.0',
     SEEDVR2: 'Apache 2.0',
     VOSR2: 'Apache 2.0',
@@ -147,7 +147,7 @@ UPSCALE_FILENAME_LABELS = {
     REALWEBPHOTO: 'RealWebPhoto-v4',
     SIAX: 'Siax',
     NOMOS2_HQ: 'Nomos2-MoSR',
-    NOMOS2_DAT2: 'Nomos2-DAT2-4x',
+    MULTIJPG: 'NomosUni-SPAN-MultiJPG-4x',
     NOMOS8K_DAT: 'Nomos8kDAT-4x',
     SEEDVR2: 'SeedVR2-3B-INT8',
     VOSR2: 'VOSR-2.0',
@@ -185,7 +185,7 @@ UPSCALE_FILES = {
     REALWEBPHOTO: {'upscale': ('UpscaleModelLoader', 'model_name', '4xRealWebPhoto_v4_dat2.safetensors')},
     SIAX: {'upscale': ('UpscaleModelLoader', 'model_name', '4x_NMKD-Siax_200k.pth')},
     NOMOS2_HQ: {'upscale': ('UpscaleModelLoader', 'model_name', '4xNomos2_hq_mosr.safetensors')},
-    NOMOS2_DAT2: {'upscale': ('UpscaleModelLoader', 'model_name', '4xNomos2_hq_dat2.safetensors')},
+    MULTIJPG: {'upscale': ('UpscaleModelLoader', 'model_name', '4xNomosUni_span_multijpg.safetensors')},
     NOMOS8K_DAT: {'upscale': ('UpscaleModelLoader', 'model_name', '4xNomos8kDAT.safetensors')},
     FACEUP_DAT: {'upscale': ('UpscaleModelLoader', 'model_name', '4xFaceUpDAT.safetensors')},
     SWINIR_S: {'upscale': ('UpscaleModelLoader', 'model_name', '002_lightweightSR_DIV2K_s64w8_SwinIR-S_x4.pth')},

@@ -16,7 +16,7 @@ sys.path.insert(0, str(root / '_internal' if (root / '_internal').is_dir() else 
 
 from export_metadata import editable_workflow, seed_from_metadata
 from methods import (CLEARREALITY, PUREPHOTO, DDCOLOR_TINY, FIBO2_TURBO, FLUX2, FLUX3, LANCZOS, METHODS, MICROSOFT, NOMOS2_HQ,
-                     NOMOS2_DAT2, NOMOS8K_DAT, SEEDVR2, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
+                     MULTIJPG, NOMOS8K_DAT, SEEDVR2, UPSCALE_MENU_SECTIONS, UPSCALERS, UPSCALING,
                      VOSR2, available_methods, model_files)
 from portable_setup import CPU, MACOS, MPS, NVIDIA, Setup
 from restoration import report_progress, restore, restoration_graph
@@ -97,7 +97,7 @@ def check_backend_schemas(definitions):
 def check_upscale_graphs(source, directory):
     expected = (333, 200)
     choices = {
-        NOMOS2_DAT2: ('ImageUpscaleWithModel', 13, 1),
+        MULTIJPG: ('ImageUpscaleWithModel', 13, 1),
         NOMOS8K_DAT: ('ImageUpscaleWithModel', 13, 1),
         SEEDVR2: ('SeedVR2PostProcessing', 48, 2),
         VOSR2: ('VOSR2Upscale', 41, 5),
@@ -247,8 +247,8 @@ def check_layout(source, language):
             assert tuple(upscale_menu.choices) == UPSCALERS
             assert all(upscale_menu.entrycget(app.translate(heading), 'state') == 'disabled'
                        for heading, _ in UPSCALE_MENU_SECTIONS)
-            upscale_menu.invoke(NOMOS2_DAT2)
-            assert gui.upscaler.get() == NOMOS2_DAT2 and has_choice_mark(upscale_menu, upscale_menu, NOMOS2_DAT2)
+            upscale_menu.invoke(MULTIJPG)
+            assert gui.upscaler.get() == MULTIJPG and has_choice_mark(upscale_menu, upscale_menu, MULTIJPG)
             flux = menu.nametowidget(menu.entrycget('FLUX', 'menu'))
             assert [flux.entrycget(index, 'value') for index in range(flux.index('end') + 1)] == [METHODS[FLUX2], METHODS[FLUX3]]
             assert menu.entrycget('FLUX', 'image') == str(menu.blank)

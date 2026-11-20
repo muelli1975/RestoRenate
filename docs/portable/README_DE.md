@@ -146,8 +146,8 @@ mit 2160 px Bildhöhe und ClearRealityV1 SPAN 4×. „Nur hochskalieren“ verwe
 als eigene Vorgabe 2160 px Bildhöhe und Nomos2 HQ MoSR 4×.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
 Das Upscaler-Menü gruppiert die Modelle nach Einsatzbereich.
-Nomos2 HQ MoSR 4× und Nomos2 HQ DAT2 4× sind für saubere Fotos gedacht. Nomos8kDAT 4× ist für kleine
-und komprimierte Fotos gedacht. SeedVR2 3B INT8 und VOSR 2.0 sind
+Nomos2 HQ MoSR 4× eignet sich für saubere Fotos. Unter „Kleine und komprimierte Fotos“ stehen
+Nomos8kDAT 4×, RealWebPhoto v4 und NomosUni SPAN MultiJPG 4×. MultiJPG eignet sich für JPEG-komprimiertes und bereits skaliertes Bildmaterial. SeedVR2 3B INT8 und VOSR 2.0 sind
 lokale Verfahren zur Detailrekonstruktion und werden bei Bedarf geladen.
 Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
 gedacht. Beide Modelle werden bei Bedarf heruntergeladen.

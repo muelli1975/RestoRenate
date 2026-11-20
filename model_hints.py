@@ -1,7 +1,7 @@
 """Bilingual descriptions keyed by model identity, shared with RestoRenate."""
 import tkinter as tk
 
-from methods import CLEARREALITY, PUREPHOTO
+from methods import CLEARREALITY, MULTIJPG, PUREPHOTO
 
 # Keep the two portable copies identical so descriptions also work offline.
 DESCRIPTIONS = {
@@ -25,6 +25,10 @@ DESCRIPTIONS = {
     "nomos_strong": (
         "Vor allem für Fotos mit stärkeren Qualitätsverlusten. Strong wurde auf die ausgeprägtesten Bildstörungen der drei Varianten trainiert.",
         "Primarily for more heavily degraded photos. Of the three variants, Strong was trained with the most severe degradations."),
+    # https://openmodeldb.info/models/4x-NomosUni-span-multijpg
+    "nomos_multijpg": (
+        "Schneller 4×-Allrounder für JPEG-komprimiertes und bereits skaliertes Bildmaterial. Trainiert mit JPEG-Qualitäten bis hinunter zu 40 und mehreren Verfahren zum Verkleinern und Vergrößern.",
+        "Fast general-purpose 4× upscaler for JPEG-compressed and previously resized images. Trained with JPEG quality down to 40 and several downsampling and upsampling methods."),
     # https://github.com/Sirosky/Upscale-Hub/releases/tag/AniSD
     "anisd": (
         "Für digital produzierte SD-Anime von DVD oder aus dem Web. Diese SPAN-Variante empfiehlt der Autor als Allrounder. Sie soll typische Störungen mindern und die Zeichnung ohne Überschärfung erhalten.",
@@ -57,10 +61,6 @@ DESCRIPTIONS = {
     "Nomos2 HQ MoSR 4×": (
         "Für saubere Fotos, trainiert auf Vorlagen ohne künstliche Qualitätsverluste. Bei sichtbaren JPEG-Artefakten empfiehlt der Autor, sie vor dem Vergrößern zu reduzieren.",
         "For clean photos, trained on inputs without added degradation. For visible JPEG artifacts, the author recommends reducing them before enlargement."),
-    # https://openmodeldb.info/models/4x-Nomos2-hq-dat2
-    "Nomos2 HQ DAT2 4×": (
-        "Wie die MoSR-Variante für saubere Fotos entwickelt und trainiert. Diese Variante verwendet DAT2 zur vierfachen Vergrößerung.",
-        "Like the MoSR variant, this model was developed and trained for clean photos. It uses DAT2 for 4× enlargement."),
     # https://openmodeldb.info/models/4x-FaceUpDAT
     "4× FaceUpDAT": (
         "Spezialisiert auf Gesichter in Fotos guter Ausgangsqualität. Auf dem FaceUp-Datensatz trainiert.",
@@ -125,6 +125,7 @@ DESCRIPTIONS = {
 
 
 DESCRIPTIONS[CLEARREALITY] = DESCRIPTIONS["clearreality"]
+DESCRIPTIONS[MULTIJPG] = DESCRIPTIONS["nomos_multijpg"]
 DESCRIPTIONS[PUREPHOTO] = DESCRIPTIONS["purephoto"]
 
 

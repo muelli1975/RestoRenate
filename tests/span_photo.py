@@ -11,14 +11,14 @@ from spandrel import ModelLoader
 
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root))
-from methods import CLEARREALITY, PUREPHOTO, UPSCALERS, UPSCALING, model_specs
+from methods import CLEARREALITY, MULTIJPG, PUREPHOTO, UPSCALERS, UPSCALING, model_specs
 from model_hints import DESCRIPTIONS
 
 manifest = json.loads((root / "download_manifest.json").read_text())
 optional = json.loads((root / "method_downloads.json").read_text())
 assert all(len(DESCRIPTIONS[name]) == 2 and all(DESCRIPTIONS[name]) for name in UPSCALERS)
 with TemporaryDirectory() as folder, torch.inference_mode():
-    for name in (CLEARREALITY, PUREPHOTO):
+    for name in (CLEARREALITY, MULTIJPG, PUREPHOTO):
         spec, = model_specs(manifest, optional, UPSCALING, upscaler=name)
         path = Path(folder) / Path(spec["path"]).name
         urlretrieve(spec["url"], path)

@@ -462,13 +462,13 @@
   ],
   "upscalers": [
     {
-      "path": "models/upscale_models/4xNomos2_hq_dat2.safetensors",
-      "size": 139792588,
-      "sha256": "278c78ba9fd333ace4b02b3aeaa0254428baea20a63d3e995e2e4f8a60173f6f",
-      "url": "https://huggingface.co/Phips/4xNomos2_hq_dat2/resolve/b64c1bdf9fc707ff6a6a708b29caf3442dc7d7fc/4xNomos2_hq_dat2.safetensors?download=true",
-      "repo": "Phips/4xNomos2_hq_dat2",
-      "revision": "b64c1bdf9fc707ff6a6a708b29caf3442dc7d7fc",
-      "source_path": "4xNomos2_hq_dat2.safetensors"
+      "path": "models/upscale_models/4xNomosUni_span_multijpg.safetensors",
+      "size": 4492232,
+      "sha256": "3bedff643a1ba51b12e0174ebca62649a930ae3e7b0868be9706d8659d4d32a2",
+      "url": "https://huggingface.co/Phips/4xNomosUni_span_multijpg/resolve/eb7c9845fb088203dcc9b5d94735c2a5f6b6213a/4xNomosUni_span_multijpg.safetensors?download=true",
+      "repo": "Phips/4xNomosUni_span_multijpg",
+      "revision": "eb7c9845fb088203dcc9b5d94735c2a5f6b6213a",
+      "source_path": "4xNomosUni_span_multijpg.safetensors"
     },
     {
       "path": "models/upscale_models/4xNomos8kDAT.safetensors",
@@ -502,7 +502,10 @@
     {
       "path": "models/vosr2/VOSR2/args.json",
       "size": 816,
-      "text_content_types": ["text/plain", "application/json"],
+      "text_content_types": [
+        "text/plain",
+        "application/json"
+      ],
       "sha256": "63b2f423eafae1f684ca860eb8fd0e81aa5fac858397f783d8f337871241c281",
       "url": "https://huggingface.co/CSWRY/VOSR/resolve/f24b3061b7f350b81e1907bdcfc27f71fb4ff3f3/VOSR2/args.json?download=true",
       "repo": "CSWRY/VOSR",
@@ -521,7 +524,10 @@
     {
       "path": "models/vosr2/VOSR2/Qwen-Image-vae-2d/config.json",
       "size": 811,
-      "text_content_types": ["text/plain", "application/json"],
+      "text_content_types": [
+        "text/plain",
+        "application/json"
+      ],
       "sha256": "1e294faf15188e06fcb72ce09652e8fb7368bd77b8dd794b5b39fe77d610681b",
       "url": "https://huggingface.co/CSWRY/VOSR/resolve/f24b3061b7f350b81e1907bdcfc27f71fb4ff3f3/Qwen-Image-vae-2d/config.json?download=true",
       "repo": "CSWRY/VOSR",

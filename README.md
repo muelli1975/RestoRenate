@@ -35,7 +35,7 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 
 ## New in 1.3
 
-Upscalers are grouped by use. Nomos2 HQ DAT2 and Nomos8kDAT join the photo models. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail in a single step. All four can upscale a photo directly or process the result of a restoration.
+Upscalers are grouped by use. NomosUni SPAN MultiJPG 4× and Nomos8kDAT handle small, compressed photos. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail in a single step. All four can upscale a photo directly or process the result of a restoration.
 
 ## New in 1.2
 
@@ -57,7 +57,7 @@ By default, results go into `output` next to the selected image or inside the se
 
 - **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
 - **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.
-- **Upscaling:** The GPU “Default” preset uses ClearRealityV1 SPAN 4×. The “Detail reconstruction” preset uses VOSR 2.0. The selection also includes SeedVR2 3B INT8, Nomos2 HQ DAT2, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT for portraits, and Real-ESRGAN Anime 4× and AnimeSharp 4× for drawings and illustrations.
+- **Upscaling:** The GPU “Default” preset uses ClearRealityV1 SPAN 4×. The “Detail reconstruction” preset uses VOSR 2.0. The selection also includes SeedVR2 3B INT8, NomosUni SPAN MultiJPG 4×, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT for portraits, and Real-ESRGAN Anime 4× and AnimeSharp 4× for drawings and illustrations.
 - **Export:** PNG, JPEG quality 95 with 4:4:4 chroma and TIFF with LZW compression. JPEG and TIFF copy compatible source metadata. PNG stores a ComfyUI workflow when applicable.
 
 ## Source and builds

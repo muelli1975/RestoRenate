@@ -130,9 +130,8 @@ selects its 2× or 4× model. Lanczos resizes to the exact output dimensions.
 The GPU restoration default is Fibo 2.0 Edit Turbo with a height of 2160 px
 and ClearRealityV1 SPAN 4×. “Upscale only” defaults to 2160 px and Nomos2 HQ MoSR 4×.
 4× FaceUpDAT is designed for portraits with clean source images.
-The upscaler menu groups models by use. Nomos2 HQ MoSR 4× and Nomos2 HQ DAT2 4×
-are intended for clean photos, and Nomos8kDAT 4× is intended for small or
-compressed photos. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail locally
+The upscaler menu groups models by use. Nomos2 HQ MoSR 4× is designed for clean photos. The small and compressed photos group includes
+Nomos8kDAT 4×, RealWebPhoto v4 and NomosUni SPAN MultiJPG 4×. MultiJPG handles JPEG-compressed and previously resized images. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail locally
 and are downloaded on demand.
 Real-ESRGAN Anime 4× and AnimeSharp 4× are intended for drawings and illustrations.
 Both models are downloaded on demand.
