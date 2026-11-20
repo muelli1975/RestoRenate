@@ -42,6 +42,7 @@ from photo_colors import Colorizer
 from progress_track import ProgressTrack
 from prompt_menu import PromptMenu
 from selection_menu import SelectionMenu
+from model_hints import ModelHints
 from theme import (APP_BG as BG, PANEL_BG as PANEL, SECONDARY_BG, HOVER_BG, BORDER,
                    TEXT as INK, MUTED, DISABLED, GOLD, GOLD_LIGHT, apply_theme, attach_tooltip, checkbox,
                    set_control_state)
@@ -484,6 +485,8 @@ class Application:
         self.upscale_menu = SelectionMenu(self.upscale_options, self.upscaler, **dict(menu_colors, disabledforeground=GOLD))
         self.upscale_options.configure(menu=self.upscale_menu)
         self.upscale_options.grid(row=1, column=0, sticky='ew', padx=(0, 5))
+        self.upscale_hints = ModelHints(self.upscale_options, lambda: self.upscaler.get() if self.size_choice() != NO_RESCALE else None, lambda: self.language)
+        self.upscale_hints.bind_menu(self.upscale_menu)
         self.refresh_upscale_menu()
         size_row = tk.Frame(scaling, bg=PANEL)
         size_row.grid(row=1, column=1, sticky='ew')
@@ -2329,6 +2332,7 @@ class Application:
         if language == self.language or self.action or self.closing:
             return
         preset, size = self.preset_key(), self.size_choice()
+        self.upscale_hints.hide()
         self.language = configure_language(language)
         self.language_button.configure(text=LANGUAGE_LABELS[self.language])
         for widget, label in self.labels.items():
