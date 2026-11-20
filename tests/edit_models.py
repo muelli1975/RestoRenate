@@ -130,7 +130,7 @@ def check_upscale_graphs(source, directory):
 
 def check_alignment(directory):
     import numpy as np
-    from crop import Alignment, CropRegion
+    from crop import Alignment, CropRegion, box_size, fit_aspect, resize_box
     from crop_dialog import CropDialog
     from imaging import align_photo, open_photo
 
@@ -149,6 +149,23 @@ def check_alignment(directory):
     try:
         dialog = CropDialog(window, (first, second), {}, first)
         window.update()
+        assert dialog.aspect_choice.current() == 0
+        dialog.aspect_choice.set('Original')
+        dialog.choose_aspect(None)
+        assert dialog.aspect == 'original'
+        dialog.box = resize_box(dialog.box, image.size, (1, 1), (120, 60), dialog.aspect)
+        assert box_size(dialog.box) == (120, 60)
+        dialog.load_source(1)
+        dialog.load_source(0)
+        assert dialog.aspect_choice.get() == 'Original' and box_size(dialog.box) == (120, 60)
+        turned = dialog.crops[first].rotated(1)
+        assert turned.aspect == 'original' and turned.size == (60, 120)
+        for size in ((1009, 701), (701, 1009)):
+            box = fit_aspect((2, 8, 60, 70), size, 'original')
+            w, h = box_size(box)
+            assert 1 < min(w, h) <= max(w, h) < 100
+            assert abs(w * size[1] - h * size[0]) <= max(size)
+        dialog.reset_crop()
         dialog.canvas.focus_force()
         window.update()
         def press(sequence):

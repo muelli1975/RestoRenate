@@ -20,8 +20,8 @@ Python, Tk und ExifTool sind enthalten. ExifTool verwendet das Perl des Systems.
 Ein Bild oder einen Ordner öffnen und ein Verfahren auswählen.
 Die Eingabe unterstützt JPEG, PNG, TIFF, WebP, BMP und AVIF. „Beschnitt …“
 öffnet einen Rahmen mit Drittel-Raster. Zum Verschieben innerhalb des Rahmens
-ziehen, zur Größenänderung an den Griffen. „Frei“, ein festes Seitenverhältnis
-oder „Benutzerdefiniert …“ für ein Verhältnis wie 7:5 wählen. In einem Ordner lässt sich
+ziehen, zur Größenänderung an den Griffen. „Original“ behält beim Aufziehen und Verkleinern das Seitenverhältnis des Eingabebildes bei.
+Zur Wahl stehen auch „Frei“, feste Formate und „Benutzerdefiniert …“ für ein Verhältnis wie 7:5. In einem Ordner lässt sich
 jedes Bild einzeln auswählen und beschneiden. „Übernehmen“ zeigt das ausgewählte
 Bild in der Hauptansicht. „Horizont“ und „Perspektive“ richten das Bild an einem 9 × 9-Raster aus.
 Der Wert lässt sich direkt eingeben. Umschalt + Mausrad über Schiene oder Griff ändert den Wert um einen Schritt.

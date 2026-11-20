@@ -45,6 +45,7 @@ ENGLISH = {
     'C halten + ← / →': 'Hold C + ← / →',
     'C halten + ↑ / ↓': 'Hold C + ↑ / ↓',
     'Ausschnitt': 'Crop',
+    'Seitenverhältnis des Eingabebildes beibehalten': 'Keep the input image’s aspect ratio',
     'Mit der linken Maustaste im Rahmen ziehen': 'Drag inside the frame with the left mouse button',
     'Ausschnitt verschieben': 'Move crop',
     'An einem Griff ziehen': 'Drag a handle',

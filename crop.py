@@ -2,10 +2,12 @@
 from dataclasses import asdict, dataclass
 from fractions import Fraction
 from math import ceil, cos, floor, radians, sin, sqrt
+from typing import Literal
 import re
 
 Box = tuple[int, int, int, int]
 Aspect = tuple[int, int]
+AspectChoice = Aspect | Literal['original']
 
 ASPECTS = ((1, 1), (3, 2), (2, 3), (4, 3), (3, 4), (5, 4), (4, 5), (16, 9), (9, 16))
 
@@ -95,7 +97,7 @@ class Alignment:
 class CropRegion:
     original_size: tuple[int, int]
     box: Box
-    aspect: Aspect | None = None
+    aspect: AspectChoice | None = None
     alignment: Alignment = Alignment()
 
     def __post_init__(self):
@@ -120,7 +122,7 @@ class CropRegion:
             left, top, right, bottom = height - bottom, left, height - top, right
             width, height = height, width
             alignment = alignment.rotated()
-            if aspect is not None:
+            if isinstance(aspect, tuple):
                 aspect = aspect[::-1]
         return CropRegion((width, height), (left, top, right, bottom), aspect, alignment)
 
@@ -152,7 +154,15 @@ def move_box(box: Box, size: tuple[int, int], dx: int, dy: int) -> Box:
     return left + dx, top + dy, right + dx, bottom + dy
 
 
-def aspect_size(scale: float, available: tuple[int, int], aspect: Aspect) -> tuple[int, int]:
+def aspect_units(aspect: AspectChoice, size: tuple[int, int]) -> tuple[float, float]:
+    if aspect == 'original':
+        # A large or coprime source ratio must still allow small, pixel-rounded crops.
+        short_side = min(size)
+        return size[0] / short_side, size[1] / short_side
+    return aspect
+
+
+def aspect_size(scale: float, available: tuple[int, int], aspect: tuple[float, float]) -> tuple[int, int]:
     """Fit proportionally before rounding, so the limiting side can touch the image edge."""
     aw, ah = aspect
     max_width, max_height = available
@@ -161,18 +171,18 @@ def aspect_size(scale: float, available: tuple[int, int], aspect: Aspect) -> tup
     return clamp(round(scale * aw), 1, max_width), clamp(round(scale * ah), 1, max_height)
 
 
-def fit_aspect(box: Box, size: tuple[int, int], aspect: Aspect) -> Box:
+def fit_aspect(box: Box, size: tuple[int, int], aspect: AspectChoice) -> Box:
     """Keep the center where possible and round the dimensions to pixels."""
     width, height = box_size(box)
-    aw, ah = aspect
-    width, height = aspect_size(sqrt(width * height / (aw * ah)), size, aspect)
+    aw, ah = aspect_units(aspect, size)
+    width, height = aspect_size(sqrt(width * height / (aw * ah)), size, (aw, ah))
     left = clamp(round((box[0] + box[2] - width) / 2), 0, size[0] - width)
     top = clamp(round((box[1] + box[3] - height) / 2), 0, size[1] - height)
     return left, top, left + width, top + height
 
 
 def resize_box(box: Box, size: tuple[int, int], handle: tuple[int, int],
-               pointer: tuple[int, int], aspect: Aspect | None) -> Box | None:
+               pointer: tuple[int, int], aspect: AspectChoice | None) -> Box | None:
     """Keep the opposite edge or corner anchored during resizing."""
     horizontal, vertical = handle
     x = box[2] if horizontal < 0 else box[0]
@@ -182,7 +192,7 @@ def resize_box(box: Box, size: tuple[int, int], handle: tuple[int, int],
     dx = (pointer[0] - x) * horizontal
     dy = (pointer[1] - y) * vertical
     if aspect:
-        aw, ah = aspect
+        aw, ah = aspect_units(aspect, size)
         if not max_width or not max_height:
             return None
         old_width, old_height = box_size(box)
@@ -192,7 +202,7 @@ def resize_box(box: Box, size: tuple[int, int], handle: tuple[int, int],
         horizontal_change = abs(dx - old_width) / aw
         vertical_change = abs(dy - old_height) / ah
         scale = dx / aw if horizontal_change >= vertical_change else dy / ah
-        width, height = aspect_size(scale, (max_width, max_height), aspect)
+        width, height = aspect_size(scale, (max_width, max_height), (aw, ah))
     else:
         if (horizontal and not max_width) or (vertical and not max_height):
             return None
