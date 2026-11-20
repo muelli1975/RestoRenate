@@ -3,7 +3,6 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
 from zipfile import ZipFile
@@ -36,6 +35,20 @@ def build(version, output):
             raise ValueError(f"Invalid original ZIP digest for {tag}")
         extract(archive, temp / "stage")
         package = temp / "stage/RestoRenate"
+        # Some releases process close events while mapping the initial Tk window.
+        # Backport just this startup fix, preserving the rest of each historical GUI.
+        source = package / "_internal/app.py"
+        if not source.exists():
+            source = package / "app.py"
+        data = source.read_bytes()
+        newline = b"\r\n" if b"\r\n" in data else b"\n"
+        transition = b"            window.update()" + newline + b"            window.attributes('-alpha', 1.0)"
+        if transition in data:
+            guard = newline.join([b"            window.update()",
+                                  b"            if not window.tk.call('info', 'commands', str(window)):",
+                                  b"                return",
+                                  b"            window.attributes('-alpha', 1.0)"])
+            source.write_bytes(data.replace(transition, guard, 1))
         build_windows_gui(package)
         result = output / name
         zip_portable(package.parent, result)
