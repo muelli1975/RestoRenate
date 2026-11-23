@@ -35,7 +35,7 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 
 ## New in 1.4
 
-The GPU Default preset uses ClearRealityV1 SPAN 4×. PurePhoto SPAN 4× and NomosUni SPAN MultiJPG 4× join the selection. All three packages include the classic upscaler weights. SeedVR2 and VOSR remain optional downloads.
+The GPU Default preset uses 4× ClearRealityV1. 4× PurePhoto-SPAN and 4× NomosUni SPAN MultiJPG join the selection. All three packages include the classic upscaler weights. SeedVR2 and VOSR remain optional downloads.
 
 The crop dialog can straighten the horizon and correct perspective before processing. Original keeps the input image’s aspect ratio. The controls guide (F1) groups mouse and keyboard gestures by task and adapts to the window width in English and German.
 
@@ -63,7 +63,7 @@ By default, results go into `output` next to the selected image or inside the se
 
 - **Restoration and editing:** Microsoft Bringing Old Photos Back to Life, Fibo 2.0 Edit Turbo, FLUX.2 [klein] 4B, FLUX 3 Image Klein, Qwen Image Edit 2509/2511 and FireRed Image Edit 1.1. Some edit models support a separately rotatable second input.
 - **Colorization:** DDColor ModelScope, Paper, Artistic and Tiny, plus DeOldify Stable and Artistic. Colorization runs on the CPU. DDColor Paper is an optional model download.
-- **Upscaling:** The GPU “Default” preset uses ClearRealityV1 SPAN 4×. The “Detail reconstruction” preset uses VOSR 2.0. The selection also includes SeedVR2 3B INT8, NomosUni SPAN MultiJPG 4×, Nomos8kDAT, Lanczos, UltraSharp V2 Lite, Real-ESRGAN, FaceUpDAT for portraits, and Real-ESRGAN Anime 4× and AnimeSharp 4× for drawings and illustrations.
+- **Upscaling:** The GPU “Default” preset uses 4× ClearRealityV1. The “Detail reconstruction” preset uses VOSR 2.0. The selection also includes SeedVR2 3B INT8, 4× NomosUni SPAN MultiJPG, 4× Nomos8kDAT, Lanczos, 4× UltraSharp V2 Lite, Real-ESRGAN 2×/4× Plus, 4× FaceUpDAT for portraits, and Real-ESRGAN 4× Plus Anime 6B and 4× AnimeSharp for drawings and illustrations.
 - **Export:** PNG, JPEG quality 95 with 4:4:4 chroma and TIFF with LZW compression. JPEG and TIFF copy compatible source metadata. PNG stores a ComfyUI workflow when applicable.
 
 ## Source and builds

@@ -47,20 +47,20 @@ METHOD_MENU_SECTIONS = (
         ('DeOldify', DEOLDIFY_METHODS),
     )),
 )
-ULTRASHARP_ORIGINAL = 'UltraSharp 4×'
-ULTRASHARP = 'UltraSharp V2'
-ULTRASHARP_LITE = 'UltraSharp V2 Lite'
-REALESRGAN = 'Real-ESRGAN'
-REALESRGAN_ANIME = 'Real-ESRGAN Anime 4×'
-ANIMESHARP = 'AnimeSharp 4×'
-REMACRI = 'Remacri 4×'
-REALWEBPHOTO = 'RealWebPhoto v4'
-SIAX = 'NMKD Siax 4×'
-CLEARREALITY = 'ClearRealityV1 SPAN 4×'
-PUREPHOTO = 'PurePhoto SPAN 4×'
-NOMOS2_HQ = 'Nomos2 HQ MoSR 4×'
-MULTIJPG = 'NomosUni SPAN MultiJPG 4×'
-NOMOS8K_DAT = 'Nomos8kDAT 4×'
+ULTRASHARP_ORIGINAL = '4× UltraSharp'
+ULTRASHARP = '4× UltraSharp V2'
+ULTRASHARP_LITE = '4× UltraSharp V2 Lite'
+REALESRGAN = 'Real-ESRGAN 2×/4× Plus'
+REALESRGAN_ANIME = 'Real-ESRGAN 4× Plus Anime 6B'
+ANIMESHARP = '4× AnimeSharp'
+REMACRI = '4× Foolhardy Remacri'
+REALWEBPHOTO = '4× RealWebPhoto v4 DAT2'
+SIAX = '4× NMKD Siax'
+CLEARREALITY = '4× ClearRealityV1'
+PUREPHOTO = '4× PurePhoto-SPAN'
+NOMOS2_HQ = '4× Nomos2 HQ MoSR'
+MULTIJPG = '4× NomosUni SPAN MultiJPG'
+NOMOS8K_DAT = '4× Nomos8kDAT'
 FACEUP_DAT = '4× FaceUpDAT'
 SWINIR_S = 'SwinIR-S 4×'
 LANCZOS = 'Lanczos'
@@ -75,6 +75,23 @@ UPSCALE_MENU_SECTIONS = (
     ('Zeichnungen und Anime', (REALESRGAN_ANIME, ANIMESHARP)),
 )
 UPSCALERS = (*(item for _, group in UPSCALE_MENU_SECTIONS for item in group), LANCZOS)
+# Existing settings and user presets store the former display labels.
+PREVIOUS_UPSCALER_NAMES = {
+    'UltraSharp 4×': ULTRASHARP_ORIGINAL,
+    'UltraSharp V2': ULTRASHARP,
+    'UltraSharp V2 Lite': ULTRASHARP_LITE,
+    'Real-ESRGAN': REALESRGAN,
+    'Real-ESRGAN Anime 4×': REALESRGAN_ANIME,
+    'AnimeSharp 4×': ANIMESHARP,
+    'Remacri 4×': REMACRI,
+    'RealWebPhoto v4': REALWEBPHOTO,
+    'NMKD Siax 4×': SIAX,
+    'ClearRealityV1 SPAN 4×': CLEARREALITY,
+    'PurePhoto SPAN 4×': PUREPHOTO,
+    'Nomos2 HQ MoSR 4×': NOMOS2_HQ,
+    'NomosUni SPAN MultiJPG 4×': MULTIJPG,
+    'Nomos8kDAT 4×': NOMOS8K_DAT,
+}
 UPSCALE_LICENSES = {
     CLEARREALITY: 'Apache 2.0',
     PUREPHOTO: 'CC BY-SA 4.0',
@@ -271,6 +288,8 @@ def uses_comfy(method, upscaler):
 
 
 def resolve_upscaler(method, upscaler=None):
+    if isinstance(upscaler, str):
+        upscaler = PREVIOUS_UPSCALER_NAMES.get(upscaler, upscaler)
     if upscaler in UPSCALERS:
         return upscaler
     return LANCZOS if method in COLORIZATION_METHODS else NOMOS2_HQ

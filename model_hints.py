@@ -1,7 +1,9 @@
 """Bilingual descriptions for the upscaler menu."""
 import tkinter as tk
 
-from methods import CLEARREALITY, MULTIJPG, PUREPHOTO
+from methods import (ANIMESHARP, CLEARREALITY, FACEUP_DAT, LANCZOS, MULTIJPG, NOMOS2_HQ, NOMOS8K_DAT,
+                     PUREPHOTO, REALESRGAN, REALESRGAN_ANIME, REALWEBPHOTO, REMACRI, SEEDVR2, SIAX,
+                     SWINIR_S, ULTRASHARP, ULTRASHARP_LITE, ULTRASHARP_ORIGINAL, VOSR2)
 
 # Match Scalerina’s wording for models available in both applications.
 DESCRIPTIONS = {
@@ -18,66 +20,66 @@ DESCRIPTIONS = {
         "Schneller 4×-Allrounder für JPEG-komprimiertes und bereits skaliertes Bildmaterial. Trainiert mit JPEG-Qualitäten bis hinunter zu 40 und mehreren Verfahren zum Verkleinern und Vergrößern.",
         "Fast general-purpose 4× upscaler for JPEG-compressed and previously resized images. Trained with JPEG quality down to 40 and several downsampling and upsampling methods."),
     # https://openmodeldb.info/models/4x-Nomos2-hq-mosr
-    "Nomos2 HQ MoSR 4×": (
+    NOMOS2_HQ: (
         "Für saubere Fotos, trainiert auf Vorlagen ohne künstliche Qualitätsverluste. Bei sichtbaren JPEG-Artefakten empfiehlt der Autor, sie vor dem Vergrößern zu reduzieren.",
         "For clean photos, trained on inputs without added degradation. For visible JPEG artifacts, the author recommends reducing them before enlargement."),
     # https://openmodeldb.info/models/4x-FaceUpDAT
-    "4× FaceUpDAT": (
+    FACEUP_DAT: (
         "Spezialisiert auf Gesichter in Fotos guter Ausgangsqualität. Auf dem FaceUp-Datensatz trainiert.",
         "Specializes in faces in good-quality photos. Trained on the FaceUp dataset."),
     # https://huggingface.co/ByteDance-Seed/SeedVR2-3B
-    "SeedVR2 3B INT8": (
+    SEEDVR2: (
         "Generatives Modell zur Restaurierung von Bildern und Videos in einem Diffusionsschritt. Hier kommt die quantisierte 3B-Variante zum Einsatz.",
         "Generative model for restoring images and video in a single diffusion step. This app uses the quantized 3B variant."),
     # https://github.com/cswry/VOSR
-    "VOSR 2.0": (
+    VOSR2: (
         "Generatives Modell für Einzelbilder. Rekonstruiert feine Strukturen in einem Schritt allein aus der Bildvorlage.",
         "Generative model for still images. Reconstructs fine structures in one step using the image alone."),
     # https://openmodeldb.info/models/4x-Nomos8kDAT
-    "Nomos8kDAT 4×": (
+    NOMOS8K_DAT: (
         "Für die vierfache Vergrößerung von Fotos. Beim Training wurden JPEG-Kompression, Unschärfe und Größenänderungen kombiniert.",
         "For 4× photo enlargement. Training combined JPEG compression, blur and resizing."),
     # https://openmodeldb.info/models/4x-RealWebPhoto-v4-dat2
-    "RealWebPhoto v4": (
+    REALWEBPHOTO: (
         "Für Webfotos, auch nach mehrfachem Verkleinern und erneuter JPEG- oder WebP-Kompression. Berücksichtigt außerdem Rauschen und optische Unschärfe.",
         "For web photos, including repeated resizing and JPEG or WebP recompression. Also addresses noise and lens blur."),
     # https://github.com/xinntao/Real-ESRGAN
-    "Real-ESRGAN": (
+    REALESRGAN: (
         "Allrounder für die Restaurierung und Vergrößerung realer Aufnahmen. Auf synthetisch erzeugten Bildstörungen trainiert, darunter Unschärfe, Rauschen und Kompression.",
         "General-purpose restoration and enlargement for real-world imagery. Trained with synthetic degradation, including blur, noise and compression."),
     # https://openmodeldb.info/models/4x-NMKD-Siax-CX
-    "NMKD Siax 4×": (
+    SIAX: (
         "Allrounder für saubere oder leicht komprimierte Vorlagen. Für JPEG nennt der Autor eine Qualitätseinstellung ab etwa 75.",
         "General-purpose upscaler for clean or lightly compressed inputs. For JPEG, the author suggests a quality setting of about 75 or higher."),
     # https://openmodeldb.info/models/4x-Remacri
-    "Remacri 4×": (
+    REMACRI: (
         "Kombiniert mehrere Modelle, darunter Siax und Superscale. Ziel sind mehr Details und weniger Glättung, besonders bei Hautstrukturen.",
         "Blends several models, including Siax and Superscale. Aims for more detail and less smoothing, particularly on skin."),
     # https://openmodeldb.info/models/4x-UltraSharp
-    "UltraSharp 4×": (
+    ULTRASHARP_ORIGINAL: (
         "Erzeugt ausgeprägte Details und Texturen. Hauptsächlich auf JPEG-Kompression trainiert, auch für stark komprimierte Vorlagen geeignet.",
         "Produces pronounced detail and texture. Trained mainly on JPEG compression and can also handle heavily compressed inputs."),
     # https://openmodeldb.info/models/4x-UltraSharpV2
-    "UltraSharp V2": (
+    ULTRASHARP: (
         "Für realistische Motive, Anime, Cartoons, Illustrationen und Kunstwerke. Die Vollversion verwendet DAT2.",
         "For realistic imagery, anime, cartoons, illustrations and artwork. The full model uses DAT2."),
     # https://openmodeldb.info/models/4x-UltraSharpV2
-    "UltraSharp V2 Lite": (
+    ULTRASHARP_LITE: (
         "Lite-Variante der V2-Reihe für realistische Motive, Anime, Cartoons und Illustrationen. Verwendet die kompaktere RealPLKSR-Architektur.",
         "Lite variant of the V2 family for realistic imagery, anime, cartoons and illustrations. Uses the smaller RealPLKSR architecture."),
     # https://github.com/JingyunLiang/SwinIR
-    "SwinIR-S 4×": (
+    SWINIR_S: (
         "Leichte SwinIR-Variante für klassische 4×-Vergrößerung. Auf DIV2K trainiert, für bikubisch verkleinerte Vorlagen.",
         "Lightweight SwinIR variant for classical 4× enlargement. Trained on DIV2K for inputs reduced with bicubic downsampling."),
     # https://github.com/xinntao/Real-ESRGAN/blob/master/docs/model_zoo.md
-    "Real-ESRGAN Anime 4×": (
+    REALESRGAN_ANIME: (
         "Für Anime-Illustrationen optimierte 4×-Variante. Verwendet ein kleineres Netz mit sechs Modellblöcken.",
         "A 4× variant optimized for anime illustrations. Uses a smaller network with six model blocks."),
     # https://openmodeldb.info/models/4x-AnimeSharp
-    "AnimeSharp 4×": (
+    ANIMESHARP: (
         "Für Anime, auch für Schrift einsetzbar. Kombiniert UltraSharp und TextSharp. Laut Autor liegen die Stärken vor allem bei Anime.",
         "For anime, with support for text as well. Blends UltraSharp and TextSharp. The author reports better results on anime than on text."),
-    "Lanczos": (
+    LANCZOS: (
         "Klassische Skalierung ohne KI. Interpoliert vorhandene Bildpunkte und eignet sich auch für schnelle Größenanpassungen.",
         "Traditional scaling without AI. Interpolates existing pixels and is useful for quick resizing."),
 }

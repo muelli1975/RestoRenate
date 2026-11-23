@@ -54,7 +54,7 @@ prompt label indicates the recommended method for that prompt.
 Use “Presets” to save the method, prompt, variants and applicable output
 and model settings. Loading a preset keeps the selected input and output
 folder. The GPU startup settings and the GPU “Default” preset use Fibo 2.0 Edit Turbo,
-“General-purpose restoration” and ClearRealityV1 SPAN 4×. “Detail reconstruction”
+“General-purpose restoration” and 4× ClearRealityV1. “Detail reconstruction”
 is available in the same menu in GPU mode and uses VOSR 2.0 with the
 same processing settings. Saved settings take precedence at startup.
 
@@ -129,15 +129,15 @@ The custom path and output mode are saved separately.
 The 1080 px and 2160 px options set image height. “Long edge” and “Short
 edge” use the entered side length. RestoRenate preserves the aspect ratio.
 “No resizing” exports at the working size. “Upscale only” starts with the
-input image. AI upscaling applies when enlarging the image. Real-ESRGAN
+input image. AI upscaling applies when enlarging the image. Real-ESRGAN 2×/4× Plus
 selects its 2× or 4× model. Lanczos resizes to the exact output dimensions.
 The GPU restoration default is Fibo 2.0 Edit Turbo with a height of 2160 px
-and ClearRealityV1 SPAN 4×. “Upscale only” defaults to 2160 px and Nomos2 HQ MoSR 4×.
+and 4× ClearRealityV1. “Upscale only” defaults to 2160 px and 4× Nomos2 HQ MoSR.
 4× FaceUpDAT is designed for portraits with clean source images.
-The upscaler menu groups models by use. Nomos2 HQ MoSR 4× is designed for clean photos. The small and compressed photos group includes
-Nomos8kDAT 4×, RealWebPhoto v4 and NomosUni SPAN MultiJPG 4×. MultiJPG handles JPEG-compressed and previously resized images. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail locally
+The upscaler menu groups models by use. 4× Nomos2 HQ MoSR is designed for clean photos. The small and compressed photos group includes
+4× Nomos8kDAT, 4× RealWebPhoto v4 DAT2 and 4× NomosUni SPAN MultiJPG. MultiJPG handles JPEG-compressed and previously resized images. SeedVR2 3B INT8 and VOSR 2.0 reconstruct detail locally
 and are downloaded on demand.
-Real-ESRGAN Anime 4× and AnimeSharp 4× are intended for drawings and illustrations.
+Real-ESRGAN 4× Plus Anime 6B and 4× AnimeSharp are intended for drawings and illustrations.
 All classic upscaler weights are bundled in `models/upscale_models`, including both Real-ESRGAN scales. The app verifies the local weights on first use and sets up the processing runtime if needed.
 
 The preview uses the saved file. Drag the divider with the left mouse button to compare before and after.

@@ -60,7 +60,7 @@ einem Prompt kennzeichnet das dafür empfohlene Verfahren.
 Unter „Presets“ lassen sich das Verfahren, der Prompt, die Varianten und
 die zugehörigen Ausgabe- und Modelleinstellungen speichern. Eingabe und Ausgabeordner
 bleiben beim Laden ausgewählt. Die GPU-Startvorgabe und „Standard“ im GPU-Modus
-verwenden Fibo 2.0 Edit Turbo, „Allround“ und ClearRealityV1 SPAN 4×.
+verwenden Fibo 2.0 Edit Turbo, „Allround“ und 4× ClearRealityV1.
 „Detailrekonstruktion“ steht im selben Menü im GPU-Modus zur Auswahl und
 verwendet bei denselben Einstellungen VOSR 2.0 als Upscaler.
 Gespeicherte Einstellungen haben beim Start Vorrang.
@@ -145,16 +145,16 @@ landen direkt dort. Der eigene Pfad und der Modus werden getrennt gespeichert.
 verwenden eine eingegebene Seitenlänge. Die App hält das Seitenverhältnis.
 „Ohne Nachskalierung“ speichert in Arbeitsauflösung. „Nur hochskalieren“
 arbeitet mit dem Eingabebild. KI-Upscaling wird beim Vergrößern verwendet.
-Real-ESRGAN wählt ein 2×- oder 4×-Modell. Lanczos passt auf die exakte
+Real-ESRGAN 2×/4× Plus wählt das passende Modell für die Skalierung. Lanczos passt auf die exakte
 Zielgröße an. Die GPU-Voreinstellung für Restaurierung ist Fibo 2.0 Edit Turbo
-mit 2160 px Bildhöhe und ClearRealityV1 SPAN 4×. „Nur hochskalieren“ verwendet
-als eigene Vorgabe 2160 px Bildhöhe und Nomos2 HQ MoSR 4×.
+mit 2160 px Bildhöhe und 4× ClearRealityV1. „Nur hochskalieren“ verwendet
+als eigene Vorgabe 2160 px Bildhöhe und 4× Nomos2 HQ MoSR.
 4× FaceUpDAT ist für Porträts mit sauberer Vorlage gedacht.
 Das Upscaler-Menü gruppiert die Modelle nach Einsatzbereich.
-Nomos2 HQ MoSR 4× eignet sich für saubere Fotos. Unter „Kleine und komprimierte Fotos“ stehen
-Nomos8kDAT 4×, RealWebPhoto v4 und NomosUni SPAN MultiJPG 4×. MultiJPG eignet sich für JPEG-komprimiertes und bereits skaliertes Bildmaterial. SeedVR2 3B INT8 und VOSR 2.0 sind
+4× Nomos2 HQ MoSR eignet sich für saubere Fotos. Unter „Kleine und komprimierte Fotos“ stehen
+4× Nomos8kDAT, 4× RealWebPhoto v4 DAT2 und 4× NomosUni SPAN MultiJPG. MultiJPG eignet sich für JPEG-komprimiertes und bereits skaliertes Bildmaterial. SeedVR2 3B INT8 und VOSR 2.0 sind
 lokale Verfahren zur Detailrekonstruktion und werden bei Bedarf geladen.
-Real-ESRGAN Anime 4× und AnimeSharp 4× sind für Zeichnungen und Illustrationen
+Real-ESRGAN 4× Plus Anime 6B und 4× AnimeSharp sind für Zeichnungen und Illustrationen
 gedacht. Alle klassischen Upscaler sind unter `models/upscale_models` im Paket enthalten, einschließlich beider Real-ESRGAN-Größen. Ihre Gewichte werden beim ersten Prüfen lokal erkannt. Die Verarbeitungslaufzeit wird bei Bedarf eingerichtet.
 
 Die Vorschau zeigt die gespeicherte Datei. Die Trennlinie mit der linken Maustaste ziehen, um Vorher und Nachher zu vergleichen.

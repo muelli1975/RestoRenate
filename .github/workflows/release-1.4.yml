@@ -57,7 +57,7 @@ jobs:
           mv artifacts/linux/RestoRenate_1.4_Linux_x64.tar.gz dist/RestoRenate_1.4_Linux_x64.tar.gz
           mv artifacts/macos/RestoRenate_1.4_macOS_AppleSilicon.zip dist/RestoRenate_1.4_macOS_AppleSilicon.zip
           (cd dist && sha256sum RestoRenate_1.4_* > SHA256SUMS.txt)
-      - name: Verify the uploaded draft before publishing
+      - name: Publish or refresh the verified platform packages
         shell: bash
         run: |
           set -euo pipefail
@@ -82,18 +82,24 @@ jobs:
           if [[ "$release" == '{}' ]]; then
             gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "RestoRenate 1.4" --notes-file "$notes" --draft
           else
-            jq -e --arg sha "$GITHUB_SHA" '.draft and .target_commitish == $sha' <<< "$release"
+            jq -e --arg sha "$GITHUB_SHA" '
+              if .draft then .target_commitish == $sha
+              else .immutable == false and .name == "RestoRenate 1.4" end
+            ' <<< "$release"
             gh release upload "$tag" dist/* --clobber
-            gh release edit "$tag" --notes-file "$notes"
           fi
           id=$(release_info | jq -er '.id')
           release=$(gh api "repos/$GH_REPO/releases/$id")
-          jq -e --arg sha "$GITHUB_SHA" '.draft and .target_commitish == $sha and (.assets | length == 4)' <<< "$release"
+          jq -e '.assets | length == 4' <<< "$release"
           for path in dist/*; do
             name=${path##*/}
             read -r digest _ < <(sha256sum "$path")
             jq -e --arg name "$name" --arg digest "sha256:$digest" \
               'any(.assets[]; .name == $name and .digest == $digest and .state == "uploaded")' <<< "$release"
           done
-          gh release edit "$tag" --draft=false --latest
-          test "$(gh api "repos/$GH_REPO/commits/$tag" --jq '.sha')" = "$GITHUB_SHA"
+          if jq -e '.draft' <<< "$release" >/dev/null; then
+            gh release edit "$tag" --draft=false --latest --notes-file "$notes"
+            test "$(gh api "repos/$GH_REPO/commits/$tag" --jq '.sha')" = "$GITHUB_SHA"
+          else
+            gh release edit "$tag" --notes-file "$notes"
+          fi
