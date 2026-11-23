@@ -19,7 +19,7 @@ from PIL import Image, ImageTk
 
 from portable_paths import ROOT
 
-from language import LANGUAGE_LABELS, configure_language, translate
+from language import ENGLISH, LANGUAGE_LABELS, configure_language, translate
 from comparison import Comparison
 from crop import CropRegion
 from crop_dialog import edit_crops
@@ -416,8 +416,17 @@ class Application:
         style_font = ttk.Style(self.window).lookup('Input.TMenubutton', 'font') or 'TkDefaultFont'
         menu_font = font.Font(root=self.window, font=style_font)
         model_width = max(menu_font.measure(name) for name in UPSCALERS) + 28 + field_gap
-        # The upscaler gets ten of nineteen equal shares in the scaling row.
-        settings_width = max(374, 2 * panel_inset + (19 * model_width + 9) // 10)
+        size_style_font = ttk.Style(self.window).lookup('TCombobox', 'font') or 'TkDefaultFont'
+        size_font = font.Font(root=self.window, font=size_style_font)
+
+        def measure_sizes(choices):
+            return max(size_font.measure(label) for choice in choices
+                       for label in (choice, ENGLISH.get(choice, choice)))
+
+        # Reserve space for both languages and for the numeric field in custom sizes.
+        size_width = 28 + max(measure_sizes(SIZE_CHOICES),
+                              measure_sizes(CUSTOM_SIZES) + size_font.measure('000000') + 15)
+        settings_width = max(374, 2 * panel_inset + model_width + size_width)
         self.preview_width_offset = settings_width + panel_gap + 2 * (body_padding + preview_padding)
         body = tk.Frame(self.window, bg=BG, padx=body_padding)
         body.pack(fill='both', expand=True)
@@ -481,8 +490,8 @@ class Application:
         self.format_widget.grid(row=5, column=0, sticky='ew', pady=(4, 0))
         scaling = tk.Frame(left, bg=PANEL)
         scaling.grid(row=6, column=0, sticky='ew', pady=(5, 0))
-        scaling.columnconfigure(0, weight=10, uniform='scaling')
-        scaling.columnconfigure(1, weight=9, uniform='scaling')
+        scaling.columnconfigure(0, weight=1, minsize=model_width)
+        scaling.columnconfigure(1, weight=1, minsize=size_width)
         tk.Label(scaling, text='Upscaler', bg=PANEL, fg=INK, anchor='w').grid(
             row=0, column=0, sticky='ew', padx=(0, 5))
         self.labelled(tk.Label, scaling, 'Zielgröße', bg=PANEL, fg=INK, anchor='w').grid(row=0, column=1, sticky='ew')
