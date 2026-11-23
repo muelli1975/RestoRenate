@@ -35,7 +35,7 @@ When updating Windows, close RestoRenate and extract the package into a clean fo
 
 ## New in 1.4
 
-The GPU Default preset uses 4× ClearRealityV1. 4× PurePhoto-SPAN and 4× NomosUni SPAN MultiJPG join the selection. All three packages include the classic upscaler weights. SeedVR2 and VOSR remain optional downloads.
+The GPU Default preset uses 4× ClearRealityV1. 4× PurePhoto SPAN and 4× NomosUni SPAN MultiJPG join the selection. All three packages include the classic upscaler weights. SeedVR2 and VOSR remain optional downloads.
 
 The crop dialog can straighten the horizon and correct perspective before processing. Original keeps the input image’s aspect ratio. The controls guide (F1) groups mouse and keyboard gestures by task and adapts to the window width in English and German.
 

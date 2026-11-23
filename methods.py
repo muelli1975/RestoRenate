@@ -57,7 +57,7 @@ REMACRI = '4× Foolhardy Remacri'
 REALWEBPHOTO = '4× RealWebPhoto v4 DAT2'
 SIAX = '4× NMKD Siax'
 CLEARREALITY = '4× ClearRealityV1'
-PUREPHOTO = '4× PurePhoto-SPAN'
+PUREPHOTO = '4× PurePhoto SPAN'
 NOMOS2_HQ = '4× Nomos2 HQ MoSR'
 MULTIJPG = '4× NomosUni SPAN MultiJPG'
 NOMOS8K_DAT = '4× Nomos8kDAT'
@@ -88,6 +88,7 @@ PREVIOUS_UPSCALER_NAMES = {
     'NMKD Siax 4×': SIAX,
     'ClearRealityV1 SPAN 4×': CLEARREALITY,
     'PurePhoto SPAN 4×': PUREPHOTO,
+    '4× PurePhoto-SPAN': PUREPHOTO,
     'Nomos2 HQ MoSR 4×': NOMOS2_HQ,
     'NomosUni SPAN MultiJPG 4×': MULTIJPG,
     'Nomos8kDAT 4×': NOMOS8K_DAT,

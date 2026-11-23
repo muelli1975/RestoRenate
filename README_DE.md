@@ -35,7 +35,7 @@ Für ein Windows-Update RestoRenate schließen und das neue Paket in einen saube
 
 ## Neu in 1.4
 
-4× ClearRealityV1 ist der Upscaler im GPU-Preset „Standard“. 4× PurePhoto-SPAN und 4× NomosUni SPAN MultiJPG ergänzen die Auswahl. Die klassischen Modellgewichte sind in allen drei Paketen enthalten. SeedVR2 und VOSR bleiben optionale Downloads.
+4× ClearRealityV1 ist der Upscaler im GPU-Preset „Standard“. 4× PurePhoto SPAN und 4× NomosUni SPAN MultiJPG ergänzen die Auswahl. Die klassischen Modellgewichte sind in allen drei Paketen enthalten. SeedVR2 und VOSR bleiben optionale Downloads.
 
 Im Beschnittdialog lassen sich Horizont und Perspektive vor der Bearbeitung korrigieren. „Original“ hält das Seitenverhältnis des Eingabebildes. Die Bedienhilfe (F1) zeigt die Maus- und Tastatursteuerung auf Deutsch oder Englisch und passt sich der Fensterbreite an.
 
